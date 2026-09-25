@@ -1,194 +1,48 @@
 ---
-/* 地图实体预览（viewer）—— 移植自单文件版，数据按图按需加载。
-   数据构建： scripts/entity-data/build-entity-data.mjs
-   地形分包： public/terr/<工坊ID>.bin（来自社区工具「云朵小铺」的实体预览，
-             几何由 Source 2 Viewer 从创意工坊地图包解析，见 docs/terrain-3d-plan.md）
-   脚本：     public/preview/app.js
-   支持参数： ?map=<slug|内部名|中文名>&view=2d&stage=N */
-import fs from 'node:fs';
-import '../styles/preview.css';
-
-const site = Astro.site ?? new URL('https://ze-map.cn');
-const canonical = new URL(Astro.url.pathname, site);
-const ogImage = new URL('/images/hero-bg.jpg', site).href;
-
-/* 带真实碰撞地形的地图数：直接数分包（一张图一个 .bin），文案就不会和实际脱节 */
-const terrCount = (() => {
-  try {
-    return fs.readdirSync('public/terr').filter((f) => f.endsWith('.bin')).length;
-  } catch {
-    return 0;
-  }
-})();
-
-const desc = `CS2 僵尸逃跑地图实体预览：传送门、可破坏物、机关、危险区、关卡分层的 2D/3D 可视化，收录 645 张地图、62.9 万个实体${terrCount ? `，其中 ${terrCount} 张带真实碰撞地形` : ''}。`;
+/*
+ * 3D 地图预览直接使用云朵小铺的 preview3d.html 原版实现。
+ *
+ * 原页面自带完整的 HTML/CSS/JavaScript/WebGL 渲染器和实体数据，
+ * 地形分包则从本站的 /terr/<工坊 ID>.bin 按需加载。
+ * 网站的 entitySlug 形如 2001-ze_xxx-<版本 ID>，这里转换成原页面
+ * 使用的地图内部名，保证地图详情页的深链仍然可以直接打开对应地图。
+ */
+const requested = Astro.url.searchParams.get('map') ?? '';
+const map = requested
+  .replace(/^\d+-/, '')
+  .replace(/-\d+$/, '');
+const query = new URLSearchParams(Astro.url.searchParams);
+if (map) query.set('map', map);
+const previewUrl = `/preview3d.html${query.toString() ? `?${query.toString()}` : ''}`;
 ---
 
 <!doctype html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>地图实体预览 · ZE 地图资料站</title>
-    <meta name="description" content={desc} />
-    <link rel="canonical" href={canonical.href} />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="ZE 地图资料站" />
-    <meta property="og:title" content="地图实体预览 · ZE 地图资料站" />
-    <meta property="og:description" content={desc} />
-    <meta property="og:url" content={canonical.href} />
-    <meta property="og:image" content={ogImage} />
-    <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      html,
+      body,
+      iframe {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        border: 0;
+        display: block;
+      }
+
+      body {
+        overflow: hidden;
+      }
+    </style>
   </head>
-<body>
-
-<header>
-  <h1>🗺️ 地图实体预览</h1>
-  <div class="sub">可破坏物 · 传送门 · 机关 · 危险区{terrCount ? ` · ${terrCount} 张真实碰撞地形` : ''}</div>
-  <div class="badges" id="hbadges"></div>
-  <a class="back" href="/maps/">← 返回地图库</a>
-</header>
-
-<main>
-  <aside>
-    <div class="side-hd">
-      <input id="q" placeholder="搜索地图（中文名 / 内部名）…" autocomplete="off">
-      <div class="side-tools">
-        <span>排序</span>
-        <button data-sort="k" class="on">实体数</button>
-        <button data-sort="st">关卡数</button>
-        <button data-sort="m">名称</button>
-      </div>
-      <div class="side-tools">
-        <select id="lmode" title="筛选模式">
-          <option value="2001" selected>ZE 僵尸逃跑</option>
-          <option value="2002">TTT 侦探</option>
-          <option value="2004">MG 小游戏</option>
-          <option value="2010">DE 爆破</option>
-          <option value="">全部模式</option>
-        </select>
-        <span id="lcount" style="color:var(--ink3);font-size:11.5px"></span>
-      </div>
-    </div>
-    <div class="maps" id="maps"></div>
-  </aside>
-  <div class="side-scrim" id="side-scrim"></div>
-
-  <section class="viewer">
-    <div class="bar">
-      <button id="side-toggle" type="button" aria-label="地图列表">☰ 地图</button>
-      <div class="mtitle"><span id="mtitle">—</span><code id="mcode"></code></div>
-      <div class="seg" id="mode">
-        <button data-m="3d" class="on">🧊 3D 视图</button>
-        <button data-m="2d">🗺️ 平面</button>
-      </div>
-      <div class="seg" id="proj">
-        <button data-p="xy" class="on">俯视 XY</button>
-        <button data-p="xz">侧视 XZ</button>
-        <button data-p="zy">前后 ZY</button>
-      </div>
-      <label class="ctl"><input type="checkbox" id="hcol"> 按高度着色</label>
-      <label class="ctl">点径 <input type="range" id="psize" min="1" max="9" step="0.5" value="3"></label>
-      <label class="ctl"><input type="checkbox" id="glow"> 区域光晕</label>
-      <label class="ctl"><input type="checkbox" id="full"> 全范围</label>
-      <label class="ctl" id="msensbox" style="display:none" title="自由视角下左键拖拽环顾的灵敏度">灵敏度
-        <input type="range" id="msens" min="0.3" max="3" step="0.1" value="1">
-        <span class="v" id="msensv">1.0×</span></label>
-      <label class="ctl" id="fspdbox" style="display:none" title="自由飞行移动速度倍率（0.1×~5×），Shift 疾跑再乘 2.6；设置自动记忆">移速
-        <input type="range" id="fspd" min="1" max="50" step="1" value="10">
-        <span class="v" id="fspdv">1.0×</span></label>
-      <label class="ctl" id="eyehbox" style="display:none" title="行走模式视点离地高度（米），默认 1.7m">眼高
-        <input type="range" id="eyeh" min="3" max="400" step="1" value="17">
-        <span class="v" id="eyehv">1.7m</span></label>
-      <button class="btn" id="fly" title="自由飞行视角（F 键切换）：不受轨道限制，可飞到任意位置">🕊 自由视角</button>
-      <button class="btn" id="walk" title="第一人称行走（V 键切换）：贴着真实碰撞地形跑图，可穿墙、无墙体碰撞">🚶 行走模式</button>
-      <button class="btn" id="fit">适应窗口</button>
-      <button class="btn" id="png">导出 PNG</button>
-    </div>
-
-    <div class="stage" id="stage">
-      <canvas id="cv"></canvas>
-      <div class="stage3d" id="stage3d">
-        <canvas id="cv3"></canvas>
-        <canvas class="axiscue" id="axis" width="152" height="152"></canvas>
-        <div class="glerr" id="glerr"></div>
-        <div class="v3hud">
-          <div class="card keys" id="camkeys">
-            <span>左键拖拽</span> 旋转 · <span>右键/Shift</span> 平移 · <span>滚轮</span> 缩放 ·
-            <span>R</span> 复位 · <span>T</span> 俯视 · <span>V</span> 行走
-          </div>
-          <div class="card" id="v3info">—</div>
-        </div>
-      </div>
-      <div class="esearch">
-        <input id="esq" placeholder="🔎 搜索当前地图的实体（名称 / 类别，如 stage1、trigger_hurt）" autocomplete="off">
-        <div class="esres" id="esres"></div>
-      </div>
-      <div class="edetail" id="edetail" style="display:none"></div>
-      <div class="tip" id="tip"></div>
-      <div class="tip ltip" id="ltip"></div>
-      <button class="btn ltbtn" id="ltoggle">图层</button>
-      <div class="layers" id="layers">
-        <h4>🧩 图层 <span id="lvis" style="color:var(--ink3);font-weight:400"></span><span class="x" id="lclose">✕</span></h4>
-        <div class="brow" id="broww" data-lt="🗺️ 地图底图" data-desc="官方雷达俯视图或环境点密度轮廓，用来对照实体与地图结构。仅平面视图显示，透明度可调。">
-          <span class="btoggle" id="btoggle">🗺️ 地图底图</span>
-          <input type="range" id="bop" min="0" max="100" value="60" title="底图不透明度">
-        </div>
-        <div class="cutrow row3d" id="row3da" data-lt="🧊 块体（3D）" data-desc="3D 视图中带体积的实体（触发区、门、可破坏物等刷子类）以方块表示，颜色按类别区分，高度为类别典型尺寸。数据只有原点坐标，无真实包围盒，块体是比例近似的示意。">
-          <span>🧊 块体</span>
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
-            <input type="checkbox" id="vbox" checked> 显示</label>
-          <input type="range" id="bopa" min="10" max="100" value="88" title="块体不透明度">
-        </div>
-        <div class="cutrow row3d" id="row3dc" data-lt="📐 块体大小（3D）" data-desc="实体块的大小倍率。块体重叠挤在一起时调小，更容易点中想看的那个。">
-          <span>📐 大小</span>
-          <input type="range" id="bsz" min="20" max="200" step="5" value="100" title="块体大小倍率">
-          <span class="v" id="bszv">100%</span>
-        </div>
-        <div class="cutrow row3d" id="row3dp" data-lt="✨ 点云大小（3D）" data-desc="环境点 / 逻辑点这类轻量实体的点精灵大小倍率。点挤在一起看不清时调小。">
-          <span>✨ 点云</span>
-          <input type="range" id="psz" min="20" max="250" step="10" value="100" title="点云大小倍率">
-          <span class="v" id="pszv">100%</span>
-        </div>
-        <div class="cutrow row3d" id="row3db" data-lt="✂️ 剖切（3D）" data-desc="按高度把块体与地形切成 [下界, 上界] 这一段，用来查看地图内部与下层结构。上界拉到 100% 且下界为 0% 即不剖切。">
-          <span>✂️ 剖切</span>
-          <input type="range" id="cutz" min="0" max="100" value="100" title="上界：按高度剖切">
-          <span class="v" id="cutzv">100%</span>
-          <input type="range" id="cutb" min="0" max="100" value="0" title="下界：切掉此高度以下（0% = 不切）">
-          <span class="v" id="cutbv">0%</span>
-        </div>
-        <div class="cutrow row3d" id="row3do" data-lt="🏔️ 地形不透明度" data-desc="真实碰撞地形的不透明度。拉低可以透视地图内部，配合剖切看结构。">
-          <span>🏔️ 地形</span>
-          <input type="range" id="topa" min="0" max="100" step="5" value="100" title="地形不透明度">
-          <span class="v" id="topav">100%</span>
-        </div>
-        <div class="cutrow row3d" id="row3dt" data-lt="🏔️ 真实碰撞地形" data-desc="从创意工坊地图包里解析出的真实碰撞网格（world_physics），545 张图带这份数据。它是地图的实体地板/墙体，不是贴图渲染的观感画面。数据来自社区工具「云朵小铺」的实体预览，几何由 Source 2 Viewer 解析；分包按图加载，缺失时自动退回只看实体。">
-          <span>🏔️ 地形</span>
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
-            <input type="checkbox" id="terbox" checked> 显示</label>
-          <span class="v" id="tstat">—</span>
-        </div>
-        <div class="cutrow" id="rowsg" data-lt="🏁 关卡分层" data-desc="只显示所选关卡的实体，切换后相机自动飞到该关范围。关卡来自实体命名（lvl2/stage3 等），未命中的按最近标注实体就近推断。">
-          <span>🏁 关卡</span>
-          <select id="stagesel" style="flex:1;min-width:0;font-size:11.5px;border:1px solid var(--line2);
-            border-radius:7px;padding:3px 5px;background:#fff;color:var(--ink);font-family:inherit"></select>
-        </div>
-        <div class="body" id="lbody"></div>
-        <div class="foot">单击切换显隐 · 双击独显<br>刷子实体只有原点、无体积，故以典型尺寸块表示<br>关卡划分来自实体命名（lvl2/stage3 等），未命名的按最近标注实体就近推断<br><span style="color:var(--ink3)">地形数据：社区工具「云朵小铺」· 几何解析：Source 2 Viewer · 地图版权归各图原作者</span></div>
-      </div>
-      <div class="hud">
-        <div class="north" id="north">▲<br>N</div>
-        <div class="scalebar"><div class="barline" id="sbline"></div><span id="sblab">—</span></div>
-        <div class="zoom" id="zoomlab">100%</div>
-      </div>
-    </div>
-
-    <div class="stats" id="stats"></div>
-  </section>
-</main>
-
-<div class="loading" id="loading"><div class="spin"></div><div id="lmsg">正在解压实体数据…</div></div>
-
-  <script is:inline src="/preview/app.js" defer></script>
-</body>
+  <body>
+    <iframe
+      src={previewUrl}
+      title="地图实体预览"
+      allow="fullscreen"
+    ></iframe>
+  </body>
 </html>
