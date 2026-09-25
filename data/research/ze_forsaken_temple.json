@@ -1,8 +1,18 @@
 {
-  "_说明": "改这个文件就行。difficulty 只能填：入门/简单/普通/困难/火星/入土/未知；summary 写介绍正文（分段就在段与段之间打 \\n\\n）；tags 是标签数组，例如 [\"神器\", \"多关卡\"]；videoUrls 放视频链接。改完点页面下面的 Commit changes 提交即可。",
-  "difficulty": "未知",
-  "summary": null,
-  "tags": [],
-  "videoUrls": [],
-  "confidence": "low"
+  "slug": "2001-ze_forsaken_temple-3247462748",
+  "difficulty": "困难",
+  "summary": "经典的神器类地图，包含三个关卡，结尾处有跳刀，CSGO由Brian创作，CS2Port By@Seth，由于该地图的触发为炎和水果的神器类触碰触发，中文ZE社区喜称地图为水果\\n\\n该地图由于神器较多打法较为灵活，以及贴门被夹死的机制使的地图对指挥的临时控场以及神器安排能力要求较高，对于萌新来说可以训练自己对于不同类神器使用的熟练度，是一张不错的神器地图",
+  "author": "Brian(原作)" "@Seth.(CS2移植)",
+  "tags": ["传送门多","神器","多关卡","机关图"],
+  "videoUrls": [
+    "https://www.bilibili.com/video/BV1aPametEC3/",
+    "https://www.bilibili.com/video/BV1RzKV6yEjZ/"
+  ],
+  "sources":[
+    "https://steamcommunity.com/sharedfiles/filedetails/?id=3247462748",
+    "https://www.bilibili.com/video/BV1aPametEC3/",
+    "https://www.bilibili.com/video/BV1RzKV6yEjZ/"
+  ],
+  "confidence": "medium",
+  "verified": true
 }
