@@ -342,8 +342,8 @@ aside,.bar,.stats{background:var(--panel);border-color:var(--line)}
       <label class="ctl"><input type="checkbox" id="hcol"> 按高度着色</label>
       <label class="ctl">点径 <input type="range" id="psize" min="1" max="9" step="0.5" value="3"></label>
       <label class="ctl" id="msensbox" style="display:none">灵敏度 <input type="range" id="msens" min="0.3" max="3" step="0.1" value="1"></label>
-       <label class="ctl" id="fspdbox" style="display:none">移速 <input type="range" id="fspd" min="1" max="50" step="1" value="4" title="自由飞行移动速度倍率（0.1x ~ 5x，默认 0.4x），Shift 疾跑再乘 2.6；设置自动记忆">
-         <span class="v" id="fspdv">0.4x</span></label>
+      <label class="ctl" id="fspdbox" style="display:none">移速 <input type="range" id="fspd" min="1" max="50" step="1" value="2" title="自由飞行移动速度倍率（0.1x ~ 5x，默认 0.2x），Shift 疾跑再乘 2.6；设置自动记忆">
+        <span class="v" id="fspdv">0.2x</span></label>
       <label class="ctl"><input type="checkbox" id="glow"> 区域光晕</label>
       <label class="ctl"><input type="checkbox" id="full"> 全范围</label>
       <button class="btn" id="fly">🕊 自由视角</button>
@@ -1041,7 +1041,7 @@ const CAM = {
   ready:false, lastT:0,
   free:false, walk:false,  // 自由视角；walk=贴地行走（无墙体碰撞）
   wspd:1, wtgt:0,          // 行走速度倍率（滚轮调，记忆）/ 贴地目标眼高
-  fspd:0.4,                // 自由飞行移速倍率（面板滑杆 0.1~5x，记忆）
+  fspd:0.2,                // 自由飞行移速倍率（面板滑杆 0.1~5x，记忆）
   eyeH:1.7,                // 行走眼高（米，滑杆可调）
   ex:0, ey:0, ez:0,        // 自由视角：眼睛位置
 };
