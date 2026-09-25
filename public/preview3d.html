@@ -270,6 +270,40 @@ html[data-theme="N"] .brow input[type=range]{accent-color:#f0a868}
 .btn.on{background:var(--acc,#f2608d);color:#fff;border-color:var(--acc,#f2608d)}
 html[data-theme="N"] .btn.on{background:#f0a868;border-color:#f0a868;color:#241a10}
 </style>
+<!-- ZE 地图资料站主题覆盖：只调整外观，不修改原版页面逻辑或 WebGL 渲染。 -->
+<style>
+:root{
+  --bg:#06070b; --panel:#0d0f16; --ink:#e6e9f0; --ink2:#8a92a6; --ink3:#657086;
+  --line:#1e2230; --line2:#2a3040; --accent:#ff4d4d; --accent2:#22d3ee;
+  --chip:#12151f; --ok:#22c55e; --warn:#f59e0b;
+  --shadow:0 8px 28px rgba(0,0,0,.28);
+}
+body{background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,#ff4d4d 0%,#ff7043 58%,#a855f7 100%);box-shadow:0 2px 18px rgba(255,77,77,.22)}
+aside,.bar,.stats{background:var(--panel);border-color:var(--line)}
+.side-hd{border-color:var(--line)}
+.side-hd input,.seg button,.side-tools button,.btn,
+.esearch input,.stagesel{background:var(--panel-2,#12151f);border-color:var(--line2);color:var(--ink)}
+.side-hd input::placeholder,.esearch input::placeholder{color:var(--ink3)}
+.side-tools span,.ctl,.mi-s,.stats,.layers .foot{color:var(--ink2)}
+.side-tools button.on,.mi.on,.li.solo{background:rgba(255,77,77,.12);border-color:rgba(255,77,77,.55);color:var(--ink)}
+.mi:hover,.li:hover,.esr:hover{background:rgba(34,211,238,.08)}
+.seg{border-color:var(--line2)}
+.seg button{border-color:var(--line2)}
+.seg button.on,.btn.on{background:linear-gradient(135deg,var(--accent),#ff7a45);border-color:var(--accent);color:#fff}
+.btn:hover{border-color:var(--accent2);color:var(--accent2)}
+.stage{background:radial-gradient(circle at 30% 20%,#121827,#090b12 72%)}
+.layers,.esres,.edetail{background:rgba(13,15,22,.96);border-color:var(--line2);box-shadow:var(--shadow)}
+.layers h4,.layers .foot{border-color:var(--line)}
+.brow,.cutrow{border-color:var(--line)}
+.hud .scalebar,.hud .north,.hud .zoom,.v3hud .card,.axiscue{background:rgba(13,15,22,.86);border-color:var(--line2);color:var(--ink2)}
+.chip{background:var(--chip);border-color:var(--line2);color:var(--ink2)}
+.chip b,.mtitle,.mi-t{color:var(--ink)}
+.loading{background:var(--bg);color:var(--ink2)}
+.spin{border-color:var(--accent2);border-top-color:transparent}
+.maps::-webkit-scrollbar-thumb,.layers .body::-webkit-scrollbar-thumb{background:#2a3040}
+.tip{background:rgba(6,7,11,.96)}
+</style>
 </head>
 <body>
 
