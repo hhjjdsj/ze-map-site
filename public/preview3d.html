@@ -342,8 +342,8 @@ aside,.bar,.stats{background:var(--panel);border-color:var(--line)}
       <label class="ctl"><input type="checkbox" id="hcol"> 按高度着色</label>
       <label class="ctl">点径 <input type="range" id="psize" min="1" max="9" step="0.5" value="3"></label>
       <label class="ctl" id="msensbox" style="display:none">灵敏度 <input type="range" id="msens" min="0.3" max="3" step="0.1" value="1"></label>
-      <label class="ctl" id="fspdbox" style="display:none">移速 <input type="range" id="fspd" min="1" max="50" step="1" value="10" title="自由飞行移动速度倍率（0.1x ~ 5x，默认 1x），Shift 疾跑再乘 2.6；设置自动记忆">
-        <span class="v" id="fspdv">1.0x</span></label>
+       <label class="ctl" id="fspdbox" style="display:none">移速 <input type="range" id="fspd" min="1" max="50" step="1" value="4" title="自由飞行移动速度倍率（0.1x ~ 5x，默认 0.4x），Shift 疾跑再乘 2.6；设置自动记忆">
+         <span class="v" id="fspdv">0.4x</span></label>
       <label class="ctl"><input type="checkbox" id="glow"> 区域光晕</label>
       <label class="ctl"><input type="checkbox" id="full"> 全范围</label>
       <button class="btn" id="fly">🕊 自由视角</button>
@@ -380,7 +380,7 @@ aside,.bar,.stats{background:var(--panel);border-color:var(--line)}
           <span class="btoggle" id="btoggle">🗺️ 地图底图</span>
           <input type="range" id="bop" min="0" max="100" value="60" title="底图不透明度">
         </div>
-        <div id="setgrp" class="closed">
+       <div id="setgrp">
           <div class="sghead" id="sethead">⚙️ 显示设置 <span class="arr">▼</span></div>
           <div class="sgbody">
         <div class="cutrow" id="row3dm" data-lt="🔍 地图大小（3D）" data-desc="真实缩放 3D 视图里的地图：100% 为游戏真实比例（1单位≈2.54cm），拉到 3937% 即 1单位=1米；改的是场景实际尺寸而非视角，配合滚轮可自由取景。">
@@ -408,7 +408,7 @@ aside,.bar,.stats{background:var(--panel);border-color:var(--line)}
           <span>🏔 地形</span>
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
             <input type="checkbox" id="wbox" checked> 显示</label>
-          <input type="range" id="topa" min="15" max="100" value="100" title="地形不透明度（拉低可透视内部）">
+           <input type="range" id="topa" min="15" max="100" value="90" title="地形不透明度（拉低可透视内部）">
           <span class="v" id="wstat">—</span>
         </div>
         <div class="cutrow" id="row3dr" data-lt="🏙 实景材质（3D）" data-desc="从创意工坊地图包解析出的真实渲染网格与贴图（仅部分地图提供）。比碰撞网格更精细，带真实墙面/地面材质。开启后替代🏔地形层显示。" style="display:none">
@@ -958,7 +958,7 @@ async function loadPayload(){
 let DATA=null, GMAP={}, CLS=[], MAPKEYS=[];
 const S = { key:null, mode:'3d', proj:'xy', hcol:false, psize:3, glow:false, full:false,
             off:new Set(), solo:null, sort:'k', bmap:true, bop:0.6, sel:null,
-            vbox:true, wbox:true, bopa:0.88, topa:1, rmat:false, cutz:1, cutb:0, bsz:1, psz:1 };
+             vbox:true, wbox:true, bopa:0.88, topa:0.9, rmat:false, cutz:1, cutb:0, bsz:1, psz:1 };
 let view = {s:1, ox:0, oy:0};
 /* 关卡过滤：0=全部 · -1=未标注 · n=第 n 关 */
 function stageOk(o){
@@ -1041,7 +1041,7 @@ const CAM = {
   ready:false, lastT:0,
   free:false, walk:false,  // 自由视角；walk=贴地行走（无墙体碰撞）
   wspd:1, wtgt:0,          // 行走速度倍率（滚轮调，记忆）/ 贴地目标眼高
-  fspd:1,                  // 自由飞行移速倍率（面板滑杆 0.1~5x，记忆）
+  fspd:0.4,                // 自由飞行移速倍率（面板滑杆 0.1~5x，记忆）
   eyeH:1.7,                // 行走眼高（米，滑杆可调）
   ex:0, ey:0, ez:0,        // 自由视角：眼睛位置
 };
@@ -2477,7 +2477,7 @@ try{
 $('msens').addEventListener('input', ()=>{
   try{ localStorage.setItem('p3dsens', $('msens').value); }catch(e){}
 });
-/* 飞行移速滑杆：0.1x ~ 5x（默认 1x），记忆上次设置 */
+/* 飞行移速滑杆：0.1x ~ 5x（默认 0.4x），记忆上次设置 */
 try{
   const sf0 = parseFloat(localStorage.getItem('p3dfspd'));
   if(sf0 >= 0.1 && sf0 <= 5){ CAM.fspd = sf0; $('fspd').value = Math.round(sf0*10); $('fspdv').textContent = sf0.toFixed(1) + 'x'; }
@@ -2529,12 +2529,16 @@ $('btoggle').addEventListener('click', ()=>{ S.bmap=!S.bmap; $('btoggle').classL
 $('bop').addEventListener('input', e=>{ S.bop=e.target.value/100; draw(); });
 $('ltoggle').addEventListener('click', ()=>{ $('layers').style.display='flex'; $('ltoggle').style.display='none'; });
 
-/* ── 显示设置折叠组：默认收起（图层列表才是主角），记忆开合 ── */
+/* ── 显示设置折叠组：默认展开，记忆开合 ── */
 $('sethead').addEventListener('click', ()=>{
   const closed = $('setgrp').classList.toggle('closed');
   try{ localStorage.setItem('p3dsetopen', closed ? '0' : '1'); }catch(err){}
 });
-try{ if(localStorage.getItem('p3dsetopen') === '1') $('setgrp').classList.remove('closed'); }catch(err){}
+try{
+  const setOpen = localStorage.getItem('p3dsetopen');
+  if(setOpen === '0') $('setgrp').classList.add('closed');
+  else if(setOpen === '1') $('setgrp').classList.remove('closed');
+}catch(err){}
 
 /* ── 浮层拖动：按标题栏拖走图层浮层 / 属性详情卡，位置记忆 ──
    拖动时经 parentElement(#stage) 定位；恢复时把 right/bottom 置 auto。
@@ -2673,7 +2677,10 @@ try{
   catch(err){ $('lmsg').textContent = '载入失败：' + err.message; document.title = 'ERR ' + err.stack; }
   $('loading').style.display='none';
   // 默认 3D（若不支持 WebGL 已自动回落 2D）
-  setMode(new URLSearchParams(location.search).get('view') === '2d' ? '2d' : '3d');
+  const initialView = new URLSearchParams(location.search).get('view') === '2d' ? '2d' : '3d';
+  setMode(initialView);
+  // 默认进入自由视角；?view=2d 时仍保持平面视图，?free=1 逻辑在下面继续兼容。
+  if(initialView === '3d') setFree(true);
   // ?demo=1 自测：自动搜索并选中一个实体，便于截图验证
   if(new URLSearchParams(location.search).has('demo')){
     setTimeout(()=>{
