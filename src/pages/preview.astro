@@ -4,16 +4,14 @@
  *
  * 原页面自带完整的 HTML/CSS/JavaScript/WebGL 渲染器和实体数据，
  * 地形分包则从本站的 /terr/<工坊 ID>.bin 按需加载。
- * 网站的 entitySlug 形如 2001-ze_xxx-<版本 ID>，这里转换成原页面
- * 使用的地图内部名，保证地图详情页的深链仍然可以直接打开对应地图。
+ *
+ * 站点是 static 输出（无 adapter），Astro.url 在构建期不含查询串，
+ * 因此 ?map= 的解析放到浏览器端：把 entitySlug 转成原页面认识的
+ * 地图内部名后再设置给 iframe，保证地图详情页深链能打开对应地图。
  */
-const requested = Astro.url.searchParams.get('map') ?? '';
-const map = requested
-  .replace(/^\d+-/, '')
-  .replace(/-\d+$/, '');
-const query = new URLSearchParams(Astro.url.searchParams);
-if (map) query.set('map', map);
-const previewUrl = `/preview3d.html${query.toString() ? `?${query.toString()}` : ''}`;
+const site = Astro.site ?? new URL('https://ze-map.cn');
+const canonical = new URL(Astro.url.pathname, site);
+const ogImage = new URL('/images/hero-bg.jpg', site).href;
 ---
 
 <!doctype html>
@@ -22,6 +20,13 @@ const previewUrl = `/preview3d.html${query.toString() ? `?${query.toString()}` :
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>地图实体预览 · ZE 地图资料站</title>
+    <link rel="canonical" href={canonical.href} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ZE 地图资料站" />
+    <meta property="og:title" content="地图实体预览 · ZE 地图资料站" />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
     <style>
       html,
       body,
@@ -39,10 +44,22 @@ const previewUrl = `/preview3d.html${query.toString() ? `?${query.toString()}` :
     </style>
   </head>
   <body>
-    <iframe
-      src={previewUrl}
-      title="地图实体预览"
-      allow="fullscreen"
-    ></iframe>
+    <iframe id="preview-frame" src="/preview3d.html" title="地图实体预览" allow="fullscreen"></iframe>
+    <script is:inline>
+      (function () {
+        try {
+          var q = new URLSearchParams(location.search);
+          var m = q.get('map') || '';
+          /* entitySlug 形如 2001-ze_xxx-<工坊ID>；已传入内部名时原样保留 */
+          if (/^\d+-/.test(m)) {
+            m = m.replace(/^\d+-/, '').replace(/-\d+$/, '');
+          }
+          if (m) q.set('map', m);
+          var qs = q.toString();
+          var frame = document.getElementById('preview-frame');
+          if (frame) frame.src = '/preview3d.html' + (qs ? '?' + qs : '');
+        } catch (e) {}
+      })();
+    </script>
   </body>
 </html>
