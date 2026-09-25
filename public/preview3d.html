@@ -1133,6 +1133,7 @@ function buildSide(){
 /* ============================ 载入某图 ============================ */
 let cur = null;
 function loadMap(k){
+  const keepFreeView = CAM.free && !CAM.walk;
   S.key = k;
   const m = DATA.maps[k];
   m.__k = k;
@@ -1187,6 +1188,7 @@ function loadMap(k){
   buildSide();
   loadRadar(m);
   build3D(); resetCam();
+  if(keepFreeView) setFree(true);  // 切图后沿用当前的自由视角模式
   GL3D.clearMesh();
   if(S.mode==='3d') render3D();
   loadMesh();
