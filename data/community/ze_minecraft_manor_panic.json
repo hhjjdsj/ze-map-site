@@ -1,13 +1,19 @@
 {
   "v": 1,
   "slug": "ze_minecraft_manor_panic",
-  "updatedAt": "2026-09-26T15:38:10.051Z",
+  "updatedAt": "2026-09-26T15:38:16.987Z",
   "fields": {
     "difficulty": {
       "v": "简单",
       "by": "白叶",
       "at": "2026-09-26T15:38:10.051Z",
       "submission": 29
+    },
+    "cover": {
+      "v": "/images/covers/custom/ze_minecraft_manor_panic.webp",
+      "by": "白叶",
+      "at": "2026-09-26T15:38:16.987Z",
+      "submission": 30
     }
   },
   "notes": [],
@@ -19,6 +25,14 @@
       "by": "白叶",
       "at": "2026-09-26T15:38:10.051Z",
       "submission": 29
+    },
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_minecraft_manor_panic.webp",
+      "by": "白叶",
+      "at": "2026-09-26T15:38:16.987Z",
+      "submission": 30
     }
   ]
 }
