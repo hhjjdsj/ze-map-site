@@ -1,0 +1,24 @@
+{
+  "v": 1,
+  "slug": "ze_minecraft_manor_panic",
+  "updatedAt": "2026-09-26T15:38:10.051Z",
+  "fields": {
+    "difficulty": {
+      "v": "简单",
+      "by": "白叶",
+      "at": "2026-09-26T15:38:10.051Z",
+      "submission": 29
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "difficulty",
+      "from": null,
+      "to": "简单",
+      "by": "白叶",
+      "at": "2026-09-26T15:38:10.051Z",
+      "submission": 29
+    }
+  ]
+}
