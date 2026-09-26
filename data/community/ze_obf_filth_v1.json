@@ -1,0 +1,24 @@
+{
+  "v": 1,
+  "slug": "ze_obf_filth_v1",
+  "updatedAt": "2026-09-26T08:10:47.469Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_obf_filth_v1.webp",
+      "by": "白叶",
+      "at": "2026-09-26T08:10:47.469Z",
+      "submission": 27
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_obf_filth_v1.webp",
+      "by": "白叶",
+      "at": "2026-09-26T08:10:47.469Z",
+      "submission": 27
+    }
+  ]
+}
