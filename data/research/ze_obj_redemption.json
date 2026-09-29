@@ -1,8 +1,20 @@
 {
-  "_说明": "改这个文件就行。difficulty 只能填：入门/简单/普通/困难/火星/入土/未知；summary 写介绍正文（分段就在段与段之间打 \\n\\n）；tags 是标签数组，例如 [\"神器\", \"多关卡\"]；videoUrls 放视频链接。改完点页面下面的 Commit changes 提交即可。",
-  "difficulty": "未知",
-  "summary": null,
-  "tags": [],
-  "videoUrls": [],
-  "confidence": "low"
+  "slug": "2001-ze_obj_redemption-3383451059",
+  "title": "龙门行动:一线生机",
+  "difficulty": "火星",
+  "summary": "行动代号:一线生机，又名救赎计划V1，该地图为地图行动代号:劫烬生曦的最初版本，地图因其音乐风格似肖申克在监狱中寻求生路最后逃出生天以及其路线和剧情设计而得名救赎，对于新手以及初玩者来说卡脚的路线以及较为复杂的路线使得通关难度很大\n正因此“在逆境中寻到一线生机”成为了这张地图的特色",
+  "author": "恐惧之鲸",
+  "tags": ["OBJ","长征图","行动代号"],
+  "videoUrls": 
+  [
+    "https://www.bilibili.com/video/BV1JNo2YLESb/",
+    "https://www.bilibili.com/video/BV1beQKYvE4W/"
+  ],
+  "sources":
+  [
+    "https://steamcommunity.com/sharedfiles/filedetails/?id=3383451059",
+    "https://www.bilibili.com/video/BV1JNo2YLESb/"
+  ],
+  "confidence": "medium",
+  "verified": true
 }
