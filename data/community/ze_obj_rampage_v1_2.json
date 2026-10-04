@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_obj_rampage_v1_2",
+  "updatedAt": "2026-10-04T11:20:25.675Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_obj_rampage_v1_2.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:20:25.675Z",
+      "submission": 57
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_obj_rampage_v1_2.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:20:25.675Z",
+      "submission": 57
+    }
+  ],
+  "items": []
+}
