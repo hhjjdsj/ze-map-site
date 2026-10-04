@@ -1,13 +1,19 @@
 {
   "v": 1,
   "slug": "ze_santassination_p",
-  "updatedAt": "2026-09-24T09:01:36.800Z",
+  "updatedAt": "2026-10-04T11:27:22.775Z",
   "fields": {
     "difficulty": {
       "v": "火星",
       "by": "白叶",
       "at": "2026-09-24T09:01:36.800Z",
       "submission": 11
+    },
+    "cover": {
+      "v": "/images/covers/custom/ze_santassination_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:27:22.775Z",
+      "submission": 76
     }
   },
   "notes": [],
@@ -19,6 +25,15 @@
       "by": "白叶",
       "at": "2026-09-24T09:01:36.800Z",
       "submission": 11
+    },
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_santassination_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:27:22.775Z",
+      "submission": 76
     }
-  ]
+  ],
+  "items": []
 }
