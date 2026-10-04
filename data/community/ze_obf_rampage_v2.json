@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_obf_rampage_v2",
+  "updatedAt": "2026-10-04T11:20:03.365Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_obf_rampage_v2.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:20:03.365Z",
+      "submission": 56
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_obf_rampage_v2.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:20:03.365Z",
+      "submission": 56
+    }
+  ],
+  "items": []
+}
