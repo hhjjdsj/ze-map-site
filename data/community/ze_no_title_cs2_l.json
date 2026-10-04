@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_no_title_cs2_l",
+  "updatedAt": "2026-10-04T11:33:08.165Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_no_title_cs2_l.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:33:08.165Z",
+      "submission": 104
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_no_title_cs2_l.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:33:08.165Z",
+      "submission": 104
+    }
+  ],
+  "items": []
+}
