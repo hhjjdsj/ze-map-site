@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_loom",
+  "updatedAt": "2026-10-04T11:22:19.984Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_loom.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:22:19.984Z",
+      "submission": 62
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_loom.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:22:19.984Z",
+      "submission": 62
+    }
+  ],
+  "items": []
+}
