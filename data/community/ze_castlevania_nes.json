@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_castlevania_nes",
+  "updatedAt": "2026-10-04T11:24:53.151Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_castlevania_nes.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:24:53.151Z",
+      "submission": 69
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_castlevania_nes.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:24:53.151Z",
+      "submission": 69
+    }
+  ],
+  "items": []
+}
