@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_jiangnan_town_v3_1",
+  "updatedAt": "2026-10-04T11:32:15.360Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_jiangnan_town_v3_1.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:32:15.360Z",
+      "submission": 97
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_jiangnan_town_v3_1.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:32:15.360Z",
+      "submission": 97
+    }
+  ],
+  "items": []
+}
