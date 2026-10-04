@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_inboxed_p",
+  "updatedAt": "2026-10-04T11:31:46.142Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_inboxed_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:31:46.142Z",
+      "submission": 94
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_inboxed_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:31:46.142Z",
+      "submission": 94
+    }
+  ],
+  "items": []
+}
