@@ -1,13 +1,19 @@
 {
   "v": 1,
   "slug": "ze_panic_escape_p",
-  "updatedAt": "2026-09-24T09:00:37.200Z",
+  "updatedAt": "2026-10-04T11:33:19.176Z",
   "fields": {
     "difficulty": {
       "v": "简单",
       "by": "白叶",
       "at": "2026-09-24T09:00:37.200Z",
       "submission": 10
+    },
+    "cover": {
+      "v": "/images/covers/custom/ze_panic_escape_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:33:19.176Z",
+      "submission": 106
     }
   },
   "notes": [],
@@ -19,6 +25,15 @@
       "by": "白叶",
       "at": "2026-09-24T09:00:37.200Z",
       "submission": 10
+    },
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_panic_escape_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:33:19.176Z",
+      "submission": 106
     }
-  ]
+  ],
+  "items": []
 }
