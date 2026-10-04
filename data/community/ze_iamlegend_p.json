@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_iamlegend_p",
+  "updatedAt": "2026-10-04T11:31:36.329Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_iamlegend_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:31:36.329Z",
+      "submission": 93
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_iamlegend_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:31:36.329Z",
+      "submission": 93
+    }
+  ],
+  "items": []
+}
