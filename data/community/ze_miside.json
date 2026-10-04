@@ -1,13 +1,19 @@
 {
   "v": 1,
   "slug": "ze_miside",
-  "updatedAt": "2026-09-26T03:17:18.770Z",
+  "updatedAt": "2026-10-04T11:32:51.636Z",
   "fields": {
     "difficulty": {
       "v": "困难",
       "by": "白叶",
       "at": "2026-09-26T03:17:18.770Z",
       "submission": 20
+    },
+    "cover": {
+      "v": "/images/covers/custom/ze_miside.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:32:51.636Z",
+      "submission": 101
     }
   },
   "notes": [],
@@ -19,6 +25,15 @@
       "by": "白叶",
       "at": "2026-09-26T03:17:18.770Z",
       "submission": 20
+    },
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_miside.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:32:51.636Z",
+      "submission": 101
     }
-  ]
+  ],
+  "items": []
 }
