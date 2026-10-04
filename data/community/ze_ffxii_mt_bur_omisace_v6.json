@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_ffxii_mt_bur_omisace_v6",
+  "updatedAt": "2026-10-04T11:27:53.037Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_ffxii_mt_bur_omisace_v6.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:27:53.037Z",
+      "submission": 77
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_ffxii_mt_bur_omisace_v6.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:27:53.037Z",
+      "submission": 77
+    }
+  ],
+  "items": []
+}
