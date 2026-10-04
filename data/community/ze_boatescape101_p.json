@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_boatescape101_p",
+  "updatedAt": "2026-10-04T11:21:31.634Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_boatescape101_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:21:31.634Z",
+      "submission": 60
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_boatescape101_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:21:31.634Z",
+      "submission": 60
+    }
+  ],
+  "items": []
+}
