@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_death_forest",
+  "updatedAt": "2026-10-04T11:32:59.055Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_death_forest.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:32:59.055Z",
+      "submission": 102
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_death_forest.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:32:59.055Z",
+      "submission": 102
+    }
+  ],
+  "items": []
+}
