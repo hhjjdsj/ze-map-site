@@ -1,7 +1,7 @@
 {
   "v": 1,
   "slug": "ze_incident_seasons",
-  "updatedAt": "2026-09-25T15:01:03.311Z",
+  "updatedAt": "2026-10-04T11:27:10.379Z",
   "fields": {
     "difficulty": {
       "v": "困难",
@@ -22,6 +22,12 @@
       "by": "白叶",
       "at": "2026-09-25T15:01:03.311Z",
       "submission": 13
+    },
+    "cover": {
+      "v": "/images/covers/custom/ze_incident_seasons.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:27:10.379Z",
+      "submission": 75
     }
   },
   "notes": [],
@@ -49,6 +55,15 @@
       "by": "白叶",
       "at": "2026-09-25T15:01:03.311Z",
       "submission": 13
+    },
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_incident_seasons.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:27:10.379Z",
+      "submission": 75
     }
-  ]
+  ],
+  "items": []
 }
