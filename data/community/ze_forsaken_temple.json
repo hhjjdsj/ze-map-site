@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_forsaken_temple",
+  "updatedAt": "2026-10-04T11:22:34.947Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_forsaken_temple.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:22:34.947Z",
+      "submission": 63
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_forsaken_temple.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:22:34.947Z",
+      "submission": 63
+    }
+  ],
+  "items": []
+}
