@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_bh3rd_babel_z",
+  "updatedAt": "2026-10-04T11:29:41.735Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_bh3rd_babel_z.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:29:41.735Z",
+      "submission": 84
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_bh3rd_babel_z.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:29:41.735Z",
+      "submission": 84
+    }
+  ],
+  "items": []
+}
