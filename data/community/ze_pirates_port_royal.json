@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_pirates_port_royal",
+  "updatedAt": "2026-10-04T11:26:09.021Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_pirates_port_royal.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:26:09.021Z",
+      "submission": 71
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_pirates_port_royal.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:26:09.021Z",
+      "submission": 71
+    }
+  ],
+  "items": []
+}
