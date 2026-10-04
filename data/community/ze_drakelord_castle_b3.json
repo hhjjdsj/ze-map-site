@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_drakelord_castle_b3",
+  "updatedAt": "2026-10-04T11:27:42.184Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_drakelord_castle_b3.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:27:42.184Z",
+      "submission": 89
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_drakelord_castle_b3.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:27:42.184Z",
+      "submission": 89
+    }
+  ],
+  "items": []
+}
