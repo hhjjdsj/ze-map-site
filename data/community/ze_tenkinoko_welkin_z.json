@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_tenkinoko_welkin_z",
+  "updatedAt": "2026-10-04T11:25:52.753Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_tenkinoko_welkin_z.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:25:52.753Z",
+      "submission": 70
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_tenkinoko_welkin_z.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:25:52.753Z",
+      "submission": 70
+    }
+  ],
+  "items": []
+}
