@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_ffxiv_pharos_sirius_night",
+  "updatedAt": "2026-10-04T11:28:01.876Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_ffxiv_pharos_sirius_night.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:28:01.876Z",
+      "submission": 78
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_ffxiv_pharos_sirius_night.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:28:01.876Z",
+      "submission": 78
+    }
+  ],
+  "items": []
+}
