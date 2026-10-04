@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_desperate_soul",
+  "updatedAt": "2026-10-04T11:29:01.325Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_desperate_soul.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:29:01.325Z",
+      "submission": 81
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_desperate_soul.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:29:01.325Z",
+      "submission": 81
+    }
+  ],
+  "items": []
+}
