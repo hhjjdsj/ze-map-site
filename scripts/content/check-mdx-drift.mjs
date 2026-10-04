@@ -87,9 +87,21 @@ const touchedBake = changed.filter(
     f.startsWith('scripts/terr-bake/data/') ||
     f === 'data/map-dates.json'
 );
+/*
+ * 生成器 / 站点脚本：改了 scripts/ 下的东西，条目本来就该重新生成 ——
+ * 例：2026-09-30 的正文信息层级重排（只调段落顺序），548 个条目全变、资料一个没动。
+ * 这类改动与「手改生成物」在结果上一样（MDX 变了、research 没变），意图却完全不同，
+ * 所以按「有正当理由」放行 + 提示，不判红。
+ */
+const touchedScripts = changed.filter((f) => f.startsWith('scripts/'));
 
 /* ---------- 3. 判定 ---------- */
-const handEdited = baseSha && touchedMdx.length > 0 && touchedResearch.length === 0 && touchedBake.length === 0;
+const handEdited =
+  baseSha &&
+  touchedMdx.length > 0 &&
+  touchedResearch.length === 0 &&
+  touchedBake.length === 0 &&
+  touchedScripts.length === 0;
 
 console.log(`构建后有 ${drift.length} 个地图条目与资料不一致：`);
 for (const line of drift.slice(0, 20)) console.log(`  ${line}`);
@@ -116,4 +128,5 @@ announce(
 if (!baseSha) console.log(`（基线 ${baseRef} 不可用，本次未判定是否为手改）`);
 else if (touchedResearch.length) console.log(`本次 PR 改了 ${touchedResearch.length} 份资料，条目随之重新生成 —— 正常。`);
 else if (touchedBake.length) console.log(`本次 PR 改了烘焙产物（${touchedBake.length} 个），条目随之重新生成 —— 正常。`);
+else if (touchedScripts.length) console.log(`本次 PR 改了生成器 / 脚本（${touchedScripts.length} 个），条目随之重新生成 —— 正常。`);
 process.exit(0);

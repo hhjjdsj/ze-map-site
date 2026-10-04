@@ -144,6 +144,9 @@ data/research/_*/
 # 每张地图的「进站 / 最近改动」日期，由 scripts/content/build-map-dates.mjs 从 git 历史生成。
 # 必须入库：线上构建若是浅克隆就读不到历史，页面要退回用这份清单，否则「最新更新」会一片空白。
 !data/map-dates.json
+# 地形分片清单（有哪些图在 R2 上有真实碰撞地形），由 npm run terr:upload 写。
+# 必须入库：preview 页面要数「N 张带真实碰撞地形」，而分片本身已不在仓库里。
+!data/terr-manifest.json
 
 # Astro 生成的类型与缓存（不要入库）
 .astro/
@@ -160,6 +163,15 @@ data/research/_*/
 .wrangler/
 .dev.vars*
 !.dev.vars.example
+
+# R2（地形分片搬到对象存储，见 docs/r2-migration.md）
+# 凭证与本地同步状态绝不入库；data/terr-manifest.json 是给页面数张数用的，必须入库。
+.env.r2
+.r2-terr-state.json
+# 迁移完成后烘焙产物写到仓库外（不再进 dist、不再进 git 历史）
+bake/
+# 兜底：万一有机器还在往旧位置烘，也别再让它进仓库
+public/terr/
 
 # terr-bake：本地工具链与运行时产物，由 setup.ps1 生成，不入库
 scripts/terr-bake/.tools/

@@ -13,12 +13,33 @@ const site = Astro.site ?? new URL('https://ze-map.cn');
 const canonical = new URL(Astro.url.pathname, site);
 const ogImage = new URL('/images/hero-bg.jpg', site).href;
 
-/* 带真实碰撞地形的地图数：直接数分包（一张图一个 .bin），文案就不会和实际脱节 */
+/*
+ * 分片来源（2026-10-04 起地形走 R2）：
+ *   地形分片 322 MB，已搬出仓库 → Cloudflare R2，公开域 terr.ze-map.cn/terr
+ *   （对象 key 是 terr/<工坊ID>.bin，跟原来的 public/terr/ 一一对应）。
+ *   entity 分片是构建输入，仍在仓库里，保持同源。
+ * 两个都能用环境变量覆盖：PUBLIC_TERR_BASE / PUBLIC_ENTITY_BASE；
+ * 想退回同源（本地另存了一份时）就设 PUBLIC_TERR_BASE=/terr。
+ * 实际加载地址由 app.js 读 window.__TERR_BASE__ / __ENTITY_BASE__ 决定。
+ */
+const TERR_BASE = import.meta.env.PUBLIC_TERR_BASE || 'https://terr.ze-map.cn/terr';
+const ENTITY_BASE = import.meta.env.PUBLIC_ENTITY_BASE || '/entity';
+
+/*
+ * 带真实碰撞地形的地图数。
+ * 以前只数 public/terr 目录 —— 地形搬到 R2 之后那个目录就不在仓库里了，
+ * 所以再留一条回落：烘焙收尾写出的 data/terr-manifest.json（见 docs/r2-migration.md）。
+ */
 const terrCount = (() => {
   try {
     return fs.readdirSync('public/terr').filter((f) => f.endsWith('.bin')).length;
   } catch {
-    return 0;
+    try {
+      const manifest = JSON.parse(fs.readFileSync('data/terr-manifest.json', 'utf8'));
+      return Array.isArray(manifest.ids) ? manifest.ids.length : 0;
+    } catch {
+      return 0;
+    }
   }
 })();
 
@@ -196,6 +217,11 @@ const desc = `CS2 僵尸逃跑地图实体预览：传送门、可破坏物、�
 
 <div class="loading" id="loading"><div class="spin"></div><div id="lmsg">正在解压实体数据…</div></div>
 
+  {/* 分片来源注入：必须在 app.js 之前执行（app.js 是 defer，这里是同步内联） */}
+  <script is:inline define:vars={{ TERR_BASE, ENTITY_BASE }}>
+    window.__TERR_BASE__ = TERR_BASE;
+    window.__ENTITY_BASE__ = ENTITY_BASE;
+  </script>
   <script is:inline src="/preview/app.js" defer></script>
 </body>
 </html>

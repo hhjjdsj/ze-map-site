@@ -1666,6 +1666,35 @@ img { max-width: 100%; display: block; }
 [data-theme="light"] .vote-btn.diff-extreme { color: #b91c1c; border-color: rgba(185, 28, 28, 0.3); }
 [data-theme="light"] .vote-btn.diff-hell { color: #7e22ce; border-color: rgba(126, 34, 206, 0.35); }
 
+/* ===== 顶部视频区（2026-09-30 信息层级重排）=====
+   视频提到正文最前面（玩家最想先看"别人怎么打"），但视频多的图（最多 9 个）
+   全铺开会把「关卡 / 神器」又挤下去，所以默认只露前两个，其余折进 details。 */
+.video-block { margin-bottom: 8px; }
+
+.video-more { margin: 14px 0 0; }
+
+.video-more > summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13.5px;
+  color: var(--text);
+  background: var(--panel-2);
+}
+
+.video-more > summary::-webkit-details-marker { display: none; }
+
+.video-more > summary::before { content: '▾'; color: var(--accent-2); }
+
+.video-more[open] > summary::before { content: '▴'; }
+
+.video-more > summary:hover { border-color: var(--accent-2); }
+
 /* ===== 社区补充（P2）=====
    内容来自 data/community/<slug>.json（审核通过后写回仓库），
    与自动生成的条目正文分开显示，避免读者分不清哪句是机器统计、哪句是人写的。 */

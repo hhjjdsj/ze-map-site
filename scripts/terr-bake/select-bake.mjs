@@ -46,7 +46,9 @@ if (fs.existsSync(manifestFile)) {
 }
 if (!manifest.maps) manifest.maps = {};
 
-const terrDir = path.join(project, 'public', 'terr');
+/* 地形分片在仓库外的 bake/terr（2026-10-04 起，见 bake-all.ps1 的说明）；
+   entity 分片仍在 public/entity/data —— 它是生成器的输入，留在仓库里。 */
+const terrDir = process.env.TERR_OUT || path.join(project, 'bake', 'terr');
 const entDir = path.join(project, 'public', 'entity', 'data');
 const hasTerr = (id) => fs.existsSync(path.join(terrDir, `${id}.bin`));
 const entFiles = fs.existsSync(entDir) ? fs.readdirSync(entDir) : [];

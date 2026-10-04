@@ -32,7 +32,11 @@ if (-not $localCache) {
 }
 $dlCache = Join-Path (Split-Path $steam -Parent) 'steamapps\workshop\content\730'
 $work = Join-Path $root 'work'
-$terr = Join-Path $project 'public\terr'
+# 地形分片不再写进仓库（2026-10-04 起）：322 MB / 546 个文件占了仓库体积的 97%，
+# 每轮重烘焙都会让 git 历史再涨 ~320 MB。现在写到仓库外的 bake\terr，由
+# `npm run terr:upload` 传到 R2，页面从 https://terr.ze-map.cn 取。
+# 想换位置就设 $env:TERR_OUT。
+$terr = if ($env:TERR_OUT) { $env:TERR_OUT } else { Join-Path $project 'bake\terr' }
 $entityDir = Join-Path $project 'public\entity\data'
 $boundsDir = Join-Path $root 'bounds'
 $one = Join-Path $root 'bake-one.ps1'

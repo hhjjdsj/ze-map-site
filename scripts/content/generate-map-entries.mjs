@@ -391,15 +391,26 @@ function renderEntry(rec, research, wsRec, gfl) {
     '',
   ].filter(Boolean);
 
-  const body = [];
+  /*
+   * 正文分三段拼装（2026-09-30 信息层级重排）：
+   *   intro    人工资料的开头（摘要/背景故事）—— 读者第一眼看到的就是它
+   *   gameplay 玩家真正关心的：关卡 → 神器 / 道具 → BOSS → 音乐
+   *   meta     资料性内容：工坊自述 → 数据概况 → 实体构成 → 实体预览 → 来源 → 说明
+   * 以前是一股脑按「工坊自述 → 数据概况 → 实体构成 → 关卡 → 神器…」推，
+   * 结果玩家要翻过三节后台性质的内容才看到神器表（2026-09-30 反馈：页杂而不精）。
+   * 只调整**段落顺序**，每一段的内容与来源说明一个字都没改 —— 改资料仍然只改 data/research/*.json。
+   */
+  const intro = [];
+  const gameplay = [];
+  const meta = [];
 
   if (hasEditorial) {
-    body.push(mdSafe(research.summary.trim()), '');
+    intro.push(mdSafe(research.summary.trim()), '');
   }
   // 数据条目的「资料待补充」提示由详情页统一渲染（stub 字段），正文里不再重复
 
   if (desc) {
-    body.push(
+    meta.push(
       '## 工坊页面自述',
       '',
       '> ' + mdSafe(excerpt(desc)).split('\n').filter(Boolean).join('\n> '),
@@ -408,13 +419,13 @@ function renderEntry(rec, research, wsRec, gfl) {
       ''
     );
   } else if (wsRec && wsRec.result !== 1) {
-    body.push(
+    meta.push(
       '> 该地图的工坊条目在 Steam 上已**查无此项**（可能是作者删除或设为隐藏），下方实体数据仍保留在本站分片中。',
       ''
     );
   }
 
-  body.push(
+  meta.push(
     '## 数据概况',
     '',
     '| 项目 | 内容 |',
@@ -433,7 +444,7 @@ function renderEntry(rec, research, wsRec, gfl) {
     ''
   );
 
-  body.push(
+  meta.push(
     '## 实体构成',
     '',
     `本图共记录 ${n(rec.n)} 个实体，分片包含 ${n(rec.k2)} 个实体点位：`,
@@ -449,7 +460,7 @@ function renderEntry(rec, research, wsRec, gfl) {
   );
 
   if (rec.st) {
-    body.push(
+    gameplay.push(
       '## 关卡',
       '',
       `按实体命名（\`lvl2\` / \`stage3\` 之类）推断，本图共 **${rec.st}** 个关卡。`,
@@ -475,11 +486,11 @@ function renderEntry(rec, research, wsRec, gfl) {
           gfl._from ? `（取自 GFL 的 \`${gfl._from}\` 配置）` : ''
         }${communityCount ? '；备注里标了「社区更正 / 社区补充」的行来自社区投稿' : ''}：`
       : `本站没有这张图的服务器配置解析结果，以下 ${merged.rows.length} 件来自[社区投稿](/contribute/)补充：`;
-    body.push(...itemsBlock(merged.rows, { title, lead, showNote }));
+    gameplay.push(...itemsBlock(merged.rows, { title, lead, showNote }));
   }
 
   if (gfl?.bosses?.length) {
-    body.push(
+    gameplay.push(
       '## BOSS',
       '',
       `服务器 bosshud 配置登记了 ${gfl.bosses.length} 个 BOSS：${gfl.bosses.map((b) => mdSafe(b)).join(' · ')}。`,
@@ -489,7 +500,7 @@ function renderEntry(rec, research, wsRec, gfl) {
 
   if (gfl?.music?.length) {
     const shown = gfl.music.slice(0, 12);
-    body.push(
+    gameplay.push(
       '## 音乐',
       '',
       `本图在服务器上登记了 ${gfl.music.length} 首 BGM，例如：`,
@@ -500,7 +511,7 @@ function renderEntry(rec, research, wsRec, gfl) {
     );
   }
 
-  body.push(
+  meta.push(
     '## 实体预览',
     '',
     `[打开《${rec.cn || rec.m}》的实体预览 →](/preview/?map=${rec.s})`,
@@ -510,10 +521,10 @@ function renderEntry(rec, research, wsRec, gfl) {
   );
 
   if (research?.sources?.length) {
-    body.push('## 资料来源', '', ...research.sources.map((s) => `- ${s}`), '');
+    meta.push('## 资料来源', '', ...research.sources.map((s) => `- ${s}`), '');
   }
 
-  body.push(
+  meta.push(
     '## 数据说明',
     '',
     `- 实体数据来源：${provenance}。`,
@@ -526,6 +537,7 @@ function renderEntry(rec, research, wsRec, gfl) {
     ''
   );
 
+  const body = [...intro, ...gameplay, ...meta];
   return fm.join('\n') + '\n' + body.filter((x) => x !== null).join('\n');
 }
 

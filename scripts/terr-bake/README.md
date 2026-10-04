@@ -107,7 +107,9 @@ For each map ID:
    Brush entities have no `box_mins/box_maxs` in the vents dump, so `extract-bounds.mjs` reads the
    per-entity brush model (`maps/<map>/entities/*.vmdl_c`, exported to GLB) to recover their real
    world-axis-aligned size; entities with no model fall back to a per-class typical size.
-4. Export `world_physics.vmdl_c` to GLB, then `bake-terrain.mjs` writes `public/terr/<id>.bin`.
+4. Export `world_physics.vmdl_c` to GLB, then `bake-terrain.mjs` writes `bake/terr/<id>.bin`
+   (**仓库外** —— 2026-10-04 起地形分片走 Cloudflare R2，见 `docs/r2-migration.md`；
+   烘完记得 `npm run terr:upload` 把新增/变化的分片传上去)。
 5. A VPK that had to be downloaded (only present in the steamcmd cache, not the local Steam cache) is deleted after a successful bake, so the next run re-downloads it on demand. Pass `-KeepDownloaded` to keep them. Local Steam cache VPKs are never touched.
 
 `data\done.txt` records successful IDs so they are skipped on later runs; failures go to
@@ -122,7 +124,7 @@ update the index; run `npm run data:catalog` after using it with `public/entity/
 
 `select-bake.mjs` selects a map when any of these holds:
 
-1. **output missing** — no `public/terr/<id>.bin` or `public/entity/data/*-<id>.bin`;
+1. **output missing** — no `bake/terr/<id>.bin`（R2 用的本地副本）or `public/entity/data/*-<id>.bin`;
 2. **updated on the Workshop** — the item's `time_updated` is newer than the version recorded in `data\bake-manifest.json`;
 3. **backlog** — an existing output that was never recorded (e.g. inherited data).
 

@@ -778,7 +778,7 @@
     },
     "ze_lotr_minas_tirith": {
       "added": "2026-09-20",
-      "updated": "2026-09-24"
+      "updated": "2026-09-29"
     },
     "ze_lotr_mines_of_moria_p": {
       "added": "2026-09-23"
@@ -956,32 +956,36 @@
       "updated": "2026-09-26"
     },
     "ze_obf_insane": {
-      "added": "2026-09-23"
+      "added": "2026-09-23",
+      "updated": "2026-09-30"
     },
     "ze_obf_npst_v1": {
       "added": "2026-09-23",
-      "updated": "2026-09-24"
+      "updated": "2026-09-29"
     },
     "ze_obf_npst_v2": {
       "added": "2026-09-23",
-      "updated": "2026-09-24"
+      "updated": "2026-09-29"
     },
     "ze_obf_rampage_v2": {
       "added": "2026-09-23",
       "updated": "2026-09-26"
     },
     "ze_obf_rampage_v24": {
-      "added": "2026-09-23"
+      "added": "2026-09-23",
+      "updated": "2026-09-30"
     },
     "ze_obf_rampage_v2_legacy": {
-      "added": "2026-09-23"
+      "added": "2026-09-23",
+      "updated": "2026-09-30"
     },
     "ze_obf_rescape": {
-      "added": "2026-09-23"
+      "added": "2026-09-23",
+      "updated": "2026-09-30"
     },
     "ze_obff_npst_v24": {
       "added": "2026-09-23",
-      "updated": "2026-09-29"
+      "updated": "2026-09-30"
     },
     "ze_obj_abyss": {
       "added": "2026-09-23",
@@ -989,7 +993,7 @@
     },
     "ze_obj_abyss_v2": {
       "added": "2026-09-23",
-      "updated": "2026-09-24"
+      "updated": "2026-09-30"
     },
     "ze_obj_annihilate_dd_v1": {
       "added": "2026-09-23",
@@ -999,10 +1003,12 @@
       "added": "2026-09-23"
     },
     "ze_obj_blue_depth": {
-      "added": "2026-09-23"
+      "added": "2026-09-23",
+      "updated": "2026-10-01"
     },
     "ze_obj_ember": {
-      "added": "2026-09-23"
+      "added": "2026-09-23",
+      "updated": "2026-09-30"
     },
     "ze_obj_escalation_v1": {
       "added": "2026-09-23"
@@ -1016,23 +1022,26 @@
       "updated": "2026-09-26"
     },
     "ze_obj_ouroboros_ragnarok": {
-      "added": "2026-09-23"
+      "added": "2026-09-23",
+      "updated": "2026-09-30"
     },
     "ze_obj_rampage_v1_2": {
       "added": "2026-09-23"
     },
     "ze_obj_redemption": {
       "added": "2026-09-23",
-      "updated": "2026-09-29"
+      "updated": "2026-09-30"
     },
     "ze_obj_redemption_v2": {
-      "added": "2026-09-23"
+      "added": "2026-09-23",
+      "updated": "2026-09-30"
     },
     "ze_obj_rove_v1": {
       "added": "2026-09-23"
     },
     "ze_obj_void_v1": {
-      "added": "2026-09-23"
+      "added": "2026-09-23",
+      "updated": "2026-09-30"
     },
     "ze_ocarina_of_time": {
       "added": "2026-09-23"
@@ -1205,7 +1214,7 @@
     },
     "ze_requiem_test": {
       "added": "2026-09-23",
-      "updated": "2026-09-24"
+      "updated": "2026-09-29"
     },
     "ze_resident_evil_3": {
       "added": "2026-09-23"

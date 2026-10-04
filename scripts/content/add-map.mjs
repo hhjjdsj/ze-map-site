@@ -54,7 +54,9 @@ try {
     fs.writeFileSync(idsFile, `${id}\n`);
     run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(bakeDir, 'bake-all.ps1'), '-IdsFile', idsFile, '-IgnoreDone', '-Parallel', '1']);
 
-    const terrain = path.join(root, 'public/terr', `${id}.bin`);
+    /* 地形分片写在仓库外的 bake/terr（见 scripts/terr-bake/bake-all.ps1 的说明），
+       页面从 R2 取；这里只校验产物存在且非空。 */
+    const terrain = path.join(process.env.TERR_OUT || path.join(root, 'bake/terr'), `${id}.bin`);
     const entityDir = path.join(root, 'public/entity/data');
     const shards = fs.readdirSync(entityDir).filter((name) => name.endsWith(`-${id}.bin`));
     if (doneCount() <= before || !fs.existsSync(terrain) || shards.length !== 1 || !fs.statSync(terrain).size) {

@@ -58,6 +58,13 @@ const hasCommunity = communityPeople.length > 0 || communityNotes.length > 0;
 /* 社区正文按投稿字段分块：背景故事单独一块，其余进「社区补充」 */
 const storyNotes = communityNotes.filter((n: { field?: string | null }) => n.field === 'story');
 const otherNotes = communityNotes.filter((n: { field?: string | null }) => n.field !== 'story');
+/*
+ * 手写条目（那三张富内容图）的正文里自带「视频攻略」一节，页面就别再渲染一遍 ——
+ * 否则同一页会出现两块视频。判定只看正文里有没有二级标题含"视频"。
+ */
+const bodyHasVideo = /^##[^\n]*视频/m.test(entry.body ?? '');
+/** 顶部视频区默认露出几个；其余折进 <details>（视频多的图不把正文挤下去） */
+const VIDEOS_SHOWN = 2;
 const communityHistoryUrl = `https://github.com/hhjjdsj/ze-map-site/commits/main/data/community/${entry.id}.json`;
 
 /*
@@ -145,21 +152,32 @@ const related = all
         </div>
       )}
 
-      <Content />
-
       {/*
-        攻略视频。
-        ⚠️ 这一块以前不存在 —— videoUrls 只被生成器写进 frontmatter，本页解构了却从不渲染，
-        所以 544 个自动生成条目（以及社区投稿补充的视频）在页面上一律看不到。
-        （富内容条目的组件嵌入由 JSON 的 document 字段生成，不受影响。）
-        组件里已经有 loading="lazy"，视频多的图不会一次性加载全部播放器。
+        攻略视频：**放在正文最前面**（2026-09-30 信息层级重排）。
+        玩家打开一张图最想先看的就是"别人怎么打"，而它以前排在整篇正文之后，
+        等于埋在最底下。视频组件是点击才加载的封面（facade），所以放前面不会拖慢首屏。
+        ⚠️ 手写条目（魔晄炉 / 米纳斯 / 黑珍珠号）的正文里**自己带视频段**，
+        这里再渲染一次就会出现两块视频，所以正文里已有视频标题时跳过 ——
+        videoUrls 仍然照常渲染在那些页面的正文里。
       */}
-      {(videoUrls ?? []).length > 0 && (
-        <section>
-          <h2>攻略视频</h2>
-          {(videoUrls ?? []).map((url: string) => <VideoEmbed url={url} />)}
+      {!bodyHasVideo && (videoUrls ?? []).length > 0 && (
+        <section class="video-block">
+          <h2>攻略视频{(videoUrls ?? []).length > 1 ? `（${(videoUrls ?? []).length}）` : ''}</h2>
+          {(videoUrls ?? []).slice(0, VIDEOS_SHOWN).map((url: string) => <VideoEmbed url={url} />)}
+          {(videoUrls ?? []).length > VIDEOS_SHOWN && (
+            /*
+              40 张图的视频超过 3 个（最多 9 个）。全铺在最前面会把「关卡 / 神器」又挤下去，
+              所以只默认露出前两个，其余折起来 —— 想看的点一下展开，不想看的直接往下读。
+            */
+            <details class="video-more">
+              <summary>展开另外 {(videoUrls ?? []).length - VIDEOS_SHOWN} 个视频</summary>
+              {(videoUrls ?? []).slice(VIDEOS_SHOWN).map((url: string) => <VideoEmbed url={url} />)}
+            </details>
+          )}
         </section>
       )}
+
+      <Content />
 
       {/*
         社区内容是**按投稿时选的字段分块显示**的：
