@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_obj_rove_v1",
+  "updatedAt": "2026-10-04T11:21:12.574Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_obj_rove_v1.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:21:12.574Z",
+      "submission": 59
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_obj_rove_v1.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:21:12.574Z",
+      "submission": 59
+    }
+  ],
+  "items": []
+}
