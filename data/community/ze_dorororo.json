@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_dorororo",
+  "updatedAt": "2026-10-04T11:30:46.661Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_dorororo.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:30:46.661Z",
+      "submission": 88
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_dorororo.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:30:46.661Z",
+      "submission": 88
+    }
+  ],
+  "items": []
+}
