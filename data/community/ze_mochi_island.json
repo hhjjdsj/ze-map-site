@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_mochi_island",
+  "updatedAt": "2026-10-04T11:28:14.885Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_mochi_island.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:28:14.885Z",
+      "submission": 79
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_mochi_island.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:28:14.885Z",
+      "submission": 79
+    }
+  ],
+  "items": []
+}
