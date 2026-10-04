@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_aot_trost_v6r",
+  "updatedAt": "2026-10-04T11:22:50.396Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_aot_trost_v6r.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:22:50.396Z",
+      "submission": 64
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_aot_trost_v6r.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:22:50.396Z",
+      "submission": 64
+    }
+  ],
+  "items": []
+}
