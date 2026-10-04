@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_blue_magic_castle",
+  "updatedAt": "2026-10-04T11:30:23.833Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_blue_magic_castle.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:30:23.833Z",
+      "submission": 86
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_blue_magic_castle.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:30:23.833Z",
+      "submission": 86
+    }
+  ],
+  "items": []
+}
