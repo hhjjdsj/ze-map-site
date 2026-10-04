@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_industrial_dejavu",
+  "updatedAt": "2026-10-04T11:31:55.074Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_industrial_dejavu.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:31:55.074Z",
+      "submission": 95
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_industrial_dejavu.webp",
+      "by": "SiKi",
+      "at": "2026-10-04T11:31:55.074Z",
+      "submission": 95
+    }
+  ],
+  "items": []
+}
