@@ -18,6 +18,7 @@ NOTICE —— 站点内容与第三方资料的版权说明
 - `src/content/maps/*.mdx` —— 地图条目正文（背景故事、关卡流程、神器、攻略）
 - `data/` —— 工坊抓取结果、线上检索资料、GFL 公开配置的解析结果
 - `public/entity/` —— 实体数据分片与索引（早期部分来自第三方服务端实体 dump，其余由本站从创意工坊地图包烘焙）
+- 地形分片 —— 由本站从创意工坊地图包烘焙，**托管在 Cloudflare R2**（`terr.ze-map.cn`），不在本仓库内（见 `docs/r2-migration.md`）
 - `public/images/` —— 卡片封面、路线图等渲染图
 
 ## 关于本站
@@ -73,6 +74,8 @@ newcomers — understand these maps.
   (published on Steam Workshop, GameBanana, etc.). This site claims no rights over them.
 - Quoted workshop descriptions, community posts, and videos belong to their original sources.
   This site only collects, translates, and indexes such content, with source links where possible.
+- Terrain collision shards are baked by this site from workshop map packs and hosted on
+  Cloudflare R2 (`terr.ze-map.cn`), outside this repository (see `docs/r2-migration.md`).
 - Please return to the original source and obtain permission before reusing such content.
   This site is not the rights holder and cannot grant permission on their behalf.
 - Map authors who want an attribution corrected, a source added, or their entry removed

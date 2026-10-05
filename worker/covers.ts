@@ -161,6 +161,10 @@ export const coverUrl = (slug: string, ext: string) => `/images/covers/custom/${
 /**
  * 把封面提交进仓库，并清掉**同一张图的其它扩展名**。
  *
+ * ⚠️ **当前没有调用方**：2026-10-05 起攒批写回（`worker/submissions.ts` 的 `handleAdminFlush`）
+ * 直接把图片和文档改动合成一个 commit，并在同一个 commit 里删掉其它扩展名。这里保留作参考实现，
+ * 也说明「为什么必须清扩展名」这件事。
+ *
  * 为什么要清：生成器按 webp → png → jpg → jpeg 取第一个命中的文件，
  * 如果 `ze_x.webp` 和 `ze_x.jpg` 同时存在，后者永远不生效却一直占着仓库 ——
  * 而且事后根本分不清哪张是"当前生效的那张"。同一个 commit 里删干净最省事。

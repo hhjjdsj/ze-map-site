@@ -84,6 +84,8 @@ try {
   run('npm', ['run', 'build'], { shell: true });
   run('npm', ['run', 'content:links'], { shell: true });
   console.log(`\n地图 ${id} 已生成。请核对 git status、地图资料与封面，再提交改动。`);
+  /* 地形分片不在仓库里 —— 漏了这步新图在预览页会缺地形（见 docs/r2-migration.md） */
+  console.log(`新图的地形分片记得传 R2：npm run terr:upload（顺带刷新 data/terr-manifest.json）`);
 } catch (error) {
   console.error(`\n加入地图失败：${error.message}`);
   process.exitCode = 1;

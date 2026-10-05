@@ -35,7 +35,8 @@ const communityModules = import.meta.glob('../../data/community/*.json', { eager
  * 在 shared/submission-fields.mjs 加一个字段，它自动成为可覆盖字段。
  *
  * 正文类字段（kind=longtext：body、story…）排除在外：它们进的是 communityNotes
- * （页面上的「社区补充」区块），不是条目字段。判断走 community-doc.mjs 的 isNoteField()，
+ * （地图页按字段分块显示：story → 「背景故事（社区投稿）」，body → 「社区补充」），
+ * 不是条目字段。判断走 community-doc.mjs 的 isNoteField()，
  * 别再写死 "body" —— 否则以后再加一个长文本字段就会踩同一个坑。
  */
 const OVERRIDABLE: string[] = Object.keys(FIELD_RULES).filter((k) => !isNoteField(k));

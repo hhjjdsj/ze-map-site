@@ -2,7 +2,7 @@
 
 > 状态：**已完成（2026-10-04）** —— 546 个分片已全量上传并抽查一致，预览页走 R2 渲染正常，
 > `public/terr` 已从仓库移除（本地副本在仓库外 `bake/terr`，已 gitignore）。
-> 最后更新：2026-10-04
+> 最后更新：2026-10-05（更正了「缓存规则」那一节：实测不需要加）
 
 ## 结论速览
 
@@ -87,14 +87,17 @@ dist 体积从 **354 MB 降到 ~32 MB**，部署上传也快得多。
    把值填进仓库根目录的 `.env.r2`（照 `.env.r2.example` 复制；该文件已 gitignore，**别贴到聊天里**）；
 6. 顺手开 **Budget alerts**（阈值 $1）：Manage Account → Billing → Billable Usage。
 
-### 还要给 `terr.ze-map.cn` 加一条缓存规则（重要）
+### 缓存规则：实测不需要加（原判断有误，2026-10-05 更正）
 
-R2 自定义域后面就是 Cloudflare 的 CDN，但 `.bin` 不在默认缓存扩展名里 ——
-不加规则的话**每次预览都要回源读 R2**（白耗 Class B 操作）。**Caching → Cache Rules** 新建一条：
+当初担心 `.bin` 不在默认缓存扩展名里，每次预览都要回源。实测：
 
-- 匹配：`http.host eq "terr.ze-map.cn"`
-- 动作：Cache Eligibility = **Eligible**，Edge TTL = **Ignore cache-control / 1 year**
-  （上传时对象本身也带了 `Cache-Control: public, max-age=31536000, immutable`）
+```
+curl -I https://terr.ze-map.cn/terr/3071209915.bin
+→ HTTP/1.1 200 · Cache-Control: public, max-age=31536000, immutable · cf-cache-status: HIT · Age: 2
+```
+
+`.bin` 其实**在 Cloudflare 默认缓存扩展名列表里**，加上上传时对象自带的长 TTL，边缘已经在缓存。
+所以 **Caching → Cache Rules 不用建**。（真要建也行，只是重复劳动。）
 
 ## 代码侧进度
 
@@ -104,8 +107,8 @@ R2 自定义域后面就是 Cloudflare 的 CDN，但 `.bin` 不在默认缓存�
 | 地形张数回落 `data/terr-manifest.json` | ✅ 已完成 |
 | 上传脚本 `npm run terr:upload`（增量 / `--dry` / `--all` / `--manifest-only`） | ✅ 已完成 |
 | `.gitignore`（`.env.r2`、`.r2-terr-state.json`、`bake/`；白名单 `data/terr-manifest.json`） | ✅ 已完成 |
-| 烘焙输出目录 `public/terr` → `bake/terr`（连带 `bake-terrain.mjs`、`select-bake.mjs`、`add-map.mjs`、`bake-all.ps1` 等） | ⏳ 上传验证通过后再动 |
-| `git rm -r --cached public/terr` + 烘焙 README / `data:verify` 路径说明 | ⏳ 放最后一步 |
+| 烘焙输出目录 `public/terr` → `bake/terr`（连带 `bake-terrain.mjs`、`select-bake.mjs`、`add-map.mjs`、`bake-all.ps1` 等） | ✅ 已完成 |
+| `git rm -r --cached public/terr` + 烘焙 README / `data:verify` 路径说明 | ✅ 已完成（546 个分片已从索引移除） |
 
 上传走 Cloudflare 官方 `wrangler r2 object put`（签名交给官方工具，不自己搓 SigV4）；
 增量判断按「大小 + mtime」，状态存本地 `.r2-terr-state.json`。

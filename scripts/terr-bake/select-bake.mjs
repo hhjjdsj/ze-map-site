@@ -5,7 +5,7 @@
  * 目的：只挑出「需要(重新)烘焙」的图，避免每次全量重烘导致仓库历史线性膨胀。
  *
  * 判定「需要烘焙」：
- *   1) 产物缺失：public/terr/<id>.bin 或 public/entity/data/*-<id>.bin 不存在；
+ *   1) 产物缺失：bake/terr/<id>.bin（仓库外，见 docs/r2-migration.md）或 public/entity/data/*-<id>.bin 不存在；
  *   2) 工坊已更新：Steam 的 time_updated 晚于 bake-manifest.json 里记录的版本；
  *   3) 从未由本站烘焙过（不在 done.txt）且没有版本记录 —— 视为待烘焙（历史遗留产物）。
  *

@@ -45,11 +45,14 @@
 ```
 
 可覆盖字段：`difficulty` `tags` `author` `authorNote` `version` `players`
-`duration` `stages` `sources` `videoUrls`（定义在 `shared/submission-fields.mjs`）。
+`duration` `stages` `sources` `videoUrls` `cover`（定义在 `shared/submission-fields.mjs`）。
+其中 `cover` 存的是**图片 URL**（`/images/covers/custom/<slug>.<ext>`），不是仓库路径 ——
+页面直接拿它当 `<img src>` 用；写成 `public/images/...` 会 404（2026-09-26 踩过）。
 
 **正文类字段**（`story` 背景故事、`body` 补充说明 / 纠错）**不进 `fields`** ——
-它们是往 `notes` 里**追加一条**，由地图页的「社区补充」区块渲染（多条会按顺序全部显示，
-各自署名）。判定走 `shared/community-doc.mjs` 的 `isNoteField()`，也就是字段表里
+它们是往 `notes` 里**追加一条**（每条都带 `field`，标明是从哪个字段投的），
+由地图页**按字段分块**渲染：`story` 进「背景故事（社区投稿）」、`body` 进「社区补充」
+（多条会按顺序全部显示，各自署名）。判定走 `shared/community-doc.mjs` 的 `isNoteField()`，也就是字段表里
 `kind: 'longtext'` 的那些；以后再加长文本字段不用改这里。
 
 **神器 / 道具**（`items`，字段表里 `kind: 'itemlist'`）**也不进 `fields`** ——

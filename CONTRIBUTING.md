@@ -10,7 +10,7 @@
 
 | 方式 | 需要 GitHub 账号 | 适合 |
 | --- | --- | --- |
-| [网页投稿表单](https://ze-map.cn/submit/) | 不用 | 补 / 改某张图的字段（难度、标签、作者、视频、来源、正文） |
+| [网页投稿表单](https://ze-map.cn/submit/) | 不用 | 补 / 改某张图的字段（难度、标签、作者、视频、来源、神器 / 道具、正文、封面图） |
 | [提 issue](https://github.com/hhjjdsj/ze-map-site/issues/new/choose) | 要 | 一次说好几件事、交整段攻略 |
 | 提 PR 改文件 | 要 | 熟悉 GitHub，或一次改很多张图 |
 

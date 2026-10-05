@@ -18,6 +18,8 @@
   - 按高度着色、区域光晕、方块体积、按高度剖切、关卡分层、单点属性与触发连线、导出 PNG
   - 已收录地图（含 TTT / MG / DE），按图按需加载
 - **标签索引**、深浅色切换、移动端适配、sitemap、自定义 404
+- **社区共建**：`/submit/` 网页投稿（不需要 GitHub 账号）→ D1 队列 → `/admin` 审核台 → 攒批写回 git →
+  自动重建；另有难度投票、`/updates/` 更新日志、贡献者署名（见 [社区编辑方案与实施记录](docs/community-editing-plan.md)）
 
 ## 技术栈
 
@@ -46,9 +48,9 @@ npm run preview
 npm run map:add -- 1234567890
 ```
 
-该命令仅烘焙指定地图（首次会安装本地工具链），抓取工坊资料，生成封面、条目并检查构建；检查 `git status` 后提交生成的分片、索引及 `scripts/terr-bake/data/` 记录。补充中文介绍等资料请编辑 `data/research/<地图英文名>.json`，再运行 `npm run content:verify` 和 `npm run build`。地图首次进站日期根据提交历史计算，提交新增 MDX 后下次构建才会更新日期清单。
+该命令仅烘焙指定地图（首次会安装本地工具链），抓取工坊资料，生成封面、条目并检查构建；检查 `git status` 后提交生成的分片、索引及 `scripts/terr-bake/data/` 记录，并跑一次 `npm run terr:upload` 把新地形分片传到 R2（漏了这步新图会缺地形，见 [R2 迁移记录](docs/r2-migration.md)）。补充中文介绍等资料请编辑 `data/research/<地图英文名>.json`，再运行 `npm run content:verify` 和 `npm run build`。地图首次进站日期根据提交历史计算，提交新增 MDX 后下次构建才会更新日期清单。
 
-实体与地形的**后续获取、更新**走 `scripts/terr-bake/`：从 Steam 工坊地图包解出实体定义与模型碰撞壳、`world_physics`，分别写入 `public/entity/data/` 和 `public/terr/`。在项目根目录运行 `npm run bake:start`；环境及批量运行参数见 [烘焙说明](scripts/terr-bake/README.md)。
+实体与地形的**后续获取、更新**走 `scripts/terr-bake/`：从 Steam 工坊地图包解出实体定义与模型碰撞壳、`world_physics`，分别写入 `public/entity/data/` 和 `bake/terr/`。地形分片**不再进仓库**，烘焙后用 `npm run terr:upload` 传到 R2（详见[迁移记录](docs/r2-migration.md)）。在项目根目录运行 `npm run bake:start`；环境及批量运行参数见 [烘焙说明](scripts/terr-bake/README.md)。
 
 `public/entity/catalog.json` 保留已有中文名等历史元数据；`npm run data:catalog` 会从当前分片更新实体统计、逐图来源并收录新地图。`bake-all.ps1` 结束后和 `npm run build` 时都会运行这一步。旧单文件导入管线已移除。
 
@@ -94,7 +96,7 @@ npm run data:covers
 |---|---|
 | `public/entity/catalog.json` | 保留历史人工元数据并从本地分片更新统计与来源的地图索引 |
 | `public/entity/data/<slug>.bin` | 每图一个 gzip 分片，格式 `[4B JSON 长度][JSON][BIN]` |
-| `public/terr/<工坊ID>.bin` | 从工坊地图包烘焙的碰撞地形 |
+| `bake/terr/<工坊ID>.bin` | 从工坊地图包烘焙的碰撞地形（仓库外，上传到 R2，不进 git / dist） |
 | `src/content/maps/*.mdx` | 全部由脚本从 JSON 和索引生成，不直接手改 |
 | `public/images/covers/<slug>.webp` | 由实体数据渲染的卡片封面（16:9） |
 | `data/research/<map>.json` | 线上检索到的资料（作者/难度/摘要/来源），生成条目时合并 |

@@ -24,7 +24,8 @@
  * 渲染优先级：社区（本文件） > 人工资料 data/research > 自动生成 src/content/maps
  *
  * 正文类字段（kind=longtext，例如「补充说明 / 纠错」body、「背景故事」story）
- * **不进 fields**，而是作为一条 note 追加到 notes 里，由地图页的「社区补充」区块渲染。
+ * **不进 fields**，而是作为一条 note 追加到 notes 里（note 上带 field，标明投的是哪个字段），
+ * 地图页再按字段分块显示：story → 「背景故事（社区投稿）」，body → 「社区补充」。
  * 判断走 isNoteField()，从字段表派生 —— 别再写死字段名。
  *
  * 神器 / 道具（kind=itemlist）**也不进 fields**：它是一行行的增量（更正 / 新增 / 删除），

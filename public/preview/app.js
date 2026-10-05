@@ -61,9 +61,10 @@ window.GL3D = (function(){
     '}'].join('\n');
 
   /* --- 真实碰撞地形（地图的 world_physics 碰撞网格）---
-     数据：public/terr/<工坊ID>.bin（gzip 包 MSH1：量化 u16 位置 + 索引）
+     数据：<TERR_BASE>/<工坊ID>.bin（gzip 包 MSH1：量化 u16 位置 + 索引）
+     2026-10-04 起 TERR_BASE 指向 Cloudflare R2（terr.ze-map.cn/terr），不再随站点发出；
      着色器自社区工具「云朵小铺 · 地图实体预览」的 preview3d.html 移植；
-     地形几何由 Source 2 Viewer 从创意工坊地图包解析。详见 docs/terrain-3d-plan.md。 */
+     地形几何由 Source 2 Viewer 从创意工坊地图包解析。详见 docs/r2-migration.md。 */
   const MVS = [
     'attribute vec3 aPos;','attribute vec3 aNrm;',
     'uniform mat4 uVP;','uniform vec3 uO;','uniform vec3 uS;',
@@ -461,7 +462,7 @@ window.GL3D = (function(){
  * 分片格式与原单文件完全一致：[4B 小端 JSON 长度][JSON][BIN]，整体 gzip。
  */
 const DATA_BASE = window.__ENTITY_BASE__ || '/entity';
-/* 真实碰撞地形分包（public/terr/<工坊ID>.bin），与实体数据同样按需加载 */
+/* 真实碰撞地形分包（<TERR_BASE>/<工坊ID>.bin，线上是 R2），与实体数据同样按需加载 */
 const TERR_BASE = window.__TERR_BASE__ || '/terr';
 let BIN = null;                   // 当前图的二进制块区（密度底图 + 雷达 webp）
 let CATALOG = null;               // 全部地图索引
@@ -491,7 +492,7 @@ async function fetchMapPayload(slug){
 }
 
 /* ===== 真实碰撞地形（可关的图层）=====
- * 数据：public/terr/<工坊ID>.bin —— gzip 包着 MSH1 头 + 量化顶点 + 索引。
+ * 数据：<TERR_BASE>/<工坊ID>.bin —— gzip 包着 MSH1 头 + 量化顶点 + 索引（线上取 R2）。
  *   'MSH1' | u32 nv | u32 nt | u32 u16i | f32×3 原点 o | f32×3 缩放 s | u16 顶点 | 索引
  * 与实体数据一样按需加载：打开某张图才拉那张的分包（约 400 KB gzip）。
  * 分包缺失（快照之后上架的新图）或解压失败时静默降级 —— 清空网格，其余照常。

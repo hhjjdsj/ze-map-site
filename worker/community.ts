@@ -144,7 +144,12 @@ export async function writeCommunityDoc(
 
 /* ===== 二进制文件（投稿封面图）=====
  *
- * 为什么用 contents API 而不是 Git Data API：
+ * ⚠️ 2026-10-05 起投稿封面也走 `commitFiles()`（审核台「写回仓库」时与文档改动合成一个 commit），
+ *   本节的 `commitCoverToRepo()` 与它下面用到的 contents API 助手（`writeRepoBinary` /
+ *   `deleteRepoFile` / `listRepoDir` / `repoFileSha`）**目前没有调用方**，保留仅作参考实现。
+ *   别把封面写回改回单文件 contents API —— 那会为一张图多产生一次提交与一次重建。
+ *
+ * 当初选 contents API 而不是 Git Data API 的理由（当时封面是审核通过即写回）：
  *   封面上限 700 KB（见 worker/covers.ts 的说明），base64 后约 960 KB，
  *   在 contents API 的承受范围内；换成 blob/tree/commit/ref 四步反而更长、
  *   还丢掉「按 sha 做乐观并发」这个现成的保护。

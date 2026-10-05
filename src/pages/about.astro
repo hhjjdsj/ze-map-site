@@ -49,6 +49,11 @@ const bakedMaps = catalog.maps.filter((m) => m.source === BAKED_SOURCE).length;
         欢迎更多人来一起完善它——补一张图的资料、纠正一处错误、加一个功能，都算数。
         不会用 GitHub 也没关系，<a href="/contribute/">投稿页</a>里有不需要账号的网页投稿路径。
       </p>
+      <p>
+        社区补充的内容走<b>人工审核</b>：投稿先进队列，站长审核通过后写进站点仓库，
+        再自动重新构建上线——所以改动不会立刻出现在页面上，通常要等几分钟。
+        审核通过的内容会署上投稿人留的昵称。
+      </p>
 
       <h3>现在收录了什么</h3>
       <ul>
@@ -69,7 +74,7 @@ const bakedMaps = catalog.maps.filter((m) => m.source === BAKED_SOURCE).length;
           <b>实体数据</b>：{bakedMaps} 张从 Steam 创意工坊地图包解析；其余保留已入库的历史服务端实体快照。
           坐标为 Source 单位；有模型碰撞壳的实体使用真实包围盒，无包围盒的实体使用典型尺寸。
         </li>
-        <li><b>工坊信息</b>：Steam Web API（发布时间、更新时间的、订阅数、作者自述正文摘录）。</li>
+        <li><b>工坊信息</b>：Steam Web API（发布时间、更新时间、订阅数、作者自述正文摘录）。</li>
         <li>
           <b>神器 / 道具、BOSS 与曲目</b>：公开的服务器配置（entwatch / bosshud / musicname）解析结果，
           逐条标注取自哪份配置，可能与其它服务器不一致。

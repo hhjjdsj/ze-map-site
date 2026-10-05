@@ -24,14 +24,15 @@
 //                      静态资源。⚠️ 少了它就没法把未知路径交回 resources 层，
 //                      站内那个 404 页会被顶掉。
 //    run_worker_first  只有 /api/* 先走脚本。其余请求仍是官方的「静态资源优先」，
-//                      所以 808 个页面照旧由边缘直接发出，速度不受影响，
+//                      所以 800 多个页面照旧由边缘直接发出，速度不受影响，
 //                      脚本出问题也只是投票接口 500，站点照常访问。
 //    d1_databases      投票数据（库名 ze-map-community）
 //    设计与分期：docs/community-editing-plan.md
 //
 // 5) 投稿封面（B 方案）—— kv_namespaces
 //    待审的封面图片先放 Workers KV 的 pending/ 前缀下（不公开可访问，只有审核台用鉴权接口能取），
-//    审核通过后由 Worker 提交进仓库 public/images/covers/custom/ 并删掉 KV 里的副本。
+//    审核台点「写回仓库」时由 Worker 把图提交进仓库 public/images/covers/custom/ 并删掉 KV 里的副本
+//    （2026-10-05 起与文档改动合成同一个 commit，见 docs/community-editing-plan.md 的「攒批写回」）。
 //    ⚠️ 选 KV 而不是 R2 的原因：KV 免费额度**不需要绑卡**（1 GB 存储 / 每天 1000 次写入），
 //       而且 put 时能直接设 expirationTtl=30 天，传了没人审的图会自己过期。
 //    ⚠️ id 必须填你在控制台建的 namespace id（KV 绑定不认名字，只认 id）：

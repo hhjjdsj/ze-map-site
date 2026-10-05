@@ -2,7 +2,7 @@
 /**
  * 投稿表单（P2）
  *
- * 不用会 git：填完提交 → 进 D1 待审队列 → 站长在 /admin 审核 → 通过后写回
+ * 不用会 git：填完提交 → 进 D1 待审队列 → 站长在 /admin 审核 → 攒进待写回队列 → 批量写回
  * data/community/<slug>.json → Cloudflare 重建 → 内容出现在地图条目里。
  *
  * 字段定义全部来自 shared/submission-fields.mjs（与 Worker 共用一份），
@@ -676,7 +676,7 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     const submitter = (document.getElementById('f-submitter') as HTMLInputElement).value;
     const contact = (document.getElementById('f-contact') as HTMLInputElement).value;
     const backLink =
-      `站长审核通过后，内容会被写进仓库并自动重建，大约几分钟内就会出现在 ` +
+      `站长审核通过后会随下一批一起写回仓库并自动重建，通常几分钟内就会出现在 ` +
       `<a href="/maps/${slug}/">《${mapInfo?.title}》的条目</a> 里。`;
 
     /* 封面走 multipart 上传接口 —— 值是一张压好的图，不是文本 */

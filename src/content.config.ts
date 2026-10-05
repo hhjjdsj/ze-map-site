@@ -65,7 +65,7 @@ const maps = defineCollection({
      */
     /** 已被社区覆盖的字段名，用于在页面上标注来源 */
     communityFields: z.array(z.string()).default([]),
-    /** 社区补充正文（审核通过后写入 data/community/<slug>.json） */
+    /** 社区补充正文（审核通过、站长「写回仓库」后写入 data/community/<slug>.json） */
     communityNotes: z
       .array(
         z.object({

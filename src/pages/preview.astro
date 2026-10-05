@@ -2,7 +2,8 @@
 /* 地图实体预览（viewer）—— 移植自单文件版，数据按图按需加载。
    分片烘焙： scripts/terr-bake/（工坊 VPK → 实体与 world_physics 地形）
    地图索引： public/entity/catalog.json（已入库的历史元数据）
-   地形分包： public/terr/<工坊ID>.bin（见 docs/terrain-3d-plan.md）
+   地形分包： Cloudflare R2 —— https://terr.ze-map.cn/terr/<工坊ID>.bin（本地烘焙副本在仓库外 bake/terr；
+             台账 data/terr-manifest.json。历史方案见 docs/terrain-3d-plan.md，迁移记录见 docs/r2-migration.md）
    脚本：     public/preview/app.js
    支持参数： ?map=<slug|内部名|中文名>&view=2d&stage=N */
 import fs from 'node:fs';

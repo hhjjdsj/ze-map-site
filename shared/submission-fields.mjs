@@ -97,7 +97,7 @@ export const FIELD_RULES = {
     label: '地图封面',
     hint: '选一张横向图（16:9 最好）。会在你的浏览器里自动裁成 16:9、压成 webp 再上传，不用自己处理',
     /* 图片上限在 worker/covers.ts（700 KB，比 cover:verify 的 800 KB 略低：
-       二进制要 base64 后走 GitHub contents API，留出余量） */
+       二进制要 base64 进 git blob，留出余量。2026-10-05 前走 contents API，现在是 Git Data API） */
   },
   story: {
     kind: 'longtext',
