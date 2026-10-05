@@ -24,6 +24,12 @@
 | `public/images/covers/custom/<地图英文名>.jpg`（或 `.png` / `.webp`） | ✅ 换地图封面（文件名必须正好是地图英文名） |
 | `src/content/maps/*.mdx` | ❌ **全部由脚本生成**，手改会被 `npm run maps:generate` 整段覆盖 |
 
+> **地形分片（`terr`）不在仓库里**：322 MB 已搬到 Cloudflare R2（见 `docs/r2-migration.md`），
+> 烘焙产物写到仓库外的 `bake/terr`。所以**新增地图的 PR 里不含地形文件** ——
+> 合并后由站长跑一次 `npm run terr:upload` 补上（需要 R2 凭证，本地上传脚本用，
+> **CI 和 Cloudflare 构建都不需要凭证**）。
+> 补上传之前的临时状态：那张图的实体预览、资料、条目页都正常，只是 3D 地形还取不到。
+
 > **改 `data/research/*.json` 就够了，不需要提交生成物。**
 > MDX 虽然由脚本产出，但 Cloudflare 构建时会用资料重新生成，**线上内容以资料为准** ——
 > 所以只改 JSON 的 PR 是正确的做法，CI 会放行（只提示一句「仓库里的打印稿落后了」）。
