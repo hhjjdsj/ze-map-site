@@ -32,8 +32,10 @@ import {
 import {
   handleAdminBan,
   handleAdminCover,
+  handleAdminFlush,
   handleAdminQueue,
   handleAdminReview,
+  handleAdminUnstage,
   handleSubmissionStatus,
   handleSubmit,
   handleSubmitCover,
@@ -67,6 +69,8 @@ export default {
 
       if (path === '/api/admin/queue') return handleAdminQueue(request, env, url);
       if (path === '/api/admin/review') return handleAdminReview(request, env);
+      if (path === '/api/admin/flush') return handleAdminFlush(request, env);
+      if (path === '/api/admin/unstage') return handleAdminUnstage(request, env);
       if (path === '/api/admin/ban') return handleAdminBan(request, env);
       /* 待审封面的缩略图：<img> 带不了自定义头，所以审核台用 fetch + Bearer 取 blob，
          这样密钥不会出现在 URL 里（也就不进任何日志）。 */

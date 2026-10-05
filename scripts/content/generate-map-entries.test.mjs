@@ -7,7 +7,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { cdText, docItemRows, mergeItems } from '../../shared/items.mjs';
 import { validateValue } from '../../shared/submission-fields.mjs';
-import { applySubmission, emptyDoc, normalizeDoc } from '../../shared/community-doc.mjs';
+import { applySubmission, contributors, emptyDoc, normalizeDoc } from '../../shared/community-doc.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -244,4 +244,25 @@ test('社区文档：items 落到自己的桶里，并记进贡献者名单', ()
   assert.equal(broken.items.length, 1);
   assert.equal(broken.items[0].name, 'Good');
   assert.equal(broken.items[0].cd, 30);
+});
+
+test('社区文档：一批投稿（字段 + 背景故事 + 神器行）能一起应用 —— 攒批写回的基础', () => {
+  const doc = emptyDoc('ze_demo');
+  const at = Date.parse('2026-10-05T00:00:00Z');
+  const batch = [
+    { id: 11, field: 'difficulty', value: '困难', submitter: '甲' },
+    { id: 12, field: 'tags', value: ['批量', '测试'], submitter: '甲' },
+    { id: 13, field: 'story', value: '一段社区补充的背景故事。', submitter: '乙' },
+    { id: 14, field: 'items', value: [{ action: 'add', name: 'Foo', cd: 30, uses: 1, note: '' }], submitter: '丙' },
+  ];
+  for (const s of batch) applySubmission(doc, { ...s, reviewedAt: at });
+
+  assert.equal(doc.fields.difficulty.v, '困难');
+  assert.deepEqual(doc.fields.tags.v, ['批量', '测试']);
+  assert.equal(doc.notes.length, 1);
+  assert.equal(doc.notes[0].field, 'story', 'note 要记住它投的是哪个字段');
+  assert.equal(doc.items.length, 1);
+  assert.equal(doc.log.length, 4, '每条投稿都要在 log 里留一行');
+  assert.deepEqual(contributors(doc), ['甲', '乙', '丙']);
+  assert.equal(doc.updatedAt, null, 'updatedAt 由调用方 touch()，applySubmission 不自己写时间');
 });

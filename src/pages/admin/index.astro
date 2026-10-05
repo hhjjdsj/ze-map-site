@@ -21,8 +21,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <div class="form-card">
       <h1>审核台</h1>
       <p class="form-hint">
-        密钥只保存在你这台浏览器里（localStorage），不会发往别处。
-        审核通过后会直接写回 GitHub 仓库的 <code>data/community/</code>，并触发 Cloudflare 重建。
+        密钥只保存在你这台浏览器里（localStorage），不会发往别处。<br />
+        「通过」只是把投稿攒进<b>待写回</b>队列；点一次
+        <b>「写回仓库」</b>才会真正提交 —— <b>不管攒了多少条，都只产生一个 commit、只触发一次重建</b>
+        （省 Cloudflare 构建分钟）。别忘了点，没写回就不会上线。
       </p>
       <div class="form-grid">
         <div class="form-row">
@@ -41,11 +43,36 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <div class="form-card" id="a-panel" hidden>
       <div class="queue-actions" style="margin-bottom: 14px">
         <button class="btn" type="button" data-status="pending" id="a-tab-pending">待审</button>
+        <button class="btn" type="button" data-status="approved">待写回</button>
         <button class="btn" type="button" data-status="applied">已上线</button>
         <button class="btn" type="button" data-status="rejected">已驳回</button>
         <button class="btn" type="button" id="a-reload">刷新</button>
       </div>
       <p class="queue-counts" id="a-counts"></p>
+
+      {/*
+        攒批区：把「通过」攒起来的投稿一次写回。
+        flush 失败不会丢东西 —— 状态留在 approved，修好后（比如换 token）再点一次即可。
+      */}
+      <div
+        id="a-flush"
+        hidden
+        style="border:1px solid var(--border); border-left:3px solid var(--accent-2); border-radius:10px; padding:12px 16px; margin:0 0 14px; background:var(--panel-2)"
+      >
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+          <strong id="a-staged-count">已攒 0 条待写回</strong>
+          <button class="btn btn-primary" type="button" id="a-flush-go">写回仓库（一次提交）</button>
+          <span class="form-hint" style="margin:0">
+            不点这个按钮，审核通过的内容不会出现在网站上。
+          </span>
+        </div>
+        <p class="form-hint" id="a-flush-out" style="margin:8px 0 0"></p>
+      </div>
+
+      <p class="form-hint" id="a-pending-tip" hidden>
+        勾选多条 → <b>批量通过</b>（攒进待写回），再点上面的「写回仓库」。
+      </p>
+
       <div id="a-list"></div>
     </div>
   </div>
@@ -268,19 +295,38 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     const actions = el('div', 'queue-actions');
 
-    if (item.status === 'pending' || item.status === 'approved') {
-      const ok = el('button', 'btn btn-primary', '通过并写回仓库') as HTMLButtonElement;
-      ok.type = 'button';
-      ok.onclick = () => review(item.id, 'approve');
-      actions.append(ok);
+    /* 待审的给个勾选框：勾几条 → 顶部「批量通过」一次攒进去 */
+    if (item.status === 'pending') {
+      const pick = el('label', 'queue-note') as HTMLLabelElement;
+      pick.style.cssText = 'display:flex;gap:6px;align-items:center;margin:0 8px 0 0';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.dataset.pick = String(item.id);
+      cb.style.cssText = 'width:16px;height:16px';
+      pick.append(cb, document.createTextNode('选中'));
+      actions.append(pick);
     }
 
     if (item.status === 'pending') {
+      const ok = el('button', 'btn btn-primary', '通过（攒着）') as HTMLButtonElement;
+      ok.type = 'button';
+      ok.onclick = () => review([item.id], 'approve');
+      actions.append(ok);
+    }
+
+    if (item.status === 'approved') {
+      const undo = el('button', 'btn', '撤回（退回待审）') as HTMLButtonElement;
+      undo.type = 'button';
+      undo.onclick = () => unstage(item.id);
+      actions.append(undo);
+    }
+
+    if (item.status === 'pending' || item.status === 'approved') {
       const no = el('button', 'btn', '驳回') as HTMLButtonElement;
       no.type = 'button';
       no.onclick = () => {
         const reason = prompt('驳回理由（会展示给投稿人）：', '');
-        if (reason !== null && reason.trim()) review(item.id, 'reject', reason.trim());
+        if (reason !== null && reason.trim()) review([item.id], 'reject', reason.trim());
       };
       actions.append(no);
     }
@@ -318,31 +364,106 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     panel.hidden = false;
 
     const c = data.counts ?? {};
+    const staged = Number(c.approved ?? 0);
     countsEl.textContent =
-      `待审 ${c.pending ?? 0} · 已上线 ${c.applied ?? 0} · 已驳回 ${c.rejected ?? 0}` +
-      (data.gitReady ? '' : '　⚠️ 服务端还没配 GITHUB_TOKEN，审核通过也无法写回仓库');
+      `待审 ${c.pending ?? 0} · 待写回 ${staged} · 已上线 ${c.applied ?? 0} · 已驳回 ${c.rejected ?? 0}` +
+      (data.gitReady ? '' : '　⚠️ 服务端还没配 GITHUB_TOKEN，写回会失败');
+
+    /* 攒批区：有存货就显眼地摆出来，免得忘了点导致「审核通过却没上线」 */
+    const flushBox = $<HTMLElement>('a-flush');
+    $<HTMLElement>('a-staged-count').textContent = staged
+      ? `已攒 ${staged} 条待写回`
+      : '当前没有待写回的投稿';
+    flushBox.hidden = staged === 0;
+    $<HTMLElement>('a-pending-tip').hidden = currentStatus !== 'pending';
+
+    /* 批量通过按钮：只在待审标签下出现 */
+    const oldBatch = document.getElementById('a-batch');
+    oldBatch?.remove();
+    if (currentStatus === 'pending') {
+      const batch = el('button', 'btn btn-primary', '批量通过选中') as HTMLButtonElement;
+      batch.type = 'button';
+      batch.id = 'a-batch';
+      batch.onclick = () => {
+        const ids = [...document.querySelectorAll<HTMLInputElement>('input[data-pick]')]
+          .filter((cb) => cb.checked)
+          .map((cb) => Number(cb.dataset.pick));
+        if (!ids.length) return setStatus('先勾选要通过的投稿', true);
+        review(ids, 'approve');
+      };
+      $<HTMLButtonElement>('a-reload').before(batch);
+    }
 
     listEl.replaceChildren();
     const items: QueueItem[] = data.items ?? [];
     if (items.length === 0) {
-      listEl.append(el('p', 'form-hint', currentStatus === 'pending' ? '没有待审投稿 🎉' : '暂无记录'));
+      const empty = currentStatus === 'pending' ? '没有待审投稿 🎉'
+        : currentStatus === 'approved' ? '没有待写回的投稿'
+        : '暂无记录';
+      listEl.append(el('p', 'form-hint', empty));
       return;
     }
     for (const item of items) listEl.append(renderItem(item));
   }
 
-  async function review(id: number, action: 'approve' | 'reject', rejectNote?: string) {
-    setStatus(action === 'approve' ? '正在写回仓库…' : '处理中…');
+  /** 审核：approve = 攒进待写回（不写仓库），reject = 驳回。ids 支持批量。 */
+  async function review(ids: number[], action: 'approve' | 'reject', rejectNote?: string) {
+    setStatus(action === 'approve' ? `正在攒下 ${ids.length} 条…` : '处理中…');
     const { status, data } = await api('/api/admin/review', {
       method: 'POST',
-      body: { id, action, rejectNote, reviewer },
+      body: { ids, action, rejectNote, reviewer },
     });
-    if (status !== 200) {
+    if (status !== 200 && status !== 207) {
       setStatus(`${data?.error ?? '操作失败'}（HTTP ${status}）`, true);
       await load();
       return;
     }
-    setStatus(data.note ?? '完成');
+    const failed = (data.results ?? []).filter((r: { ok: boolean }) => !r.ok);
+    const okCount = (data.results ?? []).length - failed.length;
+    if (action === 'approve') {
+      setStatus(
+        `已攒下 ${okCount} 条（待写回共 ${data.staged ?? okCount} 条）—— 记得点「写回仓库」` +
+          (failed.length ? `；${failed.length} 条没成功：${failed[0].error}` : '')
+      );
+    } else {
+      setStatus(`已驳回 ${okCount} 条${failed.length ? `；${failed.length} 条没成功` : ''}`);
+    }
+    await load();
+  }
+
+  /** 把待写回的投稿一次写回仓库（一个 commit、一次重建） */
+  async function flush() {
+    const btn = $<HTMLButtonElement>('a-flush-go');
+    const out = $<HTMLElement>('a-flush-out');
+    btn.disabled = true;
+    const old = btn.textContent;
+    btn.textContent = '正在写回…';
+    out.textContent = '';
+    try {
+      const { status, data } = await api('/api/admin/flush', { method: 'POST', body: { reviewer } });
+      if (status !== 200) {
+        out.textContent = `${data?.error ?? '写回失败'}（HTTP ${status}）—— 投稿仍留在「待写回」，修好后重试即可`;
+        setStatus('写回失败', true);
+        return;
+      }
+      const skipped = (data.skipped ?? []) as Array<{ id: number; reason: string }>;
+      out.textContent =
+        `✅ 已写回 ${data.committed} 条 / ${data.maps} 张图 · ${data.files} 个文件 · 提交 ${String(data.commit).slice(0, 8)}` +
+        (skipped.length ? `　⚠️ 跳过 ${skipped.length} 条：${skipped.map((s) => `#${s.id} ${s.reason}`).join('；')}` : '') +
+        '　（Cloudflare 1~2 分钟后重建上线）';
+      setStatus('写回完成');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = old;
+      await load();
+    }
+  }
+
+  /** 把「待写回」的投稿退回待审（改主意时用） */
+  async function unstage(id: number) {
+    const { status, data } = await api('/api/admin/unstage', { method: 'POST', body: { id } });
+    if (status !== 200) return setStatus(`${data?.error ?? '撤回失败'}（HTTP ${status}）`, true);
+    setStatus('已退回待审');
     await load();
   }
 
@@ -367,6 +488,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   };
 
   $<HTMLButtonElement>('a-reload').onclick = () => load();
+  $<HTMLButtonElement>('a-flush-go').onclick = () => flush();
 
   for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-status]')) {
     btn.onclick = () => {

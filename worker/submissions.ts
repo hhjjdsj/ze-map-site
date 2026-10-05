@@ -11,10 +11,16 @@
 
 import { applySubmission, isItemField, isNoteField, touch } from '../shared/community-doc.mjs';
 import { FIELD_RULES, LIMITS, isField, validateValue } from '../shared/submission-fields.mjs';
-import { GitError, type CommunityFile, readCommunityDoc, writeCommunityDoc } from './community';
+import {
+  GitError,
+  type CommitFile,
+  type CommunityFile,
+  commitFiles,
+  communityPath,
+  readCommunityDoc,
+} from './community';
 import {
   checkCoverBytes,
-  commitCoverToRepo,
   coverMetaOf,
   coverRepoPath,
   coverUrl,
@@ -74,12 +80,6 @@ function optString(
   return { ok: true, value: s };
 }
 
-function short(v: unknown): string {
-  if (v === null || v === undefined || v === '') return '（新增）';
-  const s = Array.isArray(v) ? v.join('、') : String(v);
-  return s.length > 40 ? s.slice(0, 40) + '…' : s;
-}
-
 /** 投稿内容存在 submissions.value 里（TEXT，JSON）。坏掉时返回 null，由调用方决定怎么报错。 */
 function parseStoredValue(raw: string): unknown {
   try {
@@ -87,22 +87,6 @@ function parseStoredValue(raw: string): unknown {
   } catch {
     return null;
   }
-}
-
-function commitMessage(sub: SubmissionRow, change: { field: string; from: unknown; to: unknown }, reviewer: string): string {
-  const who = sub.submitter || '匿名';
-  const audit = reviewer ? `，审核 ${reviewer}` : '';
-  /* 正文类字段（补充说明 / 背景故事）是「追加一条」，没有 from → to 可言，
-     所以用字段标签写一条更可读的提交信息；标签来自字段表，加字段不用改这里。 */
-  if (isNoteField(change.field)) {
-    return `社区投稿：${sub.map_slug} ${FIELD_RULES[change.field]?.label ?? '补充说明'}（by ${who}${audit}）`;
-  }
-  /* 神器 / 道具是一次提交好几行，写「A → B」没有意义，报行数更可读 */
-  if (isItemField(change.field)) {
-    const n = Array.isArray(change.to) ? change.to.length : 0;
-    return `社区投稿：${sub.map_slug} ${FIELD_RULES[change.field]?.label ?? '神器 / 道具'} ${n} 行（by ${who}${audit}）`;
-  }
-  return `社区投稿：${sub.map_slug} ${change.field} ${short(change.from)} → ${short(change.to)}（by ${who}${audit}）`;
 }
 
 /** Turnstile 校验。没配 TURNSTILE_SECRET 就跳过（这时靠限流 + 人工审核兜底）。 */
@@ -337,7 +321,8 @@ export async function handleAdminQueue(request: Request, env: Env, url: URL): Pr
   if (request.method !== 'GET') return fail('只支持 GET', 405);
 
   const status = url.searchParams.get('status') ?? 'pending';
-  if (!['pending', 'applied', 'rejected'].includes(status)) return fail('状态不合法');
+  /* approved = 审核通过但还没写回仓库（攒批队列），见 handleAdminFlush */
+  if (!['pending', 'approved', 'applied', 'rejected'].includes(status)) return fail('状态不合法');
   const limitRaw = Number(url.searchParams.get('limit') ?? 50);
   const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 200) : 50;
 
@@ -393,192 +378,283 @@ export async function handleAdminQueue(request: Request, env: Env, url: URL): Pr
   });
 }
 
-/** POST /api/admin/review  body: {id, action: 'approve'|'reject', rejectNote?, reviewer?} */
+/**
+ * POST /api/admin/review
+ *   body: { id, action: 'approve'|'reject', rejectNote?, reviewer? }
+ *   也接受批量：{ ids: [1,2,3], action: 'approve', reviewer? }
+ *
+ * ⚠️ 2026-10-05 起「通过」**不再立刻写回仓库**，而是把状态置成 `approved`（攒着），
+ * 由 POST /api/admin/flush 一次性写回 —— 一次提交 = 一次 Cloudflare 重建。
+ * 以前每条通过都独立提交，攒 20 条就是 20 次重建（免费版每月只有 3000 构建分钟）。
+ */
 export async function handleAdminReview(request: Request, env: Env): Promise<Response> {
   if (request.method !== 'POST') return fail('只支持 POST', 405);
 
-  const parsed = await readJsonBody(request, 4096);
+  const parsed = await readJsonBody(request, 8192);
   if (!parsed.ok) return parsed.response;
   const b = parsed.body;
 
-  const id = Number(b.id);
   const action = typeof b.action === 'string' ? b.action : '';
-  if (!Number.isInteger(id) || id <= 0) return fail('id 不合法');
   if (action !== 'approve' && action !== 'reject') return fail('action 只能是 approve / reject');
 
   const reviewerRaw = optString(b.reviewer, 32, '审核人');
   if (!reviewerRaw.ok) return fail(reviewerRaw.error);
   const reviewer = reviewerRaw.value;
 
-  const sub = await env.DB.prepare(`SELECT * FROM submissions WHERE id = ?1`)
-    .bind(id)
-    .first<SubmissionRow>();
-  if (!sub) return fail('找不到这条投稿', 404);
-  if (sub.status === 'applied') return fail('这条已经写回仓库了', 409);
+  /* 单个 id 与批量 ids 都收：批量只是省几次请求，逻辑完全一样 */
+  const ids = Array.isArray(b.ids)
+    ? [...new Set(b.ids.map((v: unknown) => Number(v)).filter((n: number) => Number.isInteger(n) && n > 0))]
+    : [Number(b.id)];
+  if (!ids.length || ids.some((n: number) => !Number.isInteger(n) || n <= 0)) return fail('id 不合法');
 
-  /* --- 驳回 --- */
-  if (action === 'reject') {
-    const reasonRaw = optString(b.rejectNote, 300, '驳回理由');
-    if (!reasonRaw.ok) return fail(reasonRaw.error);
-    await env.DB.prepare(
-      `UPDATE submissions SET status='rejected', reviewed_at=?1, reviewer=?2, reject_note=?3, error=NULL WHERE id=?4`
-    )
-      .bind(Date.now(), reviewer, reasonRaw.value, id)
-      .run();
-    /* 封面被驳回：把 KV 里的待审图删掉，别白占空间（也没人会再来看了） */
-    if (sub.field === 'cover') {
-      const meta = coverMetaOf(parseStoredValue(sub.value));
-      if (meta) await dropPendingCover(env, meta.key);
+  const rejectNoteRaw = action === 'reject' ? optString(b.rejectNote, 300, '驳回理由') : null;
+  if (rejectNoteRaw && !rejectNoteRaw.ok) return fail(rejectNoteRaw.error);
+  const rejectNote = rejectNoteRaw && rejectNoteRaw.ok ? rejectNoteRaw.value : '';
+
+  const results: Array<{ id: number; ok: boolean; status?: string; error?: string }> = [];
+
+  for (const id of ids) {
+    const sub = await env.DB.prepare(`SELECT * FROM submissions WHERE id = ?1`)
+      .bind(id)
+      .first<SubmissionRow>();
+    if (!sub) {
+      results.push({ id, ok: false, error: '找不到这条投稿' });
+      continue;
     }
-    return json({ ok: true, id, status: 'rejected' });
-  }
+    if (sub.status === 'applied') {
+      results.push({ id, ok: false, error: '已经写回仓库了' });
+      continue;
+    }
+    if (sub.status === 'rejected') {
+      results.push({ id, ok: false, error: '已被驳回' });
+      continue;
+    }
 
-  /* --- 通过：写回 git --- */
-  const value = parseStoredValue(sub.value);
-  if (value === null) return fail('这条投稿的值已损坏，无法应用', 500);
+    /* --- 驳回 --- */
+    if (action === 'reject') {
+      await env.DB.prepare(
+        `UPDATE submissions SET status='rejected', reviewed_at=?1, reviewer=?2, reject_note=?3, error=NULL WHERE id=?4`
+      )
+        .bind(Date.now(), reviewer, rejectNote, id)
+        .run();
+      /* 封面被驳回：KV 里的待审图没人会再来看了，直接删掉 */
+      if (sub.field === 'cover') {
+        const meta = coverMetaOf(parseStoredValue(sub.value));
+        if (meta) await dropPendingCover(env, meta.key);
+      }
+      results.push({ id, ok: true, status: 'rejected' });
+      continue;
+    }
 
-  /* 封面走单独一条路：先把图片提交进仓库，再把路径记进社区文档 */
-  if (sub.field === 'cover') return applyCoverSubmission(env, sub, reviewer, value);
-
-  try {
-    const { doc, sha } = await readCommunityDoc(env, sub.map_slug);
-    const change = applySubmission(doc, {
-      id: sub.id,
-      field: sub.field,
-      value,
-      submitter: sub.submitter,
-      reviewedAt: Date.now(),
-    });
-    touch(doc);
-    const { sha: commitSha, created } = await writeCommunityDoc(
-      env,
-      sub.map_slug,
-      doc,
-      commitMessage(sub, change, reviewer),
-      sha
-    );
-
+    /* --- 通过：只入队（攒批），不改仓库 --- */
+    if (parseStoredValue(sub.value) === null) {
+      results.push({ id, ok: false, error: '这条投稿的值已损坏，无法应用' });
+      continue;
+    }
     await env.DB.prepare(
-      `UPDATE submissions SET status='applied', reviewed_at=?1, reviewer=?2, commit_sha=?3, error=NULL WHERE id=?4`
+      `UPDATE submissions SET status='approved', reviewed_at=?1, reviewer=?2, reject_note=NULL, error=NULL WHERE id=?3`
     )
-      .bind(Date.now(), reviewer, commitSha, id)
+      .bind(Date.now(), reviewer, id)
       .run();
-
-    return json({
-      ok: true,
-      id,
-      status: 'applied',
-      map: sub.map_slug,
-      field: change.field,
-      commit: commitSha,
-      createdFile: created,
-      /* 提示前端：这次提交会触发 Cloudflare 重新构建，约 1~2 分钟后页面才更新 */
-      note: '已写回仓库，Cloudflare 会在 1~2 分钟内重建上线',
-    });
-  } catch (err) {
-    const e = err as GitError;
-    const message = e?.message || String(err);
-    // 失败也要留痕，但**不改状态** —— 投稿仍是 pending，修好配置后可以重试
-    await env.DB.prepare(`UPDATE submissions SET error=?1 WHERE id=?2`)
-      .bind(message.slice(0, 300), id)
-      .run();
-    return fail(message, typeof e?.status === 'number' ? e.status : 500);
+    results.push({ id, ok: true, status: 'approved' });
   }
+
+  const staged = await env.DB.prepare(`SELECT COUNT(*) AS n FROM submissions WHERE status='approved'`).first<{ n: number }>();
+  return json({
+    ok: results.every((r) => r.ok),
+    results,
+    staged: staged?.n ?? 0,
+    message: action === 'approve'
+      ? '已攒下。到「待写回」里点一次「写回仓库」才会生效（一次提交 = 一次重建）'
+      : '已驳回',
+  });
 }
 
 /**
- * 封面投稿的落盘：图片进仓库 → 路径记进社区文档 → 删掉 KV 里的待审副本。
+ * POST /api/admin/flush  body: { reviewer? }
  *
- * 为什么单独一条路：普通字段只要写一次 JSON，封面要动二进制（还会顺带清掉同名其它扩展名）、
- * 再写一次社区文档、最后清理临时文件 —— 混在主干里会把那段读成一团。
+ * 把「审核通过但还没写回仓库」的投稿（status=approved）**一次性**写回：
+ * 不管涉及多少张图、多少条投稿、多少张封面，都只有**一个 commit** —— 于是只触发一次
+ * Cloudflare 重建（2026-10-05 之前是一条一次提交一次重建，攒批后省掉大量构建分钟）。
  *
- * 失败语义与主干一致：任何一步抛错都**不改状态**（投稿仍 pending），修好后可以重试。
+ * 分组顺序：
+ *   1. 读出所有 approved 投稿，按地图分组，逐条 applySubmission 到内存里的文档；
+ *   2. 封面：从 KV 取待审图 → 作为二进制写进同一个 commit，顺带把同名的其它扩展名删掉，
+ *      并在文档里把 cover 记成 **URL**（页面直接当 <img src> 用，绝不能存仓库路径）；
+ *   3. 一次提交（worker/community.ts 的 commitFiles，Git Data API）；
+ *   4. 提交成功后才改 D1 状态、才清 KV —— 中途失败什么都不动，重试即可。
  */
-async function applyCoverSubmission(
-  env: Env,
-  sub: SubmissionRow,
-  reviewer: string,
-  value: unknown
-): Promise<Response> {
-  const meta = coverMetaOf(value);
-  if (!meta) return fail('这条封面投稿缺少图片信息，无法应用', 500);
+export async function handleAdminFlush(request: Request, env: Env): Promise<Response> {
+  if (request.method !== 'POST') return fail('只支持 POST', 405);
+
+  const parsed = await readJsonBody(request, 2048);
+  if (!parsed.ok) return parsed.response;
+  const reviewerRaw = optString(parsed.body.reviewer, 32, '审核人');
+  if (!reviewerRaw.ok) return fail(reviewerRaw.error);
+  const reviewer = reviewerRaw.value;
+  const audit = reviewer ? `，审核 ${reviewer}` : '';
+
+  const { results: rows } = await env.DB.prepare(
+    `SELECT * FROM submissions WHERE status='approved' ORDER BY created_at ASC LIMIT 200`
+  ).all<SubmissionRow>();
+  if (!rows?.length) return json({ ok: true, committed: 0, message: '没有待写回的投稿' });
+
+  /* 按地图分组：同一张图的多条投稿合并进同一份文档 */
+  const bySlug = new Map<string, SubmissionRow[]>();
+  for (const row of rows) {
+    const list = bySlug.get(row.map_slug) ?? [];
+    list.push(row);
+    bySlug.set(row.map_slug, list);
+  }
+
+  const skipped: Array<{ id: number; reason: string }> = [];
+  const files: CommitFile[] = [];
+  const pendingCovers: Array<{ id: number; key: string }> = [];
+  const authors = new Set<string>();
+  const fieldSummary = new Set<string>();
 
   try {
-    const pending = await readPendingCover(env, meta.key);
-    if (!pending) {
-      return fail(
-        `待审图片在 KV 里找不到（key=${meta.key}），无法写回。请让投稿人重新上传`,
-        410
-      );
+    for (const [slug, list] of bySlug) {
+      const { doc } = await readCommunityDoc(env, slug);
+      let touched = false;
+
+      for (const row of list) {
+        const value = parseStoredValue(row.value);
+        if (value === null) {
+          skipped.push({ id: row.id, reason: '投稿的值已损坏' });
+          continue;
+        }
+
+        /* 封面：图片进同一个 commit，文档里只记 URL */
+        if (row.field === 'cover') {
+          const meta = coverMetaOf(value);
+          if (!meta) {
+            skipped.push({ id: row.id, reason: '缺少图片信息' });
+            continue;
+          }
+          const pending = await readPendingCover(env, meta.key);
+          if (!pending) {
+            skipped.push({ id: row.id, reason: 'KV 里的待审图片已不在（让投稿人重新上传）' });
+            continue;
+          }
+          const check = checkCoverBytes(pending.bytes);
+          if (!check.ok || !check.format) {
+            skipped.push({ id: row.id, reason: `待审图片校验未通过：${check.error ?? '未知'}` });
+            continue;
+          }
+          let bin = '';
+          const CHUNK = 0x8000;
+          for (let i = 0; i < pending.bytes.length; i += CHUNK) {
+            bin += String.fromCharCode(...pending.bytes.subarray(i, i + CHUNK));
+          }
+          files.push({ path: coverRepoPath(slug, check.format), base64: btoa(bin) });
+          for (const ext of ['webp', 'png', 'jpg', 'jpeg']) {
+            if (ext !== check.format) files.push({ path: coverRepoPath(slug, ext), remove: true });
+          }
+          pendingCovers.push({ id: row.id, key: meta.key });
+          applySubmission(doc, {
+            id: row.id,
+            field: 'cover',
+            value: coverUrl(slug, check.format),
+            submitter: row.submitter,
+            reviewedAt: row.reviewed_at ?? Date.now(),
+          });
+          touched = true;
+        } else {
+          const change = applySubmission(doc, {
+            id: row.id,
+            field: row.field,
+            value,
+            submitter: row.submitter,
+            reviewedAt: row.reviewed_at ?? Date.now(),
+          });
+          isItemField(change.field) ? fieldSummary.add(`${slug} 神器/道具`) : fieldSummary.add(`${slug} ${change.field}`);
+          touched = true;
+        }
+        if (row.submitter) authors.add(row.submitter);
+      }
+
+      if (touched) {
+        touch(doc);
+        files.push({ path: communityPath(slug), text: JSON.stringify(doc, null, 2) + '\n' });
+      }
     }
-    /* 再校验一次：KV 里的字节才是真正要进仓库的东西 */
-    const check = checkCoverBytes(pending.bytes);
-    if (!check.ok || !check.format) return fail(`待审图片校验未通过：${check.error}`, 400);
 
-    const repoPath = coverRepoPath(sub.map_slug, check.format);
-    /* ⚠️ 存进社区文档的必须是 **URL**（/images/...），不是仓库路径：
-       页面会把 data.cover 直接当 <img src>，存成 public/images/... 就是破图。 */
-    const url = coverUrl(sub.map_slug, check.format);
-    const who = sub.submitter || '匿名';
-    const audit = reviewer ? `，审核 ${reviewer}` : '';
+    const committedIds = rows.filter((r) => !skipped.some((s) => s.id === r.id));
+    if (!committedIds.length) {
+      await markErrors(env, skipped);
+      return json({ ok: false, committed: 0, skipped, message: '没有可写回的投稿，见 skipped 原因' }, 409);
+    }
 
-    /* 1) 图片进仓库（顺带删掉同一张图的其它扩展名，避免 custom/ 里留两份） */
-    const { sha: imageSha, removed } = await commitCoverToRepo(
-      env,
-      sub.map_slug,
-      pending.bytes,
-      check.format,
-      `社区投稿：${sub.map_slug} 封面（by ${who}${audit}）`
-    );
+    const who = authors.size ? [...authors].slice(0, 3).join('、') : '匿名';
+    const summary = fieldSummary.size > 4
+      ? `${[...fieldSummary].slice(0, 4).join('、')} 等 ${fieldSummary.size} 项`
+      : [...fieldSummary].join('、');
+    const message = `社区投稿：${bySlug.size} 张图 · ${committedIds.length} 条（${summary}）（by ${who}${audit}）`;
 
-    /* 2) 社区文档里记一笔：谁什么时候换的（值为页面用的 URL） */
-    const { doc, sha } = await readCommunityDoc(env, sub.map_slug);
-    const change = applySubmission(doc, {
-      id: sub.id,
-      field: 'cover',
-      value: url,
-      submitter: sub.submitter,
-      reviewedAt: Date.now(),
-    });
-    touch(doc);
-    const { created } = await writeCommunityDoc(
-      env,
-      sub.map_slug,
-      doc,
-      `社区投稿：${sub.map_slug} 封面登记（by ${who}${audit}）`,
-      sha
-    );
+    const { sha: commitSha, files: fileCount } = await commitFiles(env, files, message);
 
-    /* 3) 清理临时副本（失败不影响结果，另有 KV 的 30 天过期兜底） */
-    await dropPendingCover(env, meta.key);
-
-    await env.DB.prepare(
-      `UPDATE submissions SET status='applied', reviewed_at=?1, reviewer=?2, commit_sha=?3, error=NULL WHERE id=?4`
-    )
-      .bind(Date.now(), reviewer, imageSha, sub.id)
-      .run();
+    /* 提交成功后才动 D1 与 KV */
+    const now = Date.now();
+    for (const row of committedIds) {
+      await env.DB.prepare(
+        `UPDATE submissions SET status='applied', commit_sha=?1, error=NULL WHERE id=?2`
+      )
+        .bind(commitSha, row.id)
+        .run();
+    }
+    for (const c of pendingCovers) await dropPendingCover(env, c.key);
+    await markErrors(env, skipped);
 
     return json({
       ok: true,
-      id: sub.id,
-      status: 'applied',
-      map: sub.map_slug,
-      field: change.field,
-      commit: imageSha,
-      coverPath: repoPath,
-      coverUrl: url,
-      removedOldCovers: removed,
-      createdDoc: created,
-      note: '封面已写回仓库，Cloudflare 会在 1~2 分钟内重建上线',
+      committed: committedIds.length,
+      maps: bySlug.size,
+      files: fileCount,
+      commit: commitSha,
+      skipped,
+      note: '已写回仓库，Cloudflare 会在 1~2 分钟内重建上线（一次提交只重建一次）',
+      _now: now,
     });
   } catch (err) {
     const e = err as GitError;
-    const message = e?.message || String(err);
-    await env.DB.prepare(`UPDATE submissions SET error=?1 WHERE id=?2`)
-      .bind(message.slice(0, 300), sub.id)
-      .run();
-    return fail(message, typeof e?.status === 'number' ? e.status : 500);
+    const text = e?.message || String(err);
+    /* 失败时**不改状态**：投稿仍在「待写回」里，修好（比如换 token）再点一次即可 */
+    await markErrors(env, [{ id: 0, reason: text.slice(0, 280) }]);
+    return fail(text, typeof e?.status === 'number' ? e.status : 500);
   }
+}
+
+/** 把「这条为什么没写回」记进 D1，审核台能直接看到（id=0 表示整体失败） */
+async function markErrors(env: Env, skipped: Array<{ id: number; reason: string }>): Promise<void> {
+  for (const s of skipped) {
+    if (!s.id) continue;
+    await env.DB.prepare(`UPDATE submissions SET error=?1 WHERE id=?2`)
+      .bind(s.reason.slice(0, 300), s.id)
+      .run();
+  }
+}
+
+/** POST /api/admin/unstage  body: {id} —— 把「待写回」的投稿退回待审（改主意时用） */
+export async function handleAdminUnstage(request: Request, env: Env): Promise<Response> {
+  if (request.method !== 'POST') return fail('只支持 POST', 405);
+  const parsed = await readJsonBody(request, 1024);
+  if (!parsed.ok) return parsed.response;
+  const id = Number(parsed.body.id);
+  if (!Number.isInteger(id) || id <= 0) return fail('id 不合法');
+
+  const sub = await env.DB.prepare(`SELECT status FROM submissions WHERE id=?1`)
+    .bind(id)
+    .first<{ status: string }>();
+  if (!sub) return fail('找不到这条投稿', 404);
+  if (sub.status !== 'approved') return fail('只有「待写回」的投稿可以撤回', 409);
+
+  await env.DB.prepare(
+    `UPDATE submissions SET status='pending', reviewed_at=NULL, reviewer=NULL, error=NULL WHERE id=?1`
+  )
+    .bind(id)
+    .run();
+  return json({ ok: true, id, status: 'pending' });
 }
 
 /** POST /api/admin/ban  body: {id, reason?} —— 用投稿 id 封禁，审核台不需要接触 ip_hash */

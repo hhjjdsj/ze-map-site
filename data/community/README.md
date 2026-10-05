@@ -5,11 +5,19 @@
 
 ## 谁写这个目录
 
-**不是手写的** —— 是审核台在通过一条投稿后，由 Worker 调 GitHub API 写进来的：
+**不是手写的** —— 是审核台在通过投稿后，由 Worker 调 GitHub API 写进来的。
+2026-10-05 起改成**攒批**：点「通过」只是把投稿攒进待写回队列（D1 里 `status='approved'`），
+再点一次「写回仓库」才真正提交 —— **不管攒了多少条，都只有一个 commit、只触发一次 Cloudflare 重建**
+（免费版每月只有 3000 构建分钟，一条一提交太浪费）。
 
 ```
-投稿表单 /submit/  →  D1 待审队列  →  /admin 审核通过  →  写入这里  →  触发 Cloudflare 重建
+投稿表单 /submit/ → D1 待审队列 → /admin 点「通过」（攒着）
+                                    → /admin 点「写回仓库」 → 写入这里 → 触发一次 Cloudflare 重建
 ```
+
+攒批的实现：`worker/community.ts` 的 `commitFiles()` 走 Git Data API
+（blob → tree → commit → ref），一次提交可以同时包含多张图的 JSON、多张封面图，
+以及「删掉同名的其它扩展名」这类删除项。分支被并发推过时它会自动重试（force=false）。
 
 所以这里每个文件，`git log` 都能看到「谁提的、谁审的、改了什么、依据什么」。
 

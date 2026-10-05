@@ -235,3 +235,145 @@ export async function deleteRepoFile(env: Env, path: string, message: string): P
   }
   return true;
 }
+
+/* ===== 一次提交多个文件（攒批写回）=====
+ *
+ * 为什么需要它：contents API 一次只能动一个文件、一次提交一个文件 ——
+ * 审核通过 20 条投稿就是 20 次提交、20 次 Cloudflare 重建（免费版每月 3000 构建分钟）。
+ * 攒批之后：一次 flush = **一个 commit**（不管涉及多少张图、多少个文件），
+ * 于是无论攒了多少条，都只触发一次重建。
+ *
+ * 用 Git Data API 的五步：读 ref → 读 commit 的 tree → 建 tree（带 base_tree）
+ * → 建 commit → 更新 ref。tree 里可以直接内联文本内容（不必先建 blob），
+ * 二进制（封面图）先建 blob 再引用 sha；删除则把 sha 设成 null。
+ *
+ * 并发保护：更新 ref 时 force=false，main 被别人推过就报 422 → 这里重试整轮
+ * （重新读 ref、重建 tree/commit），最多 3 次。重试是安全的，因为我们每次都是从
+ * 最新的 head 重新组装整棵树。
+ */
+
+export interface CommitFile {
+  path: string;
+  /** 文本内容（UTF-8）；与 base64 二选一 */
+  text?: string;
+  /** 二进制内容（base64）；与 text 二选一 */
+  base64?: string;
+  /** true = 删除这个文件 */
+  remove?: boolean;
+}
+
+async function ghJson<T>(env: Env, path: string, init: RequestInit, what: string): Promise<T> {
+  const res = await gh(env, path, init);
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new GitError(`${what}失败（HTTP ${res.status}）${detail ? '：' + detail.slice(0, 200) : ''}`, res.status === 422 ? 409 : 502);
+  }
+  return (await res.json()) as T;
+}
+
+export async function commitFiles(
+  env: Env,
+  files: CommitFile[],
+  message: string
+): Promise<{ sha: string; files: number }> {
+  if (!files.length) return { sha: '', files: 0 };
+  const br = branch(env);
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      /* 1) 当前 head */
+      const ref = await ghJson<{ object?: { sha?: string } }>(
+        env,
+        `/repos/${repo(env)}/git/ref/heads/${encodeURIComponent(br)}`,
+        {},
+        '读取分支'
+      );
+      const head = ref.object?.sha;
+      if (!head) throw new GitError('读不到分支的最新提交', 502);
+
+      /* 2) head 的 tree */
+      const commit = await ghJson<{ tree?: { sha?: string } }>(
+        env,
+        `/repos/${repo(env)}/git/commits/${head}`,
+        {},
+        '读取提交'
+      );
+      const baseTree = commit.tree?.sha;
+
+      /* 3) 组装 tree 条目：二进制先建 blob */
+      const tree: Array<Record<string, unknown>> = [];
+      for (const f of files) {
+        if (f.remove) {
+          tree.push({ path: f.path, mode: '100644', type: 'blob', sha: null });
+          continue;
+        }
+        if (f.base64 !== undefined) {
+          const blob = await ghJson<{ sha?: string }>(
+            env,
+            `/repos/${repo(env)}/git/blobs`,
+            {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ content: f.base64, encoding: 'base64' }),
+            },
+            '创建二进制对象'
+          );
+          if (!blob.sha) throw new GitError('创建二进制对象失败（没有返回 sha）', 502);
+          tree.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
+          continue;
+        }
+        tree.push({ path: f.path, mode: '100644', type: 'blob', content: f.text ?? '' });
+      }
+
+      const newTree = await ghJson<{ sha?: string }>(
+        env,
+        `/repos/${repo(env)}/git/trees`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ...(baseTree ? { base_tree: baseTree } : {}), tree }),
+        },
+        '创建目录树'
+      );
+      if (!newTree.sha) throw new GitError('创建目录树失败（没有返回 sha）', 502);
+
+      /* 4) 新提交 */
+      const newCommit = await ghJson<{ sha?: string }>(
+        env,
+        `/repos/${repo(env)}/git/commits`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ message, tree: newTree.sha, parents: [head] }),
+        },
+        '创建提交'
+      );
+      if (!newCommit.sha) throw new GitError('创建提交失败（没有返回 sha）', 502);
+
+      /* 5) 移动 ref（force=false：main 动过就报错，我们重试） */
+      const res = await gh(env, `/repos/${repo(env)}/git/refs/heads/${encodeURIComponent(br)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ sha: newCommit.sha, force: false }),
+      });
+      if (res.status === 409 || res.status === 422) {
+        lastError = new GitError('分支刚刚被别人推过，正在重试', 409);
+        continue;
+      }
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        throw new GitError(`更新分支失败（HTTP ${res.status}）${detail ? '：' + detail.slice(0, 200) : ''}`, 502);
+      }
+      return { sha: newCommit.sha, files: files.length };
+    } catch (err) {
+      lastError = err;
+      const status = (err as GitError)?.status;
+      /* 只有「分支动了」值得重试，其它错误直接上抛 */
+      if (status !== 409) throw err;
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new GitError('分支连续被推过三次，请稍后再试', 409);
+}
