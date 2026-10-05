@@ -2,7 +2,7 @@
  "slug": "ze_boatescape101_p",
  "title": "坐船图101",
  "summary": "**系列出处**：boatescape（中文服统称「坐船图」）是僵尸逃跑最早的题材之一。GameBanana 上 2007 年 4 月 7 日的 zombie_boatescape2（AuroraF）写的就是这套玩法：CT 坐船穿过一大片水域到死路，用无线电呼叫直升机，撑到直升机起飞后全图爆炸。ze_boatescape101 则是 thegregster101 在 2011 年 4 月发布的重制版，作者在说明里写明它是「AuroraF 的 boatescape6 的重制」，同年 5 月的 v2_1 更新把跳跃块改成踩上去会碎，防止有人卡在上面。地图内置的署名就是 MAP BY thegregster101，CS2 移植版也保留了这句。\n\n**玩法与关卡结构**：单关，出生后先跑一段，接着是跳跃段、上船、电车轨道（tram）、笼子与直升机坪。内置播报把流程写得很清楚：USE RADIO TO CALL FOR HELP（用无线电呼叫救援）、BOAT LEAVING 15 SECONDS、TRAM LEAVES 10 SECONDS、RESCUE BOAT & HELI INBOUND 60 SEC，收尾是 HELI LEAVING 与 NUKE IN 10 SECONDS。原版自述的特性还包括 HDR、3D 天空盒、电车轨道、64 人、cubemap 优化和一整套 AFK 传送，挂机的人会被直接传走，省掉满图找人的环节，同时让难度上升。\n\n**机关与实体**：实体命名基本保留了原版结构：boat01、boat02、boat03（各带 propeller）、tram01、copter01（含 copterblade01 与 copterblade02）、cage01、breakwall01、plank、ladderblocker、camperrocks、afktele1 与 afktele2、nukehurt、nukesound 等。CS2 版共 260 个实体，其中 59 个 path_track（船与电车的行进路径）、34 个 func_breakable、32 加 32 个出生点，正好对应原版的 64 人配置。CS2 移植由工坊账号 Source 2 Zombie Escape 完成，工坊自述需要 Source2ZE 的插件才能在服务器上正常运行。\n\n**中文名与社区**：中文服统一叫「坐船图」，「101」是系列里的基础版，社区视频把它归进「入门」系列；CS2 时期同系列还有 777、888（弹幕版）、999（跳刀版）与 Ultimate，社区会把 101 标成「基础版」、Ultimate 标成「终极版」。2019 年就有玩家在僵尸乐园服务器录过 ze_boatescape101_p 的全图流程，2025 年仍有 CS2 的测试录像，属于一直有人在玩的老图。",
- "difficulty": "简单",
+ "difficulty": "入门",
  "author": "thegregster101（地图内置署名；重制自 AuroraF 的 boatescape6）",
  "players": "最多 64 人（原版自述 64 人，CS2 版出生点 32 加 32）",
  "tags": [

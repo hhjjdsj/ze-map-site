@@ -1,5 +1,6 @@
 {
   "slug": "ze_dreamin",
+  "difficulty": "困难",
   "title": "梦之韵",
   "summary": "《梦之韵》（ze_dreamin）原作者是韩国作者 Reflelia，2016 年 12 月在 GameBanana 发布 CSGO 版本，作者自述这张图来自 ze_mountain_escape_snow 的 extreme mode，改动包括 4 关、4 件人类神器、4 件僵尸道具和 4 个 BOSS。CS2 工坊版（2024 年 12 月上架，体积约 336MB，2025 年 11 月仍在更新）由 @Seth.（自称 ZE Mapper）移植，Lolop、月见团子协助，工坊说明提醒单机跑图要启用 CS2FIX，神器刷新与 BOSS 技能才正常。中文社区习惯叫《梦之韵》，也简称「梦想」，RTV 关常被叫作梦想关。\n\n流程 4 关，节奏靠守点加跳刀推进，第三关分阶段；B 站既有第三关整关录像，也有专门的「梦想（梦之韵）rtv 关小攻略」。GFL 的 BOSS 血条配置里能读到 Crystal、Final Crystal、Puny Light、Giant Light、Final Light、Light 六条，其中 Final Crystal 走 blade_hp 计数、RTV 关的 Light 走 rtv_linelaser_count（线激光），其余几条分别对应可破坏物与关卡计数。神器 4 件是 Freezer、Heal、Wind、Snow（均 60 秒冷却），僵尸道具 4 件是 Zombie Gravity、Zombie Nuke、Zombie Ice 与 Zombie Heal（80 秒冷却，治疗限 2 次）。配乐清一色是音游／BMS 曲目，名单里有 a_hisa、XI、かねこちはる、Lime、Phantasma、Jun Kuroda，含 a_hisa 的 Dreamin' 与 dreamin' of u、XI 的 ANiMA 与 Glorious Crown；B 站有人专门做了 ze_dreamin_v3_3 的地图全音乐原声集。\n\n这是张老图，中文服从 CSGO 一路打到 CS2：2020 年僵尸乐园留有 ze_dreamin_v2_6 第三关的指挥视角录像，2021 年 EXG 有 v3_1（当时就有人反馈第三关刀速与护甲削减问题），2022 年 UB 有 v3_3 的「梦想小型 team win」。工坊评论的争议集中在第三关二阶段的「列车刀」——有玩家抱怨刀速过快、第一刀和音乐节奏对不上、半赌刀很难受，作者回复称刀速和 CSGO 一样没动过、两阶段刀速相同，是 CSGO 本身节奏就对不上；其它报告还有第二关传送后第一个守点左右两侧空气路能站人、第一关传送损坏、第一关出现僵尸和人类一起打 BOSS。好评也很直接：「I LOVE DREAMIN!!!」、sugoi。",
   "author": "Reflelia（原作）；@Seth.（CS2 移植）",

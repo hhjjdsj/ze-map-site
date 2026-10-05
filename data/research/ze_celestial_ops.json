@@ -1,8 +1,8 @@
 {
   "slug": "ze_celestial_ops",
   "title": "破碎末世",
-  "summary": "`ze_celestial_ops` 是日本作者 Hmn 自己上传的 CS2 原创图（2024 年 1 月 31 日建立，最后一次更新 2026 年 9 月 23 日，订阅 2785、文件约 84 MB），不是移植图。工坊说明写明它在剧情上是 `ze_fragment_ops` 的前传（前日譚），Hmn 名下另有同一「ops」系列的 `ze_fragment_ops_rewind`，此外还有 ze_watagi_sanatorium、ze_watagi_tunnel_rewind、ze_cry_thunder、ze_surf_okitsu_shonyudo 等图，全部沿用同一套日文＋英文对照的说明格式。\n\n设定在冷战末期：CIA 下属组织「CIA テスタメント（CIA Testament）」的女博士阿尔比恩（Dr. Albion）开始执行一场「疗法作战」。作者自己给这张图的定位是回归僵尸逃跑的原点——没有特殊机关、结构简单、推荐新手；同时也承认有经验的玩家可能会觉得单调、不过瘾。\n\n玩法上只有一关，实体规模很小：335 个实体，最突出的是 60 个 `point_worldtext`（地图里的文字提示与标牌），另有机关一类 33 个、传送点 15 个、出生点 64 个，没有 BOSS 配置。中文玩家把它归类成「小长征」（有一定长度的直线推进图），B 站实录给了它「ops天堂」的称呼。GFL 的 musicname 配置里这张图有两首，其中一首是 SaGa Emerald Beyond OST 的《Incomprehensible Oddity》。\n\n社区意见集中在画面上：工坊评论区有玩家说 bloom／饱和度偏重、建议调低，作者回复会在下个版本尝试修正；B 站 2026 年的指挥视角实录也吐槽滤镜太怪，而 2024 年的另一份实录给出的评价是「还算不错的小长征地图」。难度按作者定位属新手向，UB 社区 2022 年的难度表里没有这张图（该表早于本图发布）。",
-  "difficulty": "简单",
+  "summary": "`ze_celestial_ops` 是日本作者 Hmn 自己上传的 CS2 原创图（2024 年 1 月 31 日建立，最后一次更新 2026 年 9 月 23 日，订阅 2785、文件约 84 MB），不是移植图。工坊说明写明它在剧情上是 `ze_fragment_ops` 的前传（前日譚），Hmn 名下另有同一「ops」系列的 `ze_fragment_ops_rewind`，此外还有 ze_watagi_sanatorium、ze_watagi_tunnel_rewind、ze_cry_thunder、ze_surf_okitsu_shonyudo 等图，全部沿用同一套日文＋英文对照的说明格式。\n\n设定在冷战末期：CIA 下属组织「CIA テスタメント（CIA Testament）」的女博士阿尔比恩（Dr. Albion）开始执行一场「疗法作战」。作者自己给这张图的定位是回归僵尸逃跑的原点——没有特殊机关、结构简单、推荐新手；同时也承认有经验的玩家可能会觉得单调、不过瘾。\n\n玩法上只有一关，实体规模很小：335 个实体，最突出的是 60 个 `point_worldtext`（地图里的文字提示与标牌），另有机关一类 33 个、传送点 15 个、出生点 64 个，没有 BOSS 配置。中文玩家把它归类成「小长征」（有一定长度的直线推进图），B 站实录给了它「ops天堂」的称呼。GFL 的 musicname 配置里这张图有两首，其中一首是 SaGa Emerald Beyond OST 的《Incomprehensible Oddity》。\n\n社区意见集中在画面上：工坊评论区有玩家说 bloom／饱和度偏重、建议调低，作者回复会在下个版本尝试修正；B 站 2026 年的指挥视角实录也吐槽滤镜太怪，而 2024 年的另一份实录给出的评价是「还算不错的小长征地图」。难度上作者自己定位在新手向，本站按社区常见跑法记为普通；UB 社区 2022 年的难度表里没有这张图（该表早于本图发布）。",
+  "difficulty": "普通",
   "author": "Hmn",
   "tags": [
     "冷战",
