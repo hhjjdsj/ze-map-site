@@ -145,11 +145,25 @@ window.GL3D = (function(){
 
   function init(cv){
     try{
-      const opt = {alpha:true, antialias:true, premultipliedAlpha:false, depth:true,
-                   preserveDrawingBuffer:true};
-      gl = cv.getContext('webgl2', opt);
-      if(gl) GL2 = true; else gl = cv.getContext('webgl', opt) || cv.getContext('experimental-webgl', opt);
+      /* 上下文属性逐级降级再试。手机上（尤其 iOS Safari 与各家内置浏览器）带
+         antialias + preserveDrawingBuffer 的请求是有可能直接被拒的，而一旦被拒
+         页面就只剩平面视图 —— 用户只看到「3D 没了」，不知道原因。 */
+      const OPTS = [
+        {alpha:true, antialias:true, premultipliedAlpha:false, depth:true,
+         preserveDrawingBuffer:true},
+        {alpha:true, antialias:false, premultipliedAlpha:false, depth:true,
+         preserveDrawingBuffer:true},
+        {alpha:true, depth:true, preserveDrawingBuffer:true},
+        {alpha:false, depth:true},
+      ];
+      for(const opt of OPTS){
+        gl = cv.getContext('webgl2', opt);
+        GL2 = !!gl;
+        if(!gl) gl = cv.getContext('webgl', opt) || cv.getContext('experimental-webgl', opt);
+        if(gl) break;
+      }
       if(!gl) return false;
+      if(gl.isContextLost && gl.isContextLost()){ window.__glerr = '图形上下文已被系统回收'; return false; }
       const a = mk(VS, FS); prog = a.p; Object.assign(U, a.u);
       const b = mk(PVS, PFS); pprog = b.p; Object.assign(UP, b.u);
       const c = mk(MVS, MFS); mprog = c.p; Object.assign(UM, c.u);
@@ -1366,16 +1380,72 @@ let GLok = false, GLerr = '';
 function init3D(){
   GLok = GL3D.init(cv3);
   if(!GLok){
-    GLerr = window.__glerr || '浏览器不支持 WebGL';
+    GLerr = window.__glerr || '浏览器没有提供 WebGL';
     const e = $('glerr');
     e.style.display = 'flex';
     e.innerHTML = '<div>⚠️ 3D 视图不可用：' + esc(GLerr) + '</div>' +
       '<div style="color:var(--ink3)">已自动切换到「平面」视图。请用较新的 Chrome / Edge 打开。</div>';
     setMode('2d');
+    mark3DUnavailable(GLerr);
     return;
   }
   size3D();
 }
+
+/** 是不是 App 内置浏览器（微信 / QQ / 钉钉 / 微博 / 支付宝）：这些 WebView 常常不提供 WebGL */
+function inAppBrowser(){
+  const ua = navigator.userAgent || '';
+  if(/MicroMessenger/i.test(ua)) return '微信';
+  if(/\bQQ\/|QQBrowser/i.test(ua)) return 'QQ';
+  if(/DingTalk/i.test(ua)) return '钉钉';
+  if(/Weibo/i.test(ua)) return '微博';
+  if(/Alipay/i.test(ua)) return '支付宝';
+  return '';
+}
+
+/**
+ * 3D 用不了时**让用户看得见原因**。
+ * 以前这段话只写进 .stage3d 里的提示层，而那时已经切到平面视图、那层是 display:none ——
+ * 结果就是「静默降级」：手机上打开只看到平面视图，完全不知道 3D 去哪了（2026-10-05 反馈）。
+ * 现在改成两件事：右下角 toast 报原因，同时把「3D 视图」按钮打上 .off 标记（点它可重试）。
+ * 内置浏览器（微信/QQ）单独给一句能照做的提示 —— 这类 WebView 是最常见的「没有 WebGL」来源。
+ */
+function mark3DUnavailable(reason){
+  const app = inAppBrowser();
+  const hint = app ? `${app}内置浏览器不提供 3D —— 点右上角「…」选「在浏览器打开」` : reason;
+  const btn = document.querySelector('#mode button[data-m="3d"]');
+  if(btn){
+    btn.classList.add('off');
+    btn.title = '3D 视图不可用：' + hint + '（点一下可重试）';
+  }
+  flashMsg('3D 视图不可用：' + hint + '。已切到平面视图，点「3D 视图」可重试', 9000);
+}
+
+/** 清掉「3D 不可用」标记（重试成功后） */
+function clear3DUnavailable(){
+  const btn = document.querySelector('#mode button[data-m="3d"]');
+  if(btn){ btn.classList.remove('off'); btn.title = ''; }
+  const e = $('glerr');
+  if(e) e.style.display = 'none';
+  window.__glerr = '';
+}
+
+/* 手机切后台回来、显存吃紧时系统会回收 WebGL 上下文：画布变成一片黑、什么提示都没有。
+   这里接住它，并在浏览器把上下文还回来时重建资源（program / buffer 都失效了，必须重新 init）。 */
+cv3.addEventListener('webglcontextlost', e => {
+  e.preventDefault();                 // 不 preventDefault 就不会有 restored 事件
+  GLok = false;
+  setMode('2d');                      // 先把可用视图给用户，别留一块黑画布
+  mark3DUnavailable('图形上下文被系统回收（切后台常见）');
+});
+cv3.addEventListener('webglcontextrestored', () => {
+  if(GL3D.init(cv3)){
+    GLok = true;
+    clear3DUnavailable();
+    build3D();
+    setMode('3d');
+  }
+});
 function size3D(){
   const r = cv3.parentElement.getBoundingClientRect();
   const d = Math.min(window.devicePixelRatio || 1, 2);
@@ -1386,7 +1456,7 @@ function size3D(){
 
 /* 轻提示（行走模式缺地形之类的提醒） */
 let toastT = 0;
-function flashMsg(msg){
+function flashMsg(msg, ms = 2800){
   let el = $('toast');
   if(!el){
     el = document.createElement('div');
@@ -1397,7 +1467,7 @@ function flashMsg(msg){
   el.textContent = msg;
   el.classList.add('on');
   clearTimeout(toastT);
-  toastT = setTimeout(() => el.classList.remove('on'), 2800);
+  toastT = setTimeout(() => el.classList.remove('on'), ms);
 }
 
 /* --- 构建当前图的 3D 场景 --- */
@@ -1828,6 +1898,18 @@ function projPt(vp, x, y, z){
 }
 
 function setMode(m){
+  /* 3D 之前初始化失败过：用户点「3D 视图」时再试一次。
+     有的浏览器要等一次用户手势，有的只是上下文被回收后恢复了 —— 试一次很便宜，
+     失败才提示原因（以前是点了完全没反应）。 */
+  if(m === '3d' && !GLok){
+    const ctx = cv3.getContext('webgl2') || cv3.getContext('webgl');
+    if(ctx && ctx.isContextLost && ctx.isContextLost()){
+      flashMsg('图形上下文还没恢复，稍等再点一次或刷新页面', 5000);
+      return;
+    }
+    if(GL3D.init(cv3)){ GLok = true; clear3DUnavailable(); build3D(); }
+    else { mark3DUnavailable(window.__glerr || '浏览器没有提供 WebGL'); return; }
+  }
   S.mode = m;
   [].forEach.call($('mode').children, b => b.classList.toggle('on', b.dataset.m === m));
   const is3 = m === '3d' && GLok;
