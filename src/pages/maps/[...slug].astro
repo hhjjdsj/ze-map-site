@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content';
 import { getMaps } from '../../lib/maps';
+import { galleryFor } from '../../lib/gallery';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import MapCard from '../../components/MapCard.astro';
 import DifficultyVote from '../../components/DifficultyVote.astro';
@@ -66,6 +67,9 @@ const bodyHasVideo = /^##[^\n]*视频/m.test(entry.body ?? '');
 /** 顶部视频区默认露出几个；其余折进 <details>（视频多的图不把正文挤下去） */
 const VIDEOS_SHOWN = 2;
 const communityHistoryUrl = `https://github.com/hhjjdsj/ze-map-site/commits/main/data/community/${entry.id}.json`;
+
+/* 图片集（data/gallery/<slug>.json → Cloudflare R2 上的图）。没有就整块不渲染。 */
+const gallery = galleryFor(entry.id);
 
 /*
  * 社区补过的「资料来源」由 mergeEntry 注入 entry.data.communitySources。
@@ -178,6 +182,34 @@ const related = all
       )}
 
       <Content />
+
+      {/*
+        图片集：工坊预览图（作者上传）+ 本站渲染的 3D 机位图。
+        图片在 Cloudflare R2（见 src/lib/gallery.ts 的说明），页面只读清单。
+        点开是大图：用原生 <dialog> 做灯箱，不引任何依赖。
+      */}
+      {gallery.length > 0 && (
+        <section class="gallery-block">
+          <h2>图片集{gallery.length > 1 ? `（${gallery.length}）` : ''}</h2>
+          <p class="gallery-hint">
+            工坊预览图由地图作者上传；其余是本站用**真实碰撞地形**渲染的视角图，点开可看大图。
+          </p>
+          <div class="gallery-grid" id="gallery-grid">
+            {gallery.map((img: { src: string; kind: string; caption: string }) => (
+              <button
+                class="gallery-item"
+                type="button"
+                data-src={img.src}
+                data-caption={img.caption}
+                title={img.caption}
+              >
+                <img src={img.src} alt={`${title} · ${img.caption}`} loading="lazy" decoding="async" />
+                <span class="gallery-cap">{img.caption}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/*
         社区内容是**按投稿时选的字段分块显示**的：
@@ -317,4 +349,53 @@ const related = all
       </div>
     </aside>
   </div>
+
+  {gallery.length > 0 && (
+    /*
+      灯箱：原生 <dialog>（2026 年的浏览器都支持 modal），不引任何依赖。
+      做成「点缩略图 → 看大图 → Esc / 点背景 / 左右键切换」，
+      JS 只有下面这一小段，且整页只跑一次。
+    */
+    <dialog class="gallery-lightbox" id="gallery-lightbox">
+      <img id="gl-img" alt="" />
+      <div class="gl-bar">
+        <span id="gl-cap"></span>
+        <span class="gl-nav">
+          <button type="button" id="gl-prev" aria-label="上一张">‹</button>
+          <span id="gl-idx"></span>
+          <button type="button" id="gl-next" aria-label="下一张">›</button>
+          <button type="button" id="gl-close" aria-label="关闭">✕</button>
+        </span>
+      </div>
+    </dialog>
+    <script>
+      const grid = document.getElementById('gallery-grid');
+      const box = document.getElementById('gallery-lightbox') as HTMLDialogElement | null;
+      if (grid && box) {
+        const items = [...grid.querySelectorAll<HTMLButtonElement>('.gallery-item')];
+        const img = document.getElementById('gl-img') as HTMLImageElement;
+        const cap = document.getElementById('gl-cap') as HTMLElement;
+        const idx = document.getElementById('gl-idx') as HTMLElement;
+        let at = 0;
+        const show = (i: number) => {
+          at = (i + items.length) % items.length;
+          const it = items[at];
+          img.src = it.dataset.src ?? '';
+          img.alt = it.dataset.caption ?? '';
+          cap.textContent = it.dataset.caption ?? '';
+          idx.textContent = `${at + 1} / ${items.length}`;
+        };
+        items.forEach((it, i) => it.addEventListener('click', () => { show(i); box.showModal(); }));
+        document.getElementById('gl-prev')?.addEventListener('click', () => show(at - 1));
+        document.getElementById('gl-next')?.addEventListener('click', () => show(at + 1));
+        document.getElementById('gl-close')?.addEventListener('click', () => box.close());
+        /* 点图片以外的空白也关掉（点图片本身不关，方便看细节） */
+        box.addEventListener('click', (e) => { if (e.target === box) box.close(); });
+        box.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowLeft') show(at - 1);
+          else if (e.key === 'ArrowRight') show(at + 1);
+        });
+      }
+    </script>
+  )}
 </BaseLayout>

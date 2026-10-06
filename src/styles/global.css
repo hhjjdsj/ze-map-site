@@ -1695,6 +1695,120 @@ img { max-width: 100%; display: block; }
 
 .video-more > summary:hover { border-color: var(--accent-2); }
 
+/* ===== 图片集（2026-10-06）=====
+   图片放 Cloudflare R2（terr.ze-map.cn/gallery/...），页面只读 data/gallery 清单。
+   第一张是工坊预览图（作者上传），其余是本站用真实地形渲染的机位图。
+   网格自适应列宽，手机上一列、平板两列、桌面三列。 */
+.gallery-block { margin: 26px 0 8px; }
+
+.gallery-hint {
+  font-size: 13px;
+  color: var(--text-3);
+  margin: 4px 0 12px;
+  line-height: 1.6;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.gallery-item {
+  position: relative;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--panel-2);
+  cursor: zoom-in;
+  aspect-ratio: 16 / 9;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-item:hover { border-color: var(--accent-2); transform: translateY(-1px); }
+
+.gallery-cap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 5px 8px;
+  font-size: 11.5px;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
+  text-align: left;
+}
+
+/* 灯箱：原生 <dialog>，不引依赖 */
+.gallery-lightbox {
+  border: 0;
+  padding: 12px;
+  background: transparent;
+  max-width: 96vw;
+  max-height: 96vh;
+  /* 明确居中：别只依赖 UA 样式（不同浏览器表现不一致，实测有不居中的） */
+  margin: auto;
+  overflow: visible;
+}
+
+.gallery-lightbox[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.gallery-lightbox::backdrop { background: rgba(4, 5, 10, 0.86); }
+
+.gallery-lightbox img {
+  display: block;
+  max-width: min(92vw, 1600px);
+  max-height: 78vh;
+  border-radius: 10px;
+  background: #04050a;
+}
+
+.gl-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: min(92vw, 1600px);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.gl-nav { display: inline-flex; align-items: center; gap: 6px; }
+
+.gl-nav button {
+  min-width: 34px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gl-nav button:hover { border-color: var(--accent-2); }
+
+#gl-idx { font-variant-numeric: tabular-nums; color: var(--text-3); }
+
 /* ===== 社区补充（P2）=====
    内容来自 data/community/<slug>.json（审核通过后写回仓库），
    与自动生成的条目正文分开显示，避免读者分不清哪句是机器统计、哪句是人写的。 */
