@@ -1248,17 +1248,21 @@ function renderLayers(){
 }
 
 /**
- * 环境点在三维视图里**默认不画**（2026-10-05 反馈：「那些白点不要，为什么要出现」）。
+ * 三维视图里**默认不画点精灵**（2026-10-05 反馈：块体一关，画面里还剩一堆白点，"不需要"）。
  *
- * 它们是灯光、粒子、音效这类不参与玩法的实体，数量动辄几百上千；
- * 二维里它们组成「地形轮廓」密度底图，有意义；三维里叠在真实地形上只是密密麻麻的白点噪点。
- * 在图层面板点开「环境点」就会画（env3d = true），点了就按用户的意愿来。
+ * 这些层（环境点 / 逻辑节点 / 出生点 / 道具 / 模型 / 杂项）没有体积，在三维里是用
+ * 点精灵画的：叠在真实地形上就是密密麻麻的噪点，关掉块体后更显得莫名其妙。
+ * 二维视图里它们是主力（点位图），照旧全画。
+ *
+ * 想看某几层：在图层面板点那一行就画（按层记住）。双击独显也会顺带打开该层。
  */
-let env3d = false;
+const SPRITE_LAYERS = new Set(['env', 'logic', 'misc', 'item', 'spawn', 'prop']);
+const sprites3d = new Set();          // 用户在三维里明确打开的点精灵层
+
 function layerDrawn(id){
   if(S.off.has(id)) return false;
   if(S.solo && S.solo !== id) return false;
-  if(S.mode === '3d' && id === 'env' && !env3d) return false;
+  if(S.mode === '3d' && SPRITE_LAYERS.has(id) && !sprites3d.has(id)) return false;
   return true;
 }
 function renderStats(){
@@ -2141,6 +2145,9 @@ function setMode(m){
   // 回平面视图就退出自由/行走（那两个只在 3D 下有意义，留着会让滑杆在 2D 里显形）
   if(!is3 && CAM.free){ CAM.walk = false; setFree(false); }
   refreshTerrain();   // 进 3D 时按需拉地形；回 2D 时把网格释放掉
+  /* 图层行要跟着重画：三维里点精灵默认不画（layerDrawn 依赖 S.mode），
+     不重画的话切到二维后那些行还显示成「关」，等于骗人。 */
+  if(cur) renderLayers();
 }
 
 /* ============================ 实体选中 / 详情 / 搜索 ============================ */
@@ -2379,14 +2386,17 @@ $('lbody').addEventListener('click', e=>{
   }
   const li = e.target.closest('.li'); if(!li) return;
   const g = li.dataset.g;
-  if(e.detail>1){ S.solo = (S.solo===g) ? null : g; }
-  else if(g === 'env' && S.mode === '3d'){
-    /* 三维里「环境点」默认不画，但它并不在 S.off 里 —— 如果照旧按 S.off 取反，
-       第一次点击会变成「再关一次」，用户看着没反应（实测踩到）。
-       所以这里按**实际显示状态**取反。 */
-    const wantOn = !layerDrawn('env');
-    if(wantOn){ S.off.delete('env'); env3d = true; }
-    else { S.off.add('env'); env3d = false; if(S.solo === 'env') S.solo = null; }
+  if(e.detail>1){
+    S.solo = (S.solo===g) ? null : g;
+    /* 双击独显某个点精灵层时顺带把它打开，否则「独显」会是一片空 */
+    if(S.mode === '3d' && S.solo && SPRITE_LAYERS.has(g)) sprites3d.add(g);
+  }
+  else if(S.mode === '3d' && SPRITE_LAYERS.has(g)){
+    /* 三维里点精灵默认不画，但它并不在 S.off 里 —— 按**实际显示状态**取反，
+       否则第一次点击会变成「再关一次」，看着像点不动（实测踩到）。 */
+    const wantOn = !layerDrawn(g);
+    if(wantOn){ S.off.delete(g); sprites3d.add(g); }
+    else { S.off.add(g); sprites3d.delete(g); if(S.solo === g) S.solo = null; }
   }
   else {
     if(S.off.has(g)){ S.off.delete(g); if(S.solo===g) S.solo=null; }
@@ -2413,7 +2423,7 @@ const GDESC = {
   spawn: {desc:'玩家出生与复活位置。开局站位、重生点与防守压力分布的参考。',cls:'info_player_start · info_player_terrorist / counterterrorist'},
   item:  {desc:'武器与道具生成点。捡补给、拿装备的位置参考。',cls:'weapon_* · item_* · game_*'},
   prop:  {desc:'装饰与动态模型：雕像、招牌、场景摆设等视觉元素，一般不影响玩法；可打碎的物理道具已归入「可破坏物」。',cls:'prop_dynamic · prop_static · prop_ragdoll'},
-  env:   {desc:'灯光、粒子、音效、天空盒等环境实体，不参与玩法；抽样后其分布用于生成「地形轮廓」密度底图。三维视图里默认不画（数量多、叠在地形上像噪点），需要时点这一行打开。',cls:'light_* · info_particle_system · ambient_generic'},
+  env:   {desc:'灯光、粒子、音效、天空盒等环境实体，不参与玩法；抽样后其分布用于生成「地形轮廓」密度底图。三维里默认不画，点这一行打开。',cls:'light_* · info_particle_system · ambient_generic'},
   misc:  {desc:'未归入上述类别的杂项实体，通常数量极少。',cls:'其余 classname'}
 };
 const ltipEl = $('ltip');
