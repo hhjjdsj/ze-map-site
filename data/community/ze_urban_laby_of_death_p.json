@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_urban_laby_of_death_p",
+  "updatedAt": "2026-10-06T14:15:57.458Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_urban_laby_of_death_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-06T13:11:49.909Z",
+      "submission": 117
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_urban_laby_of_death_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-06T13:11:49.909Z",
+      "submission": 117
+    }
+  ],
+  "items": []
+}
