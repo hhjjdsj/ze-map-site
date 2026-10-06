@@ -184,7 +184,8 @@ const related = all
       <Content />
 
       {/*
-        图片集：工坊预览图（作者上传）+ 本站渲染的 3D 机位图。
+        图片集：工坊预览图（作者上传的）+ 玩家投稿的真实截图。
+        **没有本站渲染的 3D 示意图**（2026-10-06 去掉：示意图混在真实截图里会误导人）。
         图片在 Cloudflare R2（见 src/lib/gallery.ts 的说明），页面只读清单。
         点开是大图：用原生 <dialog> 做灯箱，不引任何依赖。
       */}
@@ -192,19 +193,25 @@ const related = all
         <section class="gallery-block">
           <h2>图片集{gallery.length > 1 ? `（${gallery.length}）` : ''}</h2>
           <p class="gallery-hint">
-            工坊预览图由地图作者上传；其余是本站用**真实碰撞地形**渲染的视角图，点开可看大图。
+            工坊预览图由地图作者上传，其余来自玩家投稿。点开可看大图；
+            手上也有这张图的截图？<a href={`/submit/?map=${entry.id}&field=gallery`}>投稿图片</a>
+            —— 通过后会出现在这里，并署上你的昵称。
           </p>
           <div class="gallery-grid" id="gallery-grid">
-            {gallery.map((img: { src: string; kind: string; caption: string }) => (
+            {gallery.map((img) => (
               <button
                 class="gallery-item"
                 type="button"
                 data-src={img.src}
                 data-caption={img.caption}
+                {...(img.by ? { 'data-by': img.by } : {})}
                 title={img.caption}
               >
                 <img src={img.src} alt={`${title} · ${img.caption}`} loading="lazy" decoding="async" />
-                <span class="gallery-cap">{img.caption}</span>
+                <span class="gallery-cap">
+                  {img.caption}
+                  {img.by ? <em class="gallery-by">{` · ${img.by}`}</em> : null}
+                </span>
               </button>
             ))}
           </div>
@@ -380,9 +387,10 @@ const related = all
         const show = (i: number) => {
           at = (i + items.length) % items.length;
           const it = items[at];
+          const text = (it.dataset.caption ?? '') + (it.dataset.by ? ` · ${it.dataset.by}` : '');
           img.src = it.dataset.src ?? '';
-          img.alt = it.dataset.caption ?? '';
-          cap.textContent = it.dataset.caption ?? '';
+          img.alt = text;
+          cap.textContent = text;
           idx.textContent = `${at + 1} / ${items.length}`;
         };
         items.forEach((it, i) => it.addEventListener('click', () => { show(i); box.showModal(); }));

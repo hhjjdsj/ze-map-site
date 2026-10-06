@@ -127,6 +127,25 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
                   </figure>
                 </div>
               </div>
+            ) : f.kind === 'gallery' ? (
+              /*
+                图片集：可一次选多张，每张单独一条投稿、单独写一句说明。
+                浏览器里压成最长边 1600 的 webp（**不裁剪** —— 截图该保持原样），
+                权威校验与落盘在 worker/gallery.ts。
+              */
+              <div>
+                <input
+                  id={`f-in-${f.key}`}
+                  data-input={f.key}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  multiple
+                />
+                <p class="form-hint" id="gallery-status">
+                  还没选图。可一次选多张：会自动压成 webp 再上传，每张上传后可以单独写说明。
+                </p>
+                <div id="gallery-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:8px"></div>
+              </div>
             ) : f.kind === 'itemlist' ? (
               /*
                 神器 / 道具：逐行更正，不做整表替换（表格在条目正文里，
@@ -159,7 +178,7 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
                 type={f.kind === 'int' ? 'number' : 'text'}
               />
             )}
-            {f.kind === 'itemlist' ? null : (
+            {f.kind === 'itemlist' || f.kind === 'gallery' ? null : (
               <p class="form-hint">
                 条目现在的值：<span data-current={f.key}>—</span>
               </p>
@@ -462,6 +481,13 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
       return;
     }
 
+    /* 图片集：也不能预填（多张图 + 说明），但告诉投稿人这张图现在有几张，
+       免得把已有的图又投一遍 */
+    if (rules[key]?.kind === 'gallery') {
+      updateGalleryStatus();
+      return;
+    }
+
     /* 封面：把当前那张显示成缩略图，换的时候好对比 */
     if (key === 'cover') {
       const wrap = document.getElementById('cover-cur-wrap');
@@ -655,16 +681,165 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     }
   });
 
-  /** 提交成功后统一的展示（文本字段与封面共用） */
-  function showSuccess(id: number, extra: string) {
+  /* ===== 图片集：可多选，逐张压、逐张说明 =====
+     和封面共用 loadBitmap / encodeCanvas，差别是**不裁剪**（截图本来就该保持原样）、
+     最长边压到 1600、上限放宽到 1.5 MB（图片进 R2，不进 git —— 见 worker/gallery.ts）。 */
+  const GALLERY_MAX_BYTES = 1500 * 1024; // 与 worker/gallery.ts 保持一致
+  const GALLERY_MAX_EDGE = 1600;
+  const GALLERY_CAPTION_MAX = 60;
+
+  type GalleryItem = {
+    blob: Blob;
+    ext: string;
+    w: number;
+    h: number;
+    caption: string;
+    /** 预览用的 objectURL —— 移除或提交成功时要 revoke，否则整页生命周期里一直占内存 */
+    url: string;
+  };
+  const galleryItems: GalleryItem[] = [];
+
+  const galleryInput = document.getElementById('f-in-gallery') as HTMLInputElement | null;
+  const galleryStatus = document.getElementById('gallery-status') as HTMLElement | null;
+  const galleryList = document.getElementById('gallery-list') as HTMLElement | null;
+
+  async function buildGalleryImage(
+    file: File
+  ): Promise<{ blob: Blob; ext: string; w: number; h: number }> {
+    const src = await loadBitmap(file);
+    const sw = src.width;
+    const sh = src.height;
+    if (!sw || !sh) throw new Error('读不出这张图的尺寸');
+
+    /* 只缩不放：小图保持原样，大图等比缩到最长边 1600 */
+    const scale = Math.min(1, GALLERY_MAX_EDGE / Math.max(sw, sh));
+    const outW = Math.max(1, Math.round(sw * scale));
+    const outH = Math.max(1, Math.round(sh * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('这个浏览器不支持 canvas，换一个浏览器试试');
+    ctx.drawImage(src as CanvasImageSource, 0, 0, outW, outH);
+    if ('close' in src && typeof (src as ImageBitmap).close === 'function') (src as ImageBitmap).close();
+
+    let blob = await encodeCanvas(canvas, 'image/webp', 0.82);
+    let ext = 'webp';
+    if (!blob || blob.type !== 'image/webp') {
+      blob = await encodeCanvas(canvas, 'image/jpeg', 0.85);
+      ext = 'jpg';
+    }
+    if (!blob) throw new Error('压缩失败，换一张图试试');
+
+    for (const q of [0.7, 0.6, 0.5, 0.4]) {
+      if (blob.size <= GALLERY_MAX_BYTES) break;
+      const again = await encodeCanvas(canvas, blob.type || 'image/jpeg', q);
+      if (again) blob = again;
+    }
+    return { blob, ext, w: outW, h: outH };
+  }
+
+  function updateGalleryStatus(): void {
+    if (!galleryStatus) return;
+    const has = Number(mapInfo?.galleryCount ?? 0);
+    const base = has ? `《${mapInfo?.title}》现在的图片集有 ${has} 张。` : '';
+    if (!galleryItems.length) {
+      galleryStatus.textContent =
+        base + '还没选图。可一次选多张：会自动压成 webp 再上传，每张上传后可以单独写说明。';
+      return;
+    }
+    const total = galleryItems.reduce((n, i) => n + i.blob.size, 0);
+    galleryStatus.textContent =
+      base +
+      `已压好 ${galleryItems.length} 张，共 ${Math.round(total / 1024)} KB` +
+      ` —— 提交后一张一条投稿，都要过审。`;
+  }
+
+  /** 把选中的图标出来：缩略图 + 说明输入框 + 移除按钮 */
+  function renderGalleryList(): void {
+    if (!galleryList) return;
+    galleryList.textContent = '';
+    galleryItems.forEach((item, idx) => {
+      const card = document.createElement('figure');
+      card.style.cssText =
+        'margin:0;border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--panel-2)';
+
+      const img = document.createElement('img');
+      img.src = item.url;
+      img.alt = `第 ${idx + 1} 张`;
+      img.style.cssText = 'width:100%;border-radius:6px;display:block';
+
+      const cap = document.createElement('input');
+      cap.value = item.caption;
+      cap.maxLength = GALLERY_CAPTION_MAX;
+      cap.placeholder = '这张图是什么？（选填）';
+      cap.style.cssText = 'width:100%;margin-top:6px;box-sizing:border-box';
+      cap.addEventListener('input', () => {
+        item.caption = cap.value;
+      });
+
+      const meta = document.createElement('figcaption');
+      meta.className = 'form-hint';
+      meta.style.cssText = 'margin:4px 0 0;font-size:12px';
+      meta.textContent = `${item.w}×${item.h} · ${Math.round(item.blob.size / 1024)} KB`;
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn';
+      del.textContent = '移除这张';
+      del.style.cssText = 'margin-top:6px;font-size:12px;padding:2px 8px';
+      del.addEventListener('click', () => {
+        URL.revokeObjectURL(item.url);
+        galleryItems.splice(idx, 1);
+        renderGalleryList();
+        updateGalleryStatus();
+      });
+
+      card.append(img, cap, meta, del);
+      galleryList.append(card);
+    });
+  }
+
+  galleryInput?.addEventListener('change', async () => {
+    const files = [...(galleryInput.files ?? [])];
+    if (!files.length) return;
+    errEl.hidden = true;
+    if (galleryStatus) galleryStatus.textContent = `正在压缩 ${files.length} 张…`;
+    for (const file of files) {
+      try {
+        const r = await buildGalleryImage(file);
+        galleryItems.push({
+          blob: r.blob,
+          ext: r.ext,
+          w: r.w,
+          h: r.h,
+          caption: '',
+          url: URL.createObjectURL(r.blob),
+        });
+      } catch (err) {
+        showError(`${file.name}：${err instanceof Error && err.message ? err.message : '处理失败'}`);
+      }
+    }
+    /* 清空控件，这样同一张图还能再选一次（比如刚移除了想加回来） */
+    galleryInput.value = '';
+    renderGalleryList();
+    updateGalleryStatus();
+  });
+
+  /** 提交成功后统一的展示（文本 / 封面 / 图片集共用；图片集一次会拿到多个编号） */
+  function showSuccess(idOrIds: number | number[], extra: string) {
+    const ids = (Array.isArray(idOrIds) ? idOrIds : [idOrIds]).filter((n) => Number.isFinite(n) && n > 0);
+    const head = ids.length > 1
+      ? `编号 <strong>${ids.join('、')}</strong>（共 ${ids.length} 条）`
+      : `编号 <strong>${ids[0] ?? '—'}</strong>`;
     form.hidden = true;
     resultEl.hidden = false;
     resultEl.innerHTML =
       `<h2>提交成功 ✅</h2>` +
-      `<p class="form-ok">编号 <strong>${id}</strong> —— 请记下它，可以回来查审核状态。</p>` +
+      `<p class="form-ok">${head} —— 请记下它，可以回来查审核状态。</p>` +
       `<p class="form-hint">${extra}</p>`;
     const qid = document.getElementById('q-id') as HTMLInputElement;
-    if (qid) qid.value = String(id ?? '');
+    if (qid) qid.value = String(ids[ids.length - 1] ?? '');
   }
 
   form.addEventListener('submit', async (e) => {
@@ -697,6 +872,51 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
         showSuccess(Number(data.id), `审核通过后封面会替换成这张。${backLink}`);
       } catch (err) {
         showError(err instanceof Error && err.message ? err.message : '上传失败，请稍后再试');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '提交';
+      }
+      return;
+    }
+
+    /* 图片集走 multipart，**一张一条投稿**：中途失败就停下，把已经成功的那些从列表里挪走，
+       免得再点提交时重复投一遍（重复投不会出错，但会在队列里多出一条一样的）。 */
+    if (field === 'gallery') {
+      if (!galleryItems.length) return showError('先选图片，等它们压好之后再提交。');
+      submitBtn.disabled = true;
+      const ids: number[] = [];
+      try {
+        for (let i = 0; i < galleryItems.length; i++) {
+          const item = galleryItems[i];
+          submitBtn.textContent = `上传中…（${i + 1}/${galleryItems.length}）`;
+          if (galleryStatus) galleryStatus.textContent = `正在上传第 ${i + 1}/${galleryItems.length} 张…`;
+          const fd = new FormData();
+          fd.append('map', slug);
+          fd.append('image', item.blob, `gallery.${item.ext}`);
+          fd.append('caption', item.caption);
+          fd.append('note', note);
+          fd.append('submitter', submitter);
+          fd.append('contact', contact);
+          const res = await fetch('/api/submit-gallery', { method: 'POST', body: fd });
+          const data = (await res.json()) as { ok?: boolean; id?: number; error?: string };
+          if (!data.ok) throw new Error(`第 ${i + 1} 张没成功：${data.error || '上传失败'}`);
+          ids.push(Number(data.id));
+        }
+        showSuccess(
+          ids,
+          `审核通过后这些图会出现在《${mapInfo?.title}》条目底部的「图片集」里。${backLink}`
+        );
+      } catch (err) {
+        for (let i = ids.length - 1; i >= 0; i--) {
+          URL.revokeObjectURL(galleryItems[i].url);
+          galleryItems.splice(i, 1);
+        }
+        renderGalleryList();
+        updateGalleryStatus();
+        showError(
+          (ids.length ? `已成功的 ${ids.length} 张（编号 ${ids.join('、')}）已进审核队列；` : '') +
+            (err instanceof Error && err.message ? err.message : '上传失败，请稍后再试')
+        );
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = '提交';

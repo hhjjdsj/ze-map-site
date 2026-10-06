@@ -437,3 +437,30 @@ P1、P2 都已实现并通过测试。与上面设计稿有**三处偏离**，�
   行按道具名合并，服务器配置的原值保留在表格备注列里，避免社区值把配置值顶掉还看不出来。
 - **地图封面（`cover`）**：第 4 期设想的「图片上传」正式进表单（浏览器先裁 16:9、压 webp，
   服务端在 `worker/covers.ts` 复核格式/体积/比例），通过后写进 `public/images/covers/custom/`。
+
+### 图片集投稿（2026-10-06）
+
+地图条目底部多了「图片集」一块（`data/gallery/<slug>.json`），这次把投稿也接了上去，
+同时**去掉了本站自己渲染的图**：
+
+- **只放真实图片**：工坊预览图（作者自己在创意工坊上传的那张，`kind: workshop`，526 张图已有）
+  + 玩家投稿（`kind: user`）。原先还有 4 张本站用真实碰撞地形渲染的机位图
+  （`01-iso/02-top/03-side/04-close`），同日删掉 —— 示意图和真实截图混在一起会误导人。
+  渲染那条链路（headless Edge + CDP + sharp 的 `render-gallery.mjs`）一并删除。
+- **存储分工和封面不一样**，这是有意的：
+  | | 封面 | 图片集 |
+  |---|---|---|
+  | 待审图片 | KV `UPLOADS` 的 `pending/`（30 天 TTL） | KV 的 `pending-gallery/`（同样 30 天 TTL） |
+  | 通过的图片 | 进仓库 `public/images/covers/custom/` | 进 R2 `gallery/<slug>/u<投稿id>.<ext>` |
+  | 入库的元数据 | `data/community/<slug>.json` 里的 URL | 清单 `data/gallery/<slug>.json` |
+  图片集不进 git 是因为量级不同：封面上限 700 KB（要 base64 进 git blob），
+  图片集约 546 张图 × 若干张，进仓库会重演 terr 那次的体积事故。
+- **文件名 `u<投稿id>.<ext>`**：D1 自增 id 保证唯一，且**同一个 id 每次重试都写同一个对象名** ——
+  写回失败重来时不会在桶里留下孤儿图（清单绝不能指向不存在的图，所以是先落 R2 再改清单）。
+- **一次一张**：`/api/submit-gallery` 是 multipart、一张一条投稿（表单里可一次选多张，
+  浏览器逐张压、逐张传），审核台逐张看、逐张通过/驳回。限流桶、封禁、Turnstile 与文本投稿共用。
+- **写回**：`handleAdminFlush` 里图片集走独立分支 —— 不碰社区文档，只改清单，和社区文档进
+  同一个 commit。每批最多 `GALLERY_PER_FLUSH`（8）张，额度用完了状态不变、下一轮自动接着写。
+- 清单有两个来源，**改脚本时注意别互相冲掉**：`scripts/gallery/upload-gallery.mjs`
+  重写清单时会保留非本地生成的条目（也就是玩家投稿）；`worker/gallery.ts` 的 `withImages()`
+  按 src 去重追加。

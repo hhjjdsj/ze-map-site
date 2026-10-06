@@ -9,6 +9,7 @@
  * 投稿是逐行更正的，投稿人得先看见表里已有的名字才好在上面改（表单里做名称联想）。
  */
 import { getMaps } from '../../lib/maps';
+import { galleryFor } from '../../lib/gallery';
 import { normalizeDoc } from '../../../shared/community-doc.mjs';
 import { cdText, docItemRows, itemKey, mergeItems, usesText } from '../../../shared/items.mjs';
 import type { APIRoute } from 'astro';
@@ -76,6 +77,9 @@ export const GET: APIRoute = async () => {
     if (d.sources?.length) row.sources = d.sources;
     /* 封面：投稿表单要显示「当前封面」缩略图（换封面时好对比） */
     if (d.cover) row.cover = d.cover;
+    /* 图片集已有几张：投稿表单用它说明「现在有几张图」，免得重复投同一张 */
+    const galleryCount = galleryFor(m.id).length;
+    if (galleryCount) row.galleryCount = galleryCount;
 
     /* 神器 / 道具现状：手写表 + 服务器配置打底 + 社区已通过的更正。
        字段用短键 —— 1700 多行，键名能省下十几 KB。

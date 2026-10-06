@@ -1,31 +1,11 @@
 {
   "slug": "ze_2012_p",
-  "count": 5,
+  "count": 1,
   "images": [
     {
       "src": "https://terr.ze-map.cn/gallery/ze_2012_p/05-workshop.webp",
       "kind": "workshop",
       "caption": "工坊预览图（作者上传）"
-    },
-    {
-      "src": "https://terr.ze-map.cn/gallery/ze_2012_p/01-iso.webp",
-      "kind": "render",
-      "caption": "本站渲染 · 斜视"
-    },
-    {
-      "src": "https://terr.ze-map.cn/gallery/ze_2012_p/02-top.webp",
-      "kind": "render",
-      "caption": "本站渲染 · 俯视"
-    },
-    {
-      "src": "https://terr.ze-map.cn/gallery/ze_2012_p/03-side.webp",
-      "kind": "render",
-      "caption": "本站渲染 · 侧视"
-    },
-    {
-      "src": "https://terr.ze-map.cn/gallery/ze_2012_p/04-close.webp",
-      "kind": "render",
-      "caption": "本站渲染 · 近景"
     }
   ]
 }

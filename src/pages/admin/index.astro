@@ -156,12 +156,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 
   /**
-   * 待审封面缩略图。`<img src>` 带不了 Authorization 头，所以用 fetch 取 blob 再 objectURL ——
-   * 这样密钥不会出现在 URL 里（也就不会进任何日志/Referer）。
+   * 待审图片缩略图（封面 / 图片集）。`<img src>` 带不了 Authorization 头，所以用 fetch 取 blob
+   * 再 objectURL —— 这样密钥不会出现在 URL 里（也就不会进任何日志/Referer）。
    */
-  async function loadCoverThumb(id: number, img: HTMLImageElement) {
+  async function loadImageThumb(id: number, img: HTMLImageElement, kind: 'cover' | 'gallery') {
     try {
-      const res = await fetch(`/api/admin/cover/${id}`, {
+      const res = await fetch(`/api/admin/${kind}/${id}`, {
         headers: { authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
@@ -247,7 +247,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         img.style.cssText =
           'max-width:340px;width:100%;border-radius:8px;border:1px solid var(--border);display:block;margin:8px 0';
         box.append(img);
-        void loadCoverThumb(item.id, img);
+        void loadImageThumb(item.id, img, 'cover');
         box.append(el('p', 'queue-note', `${size} · 通过后写成 ${target}`));
       } else {
         box.append(el('p', 'queue-note', `${size} · 目标路径 ${target}`));
@@ -261,6 +261,46 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           )
         );
       }
+    } else if (item.field === 'gallery') {
+      /*
+        图片集：通过后图片进 R2（`gallery/<slug>/u<投稿id>.<ext>`），仓库里只改清单。
+        文件名由投稿 id 决定，所以这里显示的目标路径就是最终路径，不用猜。
+      */
+      const meta = (item.value ?? {}) as Record<string, unknown>;
+      const size = `${meta.width ?? '?'}×${meta.height ?? '?'} · ${Math.round((Number(meta.bytes) || 0) / 1024)} KB`;
+      const name = `u${item.id}.${meta.ext ?? 'webp'}`;
+      const target = `https://terr.ze-map.cn/gallery/${item.map_slug}/${name}`;
+
+      /* 只有还躺在队列里的才去取图：已上线的临时副本按设计已经删掉了 */
+      if (item.status === 'pending' || item.status === 'approved') {
+        const img = el('img') as HTMLImageElement;
+        img.alt = '待审图片集图片';
+        img.style.cssText =
+          'max-width:460px;width:100%;border-radius:8px;border:1px solid var(--border);display:block;margin:8px 0';
+        box.append(img);
+        void loadImageThumb(item.id, img, 'gallery');
+        box.append(el('p', 'queue-note', `${size} · 通过后写成 ${target}`));
+      } else {
+        box.append(el('p', 'queue-note', `${size} · ${target}`));
+        box.append(
+          el(
+            'p',
+            'queue-note',
+            item.status === 'applied'
+              ? '✅ 已进图片集并写回清单（KV 里的临时副本已清理）'
+              : '已驳回（KV 里的临时副本已清理）'
+          )
+        );
+      }
+      box.append(
+        el(
+          'p',
+          'queue-note',
+          item.value && (item.value as Record<string, unknown>).caption
+            ? `图片说明：${String((item.value as Record<string, unknown>).caption)}`
+            : '图片说明：（没写，会显示成「玩家截图」）'
+        )
+      );
     } else if (rules[item.field]?.kind === 'itemlist') {
       /* 神器 / 道具：逐行合并，所以要看「这次提交的行」与「文档里已有的行」 */
       const rows = Array.isArray(item.value) ? (item.value as Array<Record<string, unknown>>) : [];

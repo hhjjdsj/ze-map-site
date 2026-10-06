@@ -10,6 +10,10 @@
  * 上限为什么是 700 KB 而不是 cover:verify 的 800 KB：
  *   二进制要 base64 之后走 GitHub contents API，800 KB → 约 1.07 MB，贴到单文件限制边上；
  *   700 KB → 约 960 KB，留出余量。`npm run cover:set` 的产物约 100 KB，正常投稿远碰不到上限。
+ *
+ * ⚠️ `pendingImageKey / putPendingImage / readPendingImage / dropPendingImage` 是**待审图片的
+ *    通用 KV 存取**，封面（`pending/`）和图片集（`pending-gallery/`，见 worker/gallery.ts）共用。
+ *    关键好处是 KV 的 expirationTtl：没人审的图 30 天后自己过期，不必给 R2 配生命周期规则。
  */
 
 import { detectImageFormat, imageSize } from '../shared/image-size.mjs';
@@ -76,8 +80,15 @@ export function checkCoverBytes(bytes: Uint8Array): CoverCheck {
 }
 
 /** KV 里的临时 key：<uuid>.<ext>，不暴露地图名，避免有人猜别人的待审图 */
+export const PENDING_COVER_PREFIX = 'pending/';
+
+export function pendingImageKey(prefix: string, format: string): string {
+  return `${prefix}${crypto.randomUUID()}.${format}`;
+}
+
+/** 封面用的 key（历史前缀就是 `pending/`，别改：线上队列里还有按这个前缀存的待审图） */
 export function pendingCoverKey(format: string): string {
-  return `pending/${crypto.randomUUID()}.${format}`;
+  return pendingImageKey(PENDING_COVER_PREFIX, format);
 }
 
 /** 待审图片的存放时长：30 天。KV 自带过期，不用再配生命周期规则 */
@@ -87,18 +98,18 @@ const PENDING_TTL_SECONDS = 30 * 24 * 60 * 60;
  * 存进 KV。用 metadata 带上 content-type（KV 值本身没有头部），
  * 并设 expirationTtl —— 传了没人审的图会自己过期，不用额外配清理规则。
  */
-export async function putPendingCover(
+export async function putPendingImage(
   env: Env,
   key: string,
   bytes: Uint8Array,
   format: string
 ): Promise<void> {
   if (!env.UPLOADS) {
-    throw new GitError('封面功能尚未配置（缺少 KV 绑定 UPLOADS，见 wrangler.jsonc）', 503);
+    throw new GitError('投稿图片功能尚未配置（缺少 KV 绑定 UPLOADS，见 wrangler.jsonc）', 503);
   }
   await env.UPLOADS.put(key, bytes, {
     expirationTtl: PENDING_TTL_SECONDS,
-    metadata: { contentType: `image/${format}`, bytes: bytes.length },
+    metadata: { contentType: `image/${format === 'jpg' ? 'jpeg' : format}`, bytes: bytes.length },
   });
 }
 
@@ -113,11 +124,11 @@ export async function putPendingCover(
  * 语义约定：返回 null 只代表「KV 里确实没这个 key」（或已过期）；读法/类型不对一律抛错，
  * 不许和"没有"混为一谈。
  */
-export async function readPendingCover(
+export async function readPendingImage(
   env: Env,
   key: string
 ): Promise<{ bytes: Uint8Array; contentType: string } | null> {
-  if (!env.UPLOADS) throw new GitError('封面功能尚未配置（缺少 KV 绑定 UPLOADS）', 503);
+  if (!env.UPLOADS) throw new GitError('投稿图片功能尚未配置（缺少 KV 绑定 UPLOADS）', 503);
   const { value, metadata } = await env.UPLOADS.getWithMetadata(key, { type: 'arrayBuffer' });
   if (value === null || value === undefined) return null;
   if (!(value instanceof ArrayBuffer)) {
@@ -137,7 +148,7 @@ export async function readPendingCover(
  * 删除待审图片；失败不影响主流程（KV 自带 30 天过期兜底）。
  * ⚠️ KV 是最终一致的：这里的删除在全球边缘最长约 60 秒才完全生效，不影响正常使用。
  */
-export async function dropPendingCover(env: Env, key: string): Promise<void> {
+export async function dropPendingImage(env: Env, key: string): Promise<void> {
   if (!env.UPLOADS || !key) return;
   try {
     await env.UPLOADS.delete(key);

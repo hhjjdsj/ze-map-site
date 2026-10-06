@@ -50,7 +50,16 @@ export function imageSize(bytes) {
         h: 1 + (u8[27] | (u8[28] << 8) | (u8[29] << 16)),
       };
     }
-    if (fmt === 'VP8 ') return { w: dv.getUint16(26) & 0x3fff, h: dv.getUint16(28) & 0x3fff };
+    if (fmt === 'VP8 ') {
+      /*
+       * ⚠️ 必须读**小端**：VP8 的码流是小端，宽高就在帧头里
+       * （帧标签 3 字节 + 起始码 9d 01 2a 三字节 → 宽在高 14 位、高在高 14 位）。
+       * 2026-10-06 之前这里漏了 `true`，按大端读出来是垃圾值：555×312 的图会读成
+       * 11010×14337 —— 于是 `w*h > 40M` 的护栏把**浏览器压出来的所有有损 webp 都判成
+       * 「图片尺寸过大」**（投稿封面走的就是 canvas.toBlob('image/webp')）。
+       */
+      return { w: dv.getUint16(26, true) & 0x3fff, h: dv.getUint16(28, true) & 0x3fff };
+    }
     if (fmt === 'VP8L') {
       const b = dv.getUint32(21, true);
       return { w: (b & 0x3fff) + 1, h: ((b >> 14) & 0x3fff) + 1 };

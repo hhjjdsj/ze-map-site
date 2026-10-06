@@ -45,6 +45,8 @@ export const LIMITS = {
  *   urlList  链接数组
  *   image    图片文件（**不走这里的 text 校验**：由 /api/submit-cover 以 multipart 上传，
  *            校验与落盘在 worker/covers.ts；这里只用于表单控件与审核台标签）
+ *   gallery  图片集图片（**同 image**：由 /api/submit-gallery 一次一张上传，
+ *            校验在 worker/gallery.ts，图片进 R2、通过的清单写进 data/gallery/<slug>.json）
  *   longtext 多行正文（**正文类字段不做条目字段覆盖，而是进「社区补充」区块的笔记** ——
  *            见 shared/community-doc.mjs 的 applySubmission 与 isNoteField）
  *   itemlist 神器 / 道具行（**逐行合并**，不整表替换：见 shared/items.mjs 的 mergeItems；
@@ -98,6 +100,17 @@ export const FIELD_RULES = {
     hint: '选一张横向图（16:9 最好）。会在你的浏览器里自动裁成 16:9、压成 webp 再上传，不用自己处理',
     /* 图片上限在 worker/covers.ts（700 KB，比 cover:verify 的 800 KB 略低：
        二进制要 base64 进 git blob，留出余量。2026-10-05 前走 contents API，现在是 Git Data API） */
+  },
+  gallery: {
+    kind: 'gallery',
+    label: '图片集图片',
+    hint:
+      '真实的游戏内截图 / 作者自己发的图，可一次选多张（一张图最多收 24 张投稿图）。' +
+      '会在你的浏览器里压成 webp 再上传，通过后进条目底部的「图片集」，每张都能写一句说明。' +
+      '**不要传本站渲染的 3D 视角示意图**。',
+    /* 图片上限与落盘在 worker/gallery.ts（单张 1.5 MB、宽至少 480px、每图最多 24 张）；
+       说明上限 60 字；接口是 /api/submit-gallery（multipart，一次一张） */
+    maxCaption: 60,
   },
   story: {
     kind: 'longtext',
@@ -265,6 +278,10 @@ export function validateValue(field, raw) {
          服务端在那里做权威校验（种类、体积、尺寸）。走到这里说明调用方搞错了入口。 */
       return { ok: false, error: '封面请用表单里的图片上传控件（接口是 /api/submit-cover）' };
 
+    case 'gallery':
+      /* 同理：图片集走 multipart 到 /api/submit-gallery，一次一张，落盘在 worker/gallery.ts */
+      return { ok: false, error: '图片集请用表单里的图片上传控件（接口是 /api/submit-gallery）' };
+
     case 'urlList': {
       const list = Array.isArray(raw)
         ? raw
@@ -298,6 +315,7 @@ export function inputKind(field) {
   if (rule.kind === 'longtext') return 'textarea';
   if (rule.kind === 'enum') return 'select';
   if (rule.kind === 'image') return 'file';
+  if (rule.kind === 'gallery') return 'file';
   if (rule.kind === 'itemlist') return 'itemlist';
   return 'text';
 }

@@ -156,6 +156,23 @@ export async function readCommunityDocs(
 }
 
 /**
+ * 读仓库里任意文本文件；**文件不存在返回 null**（不是错误）。
+ *
+ * 给图片集清单（`data/gallery/<slug>.json`）用：那份清单的结构由 worker/gallery.ts 自己维护，
+ * 不套 normalizeDoc 那套社区文档模型。清单只有几百字节，一次 GET 就够。
+ */
+export async function readRepoText(env: Env, path: string): Promise<string | null> {
+  const res = await gh(
+    env,
+    `/repos/${repo(env)}/contents/${path}?ref=${encodeURIComponent(branch(env))}`
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new GitError(`读取仓库文件失败（${path}，HTTP ${res.status}）`, 502);
+  const data = (await res.json()) as { content?: string };
+  return data.content ? fromBase64Utf8(data.content) : '';
+}
+
+/**
  * 写入社区文档并提交。
  * 用 contents API 的 sha 做乐观并发：拿到的 sha 过期时 GitHub 会拒绝，
  * 我们上抛 409 让审核员重试 —— D1 里的投稿还在，不会丢数据。

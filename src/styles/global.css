@@ -1697,7 +1697,8 @@ img { max-width: 100%; display: block; }
 
 /* ===== 图片集（2026-10-06）=====
    图片放 Cloudflare R2（terr.ze-map.cn/gallery/...），页面只读 data/gallery 清单。
-   第一张是工坊预览图（作者上传），其余是本站用真实地形渲染的机位图。
+   **只放真实图片**：第一张是工坊预览图（作者上传），其余是玩家投稿的游戏内截图 ——
+   本站渲染的 3D 示意图同日去掉了（示意图混在真实截图里会误导人）。
    网格自适应列宽，手机上一列、平板两列、桌面三列。 */
 .gallery-block { margin: 26px 0 8px; }
 
@@ -1746,6 +1747,9 @@ img { max-width: 100%; display: block; }
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
   text-align: left;
 }
+
+/* 投稿人署名：压在说明后面，弱一档（玩家投稿才有） */
+.gallery-by { font-style: normal; opacity: 0.75; }
 
 /* 灯箱：原生 <dialog>，不引依赖 */
 .gallery-lightbox {

@@ -35,17 +35,33 @@ export interface KVLike {
   delete(key: string): Promise<void>;
 }
 
-/** 同理，只声明用到的 R2 接口（wrangler.jsonc 的 r2_buckets → TERR） */
+/**
+ * 同理，只声明用到的 R2 接口（wrangler.jsonc 的 r2_buckets → TERR）。
+ * terr.ts 只用 get().body 做同源回退；图片集写回要用 put() 把投稿图落到 `gallery/` 前缀。
+ */
+export interface R2ObjectLike {
+  body: ReadableStream;
+  size: number;
+  httpMetadata?: { contentType?: string; cacheControl?: string };
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
 export interface R2Like {
-  get(key: string): Promise<{ body: ReadableStream; size: number } | null>;
+  get(key: string): Promise<R2ObjectLike | null>;
+  put(
+    key: string,
+    value: ArrayBuffer | Uint8Array | ReadableStream | string,
+    options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }
+  ): Promise<unknown>;
+  delete(key: string | string[]): Promise<void>;
 }
 
 export interface Env {
   DB: D1;
   ASSETS: { fetch(request: Request): Promise<Response> };
-  /** 待审封面的临时存储（wrangler.jsonc 的 kv_namespaces → UPLOADS） */
+  /** 待审图片的临时存储（wrangler.jsonc 的 kv_namespaces → UPLOADS）：封面 pending/、图片集 pending-gallery/ */
   UPLOADS?: KVLike;
-  /** 地形分片所在的 R2 桶（wrangler.jsonc 的 r2_buckets → TERR）：/terr/* 同源回退用 */
+  /** 地形分片与图片集所在的 R2 桶（wrangler.jsonc 的 r2_buckets → TERR） */
   TERR?: R2Like;
   /** IP 哈希用的盐，必须用 `wrangler secret put IP_SALT` 设置 */
   IP_SALT?: string;

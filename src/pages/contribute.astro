@@ -32,6 +32,8 @@ const canFill = (r: (typeof R)[string]) => {
       return `${r.min} ~ ${r.max} 的整数`;
     case 'image':
       return '一张图：浏览器里自动裁成 16:9、压成 webp（上限 700 KB）再上传，不用自己处理';
+    case 'gallery':
+      return '可一次选多张游戏内截图：浏览器里压成 webp（单张上限 1.5 MB）再上传，每张能单独写一句说明';
     case 'itemlist':
       return '一件一行：填道具名 + 冷却秒 + 次数（后两项留空表示不改这一项）。名字选条目页表里的写法就是更正，表里没有的就是新增，不用自己选';
     default:
@@ -46,9 +48,11 @@ const mergeNote = (r: (typeof R)[string]) =>
       ? '整组替换'
       : r.kind === 'image'
         ? '替换当前人工封面（渲染图仍在，删掉人工封面即回退）'
-        : r.kind === 'itemlist'
-          ? '逐行合并：按道具名对上号，服务器配置的原值会保留在表格备注里'
-          : '';
+        : r.kind === 'gallery'
+          ? '追加进条目的「图片集」，署你的昵称；不会顶掉已有的图'
+          : r.kind === 'itemlist'
+            ? '逐行合并：按道具名对上号，服务器配置的原值会保留在表格备注里'
+            : '';
 
 const fieldRows = Object.entries(R).map(([key, r]) => ({
   key,
@@ -95,6 +99,11 @@ const fieldRows = Object.entries(R).map(([key, r]) => ({
           <tr>
             <td>有一大段<b>背景故事</b>想交</td>
             <td><a href="#form">① 网页表单</a>（选「背景故事」）</td>
+            <td><b>不用</b></td>
+          </tr>
+          <tr>
+            <td>有这张图的<b>游戏内截图</b>，想放进条目的「图片集」</td>
+            <td><a href="#form">① 网页表单</a>（选「图片集图片」，可一次选多张）</td>
             <td><b>不用</b></td>
           </tr>
           <tr>

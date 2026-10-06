@@ -21,6 +21,7 @@ import {
   listRepoDir,
   readCommunityDoc,
   readCommunityDocs,
+  readRepoText,
 } from './community';
 import {
   COVER_DIR,
@@ -29,12 +30,30 @@ import {
   coverMetaOf,
   coverRepoPath,
   coverUrl,
-  dropPendingCover,
+  dropPendingImage,
   imageResponse,
   pendingCoverKey,
-  putPendingCover,
-  readPendingCover,
+  pendingImageKey,
+  putPendingImage,
+  readPendingImage,
 } from './covers';
+import {
+  GALLERY_CAPTION_MAX,
+  GALLERY_PENDING_PREFIX,
+  GALLERY_PER_FLUSH,
+  GALLERY_PER_MAP_MAX,
+  checkGalleryBytes,
+  galleryEntryName,
+  galleryEntryUrl,
+  galleryManifestPath,
+  galleryMetaOf,
+  parseManifest,
+  putGalleryImage,
+  serializeManifest,
+  withImages,
+  type GalleryEntry,
+  type GalleryManifest,
+} from './gallery';
 import { allowWrite, fail, isBanned, json, readJsonBody, type Env } from './http';
 import { SLUG_RE } from './votes';
 
@@ -252,7 +271,7 @@ export async function handleSubmitCover(
   /* 先写 KV 再写 D1：反过来的话 D1 里会留下指向不存在图片的记录 */
   const key = pendingCoverKey(check.format);
   try {
-    await putPendingCover(env, key, bytes, check.format);
+    await putPendingImage(env, key, bytes, check.format);
   } catch (err) {
     const e = err as GitError;
     return fail(e?.message || '图片暂存失败', typeof e?.status === 'number' ? e.status : 500);
@@ -283,32 +302,135 @@ export async function handleSubmitCover(
       message: '已收到封面，审核通过后会出现在条目里',
     });
   } catch (err) {
-    await dropPendingCover(env, key); // 回滚：别留下没人认领的图片
+    await dropPendingImage(env, key); // 回滚：别留下没人认领的图片
     throw err;
   }
 }
 
-/** GET /api/admin/cover/<id> —— 审核台取待审图片（走 /api/admin/* 的密钥校验） */
-export async function handleAdminCover(request: Request, env: Env, path: string): Promise<Response> {
+/**
+ * POST /api/submit-gallery —— multipart/form-data
+ *   map / caption / submitter / contact / note / turnstileToken + 文件字段 image
+ *
+ * 与封面接口的差别只有三点：不裁 16:9（截图本来就该保持原样）、上限放到 1.5 MB、
+ * 通过后进的是 R2 的 `gallery/` 前缀而不是仓库里的二进制（见 worker/gallery.ts）。
+ * 限流桶、封禁、人机校验与文本 / 封面投稿完全共用。
+ */
+export async function handleSubmitGallery(
+  request: Request,
+  env: Env,
+  ipHash: string,
+  rawIp: string
+): Promise<Response> {
+  if (request.method !== 'POST') return fail('只支持 POST', 405);
+
+  /* 1.5 MB 的图 base64 之后也没多大，但 body 里还有 multipart 开销，留一倍余量 */
+  const declared = Number(request.headers.get('content-length') ?? 0);
+  if (declared && declared > 4 * 1024 * 1024) return fail('上传内容过大', 413);
+
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch {
+    return fail('上传格式不对（应为 multipart/form-data）');
+  }
+
+  const slug = typeof form.get('map') === 'string' ? String(form.get('map')).trim() : '';
+  if (!SLUG_RE.test(slug)) return fail('地图参数不合法');
+
+  const file = form.get('image');
+  if (!(file instanceof File) && !(file instanceof Blob)) return fail('没有收到图片文件');
+  const bytes = new Uint8Array(await (file as Blob).arrayBuffer());
+
+  const check = checkGalleryBytes(bytes);
+  if (!check.ok || !check.format) return fail(check.error ?? '图片不合法');
+
+  const caption = optString(form.get('caption'), GALLERY_CAPTION_MAX, '图片说明');
+  if (!caption.ok) return fail(caption.error);
+  const submitter = optString(form.get('submitter'), LIMITS.submitter, '昵称');
+  if (!submitter.ok) return fail(submitter.error);
+  const contact = optString(form.get('contact'), LIMITS.contact, '联系方式');
+  if (!contact.ok) return fail(contact.error);
+  const note = optString(form.get('note'), LIMITS.note, '理由');
+  if (!note.ok) return fail(note.error);
+
+  if (await isBanned(env, ipHash)) return fail('该来源已被禁止投稿', 403);
+
+  if (env.TURNSTILE_SECRET && !(await verifyTurnstile(env, form.get('turnstileToken'), rawIp))) {
+    return fail('人机验证没通过，请重试', 400);
+  }
+
+  const quota = await submissionQuota(env, ipHash);
+  if (quota) return quota;
+
+  /* 先写 KV 再写 D1（同封面）：反过来 D1 里会留下指向不存在图片的记录 */
+  const key = pendingImageKey(GALLERY_PENDING_PREFIX, check.format);
+  try {
+    await putPendingImage(env, key, bytes, check.format);
+  } catch (err) {
+    const e = err as GitError;
+    return fail(e?.message || '图片暂存失败', typeof e?.status === 'number' ? e.status : 500);
+  }
+
+  const meta = {
+    key,
+    ext: check.format,
+    bytes: bytes.length,
+    width: check.width ?? 0,
+    height: check.height ?? 0,
+    caption: caption.value,
+  };
+
+  try {
+    const row = await env.DB.prepare(
+      `INSERT INTO submissions (map_slug, field, value, note, submitter, contact, ip_hash, status, created_at)
+       VALUES (?1,'gallery',?2,?3,?4,?5,?6,'pending',?7) RETURNING id`
+    )
+      .bind(slug, JSON.stringify(meta), note.value, submitter.value, contact.value, ipHash, Date.now())
+      .first<{ id: number }>();
+
+    return json({
+      ok: true,
+      id: row?.id ?? null,
+      width: meta.width,
+      height: meta.height,
+      bytes: meta.bytes,
+      message: '已收到图片，审核通过后会出现在条目的「图片集」里',
+    });
+  } catch (err) {
+    await dropPendingImage(env, key); // 回滚：别留下没人认领的图片
+    throw err;
+  }
+}
+
+/**
+ * GET /api/admin/cover/<id> 或 /api/admin/gallery/<id> —— 审核台取待审图片。
+ *
+ * 两条路径共用一个实现：都是「按 id 找到那条投稿 → 从 KV 取它的待审图」，
+ * 差别只在字段名与元数据的解析方式。走 /api/admin/* 的密钥校验。
+ */
+export async function handleAdminImage(request: Request, env: Env, path: string): Promise<Response> {
   if (request.method !== 'GET') return fail('只支持 GET', 405);
 
-  const id = Number(path.slice('/api/admin/cover/'.length));
+  const m = /^\/api\/admin\/(cover|gallery)\/(\d+)$/.exec(path);
+  if (!m) return fail('路径不对', 400);
+  const id = Number(m[2]);
   if (!Number.isInteger(id) || id <= 0) return fail('id 不合法');
 
   const row = await env.DB.prepare(`SELECT field, value FROM submissions WHERE id = ?1`)
     .bind(id)
     .first<{ field: string; value: string }>();
   if (!row) return fail('没有这条投稿', 404);
-  if (row.field !== 'cover') return fail('这条投稿不是封面', 400);
+  if (row.field !== 'cover' && row.field !== 'gallery') return fail('这条投稿不是图片', 400);
 
-  const meta = coverMetaOf(parseStoredValue(row.value));
-  if (!meta) return fail('这条封面投稿缺少图片信息', 500);
+  const value = parseStoredValue(row.value);
+  const key = row.field === 'cover' ? coverMetaOf(value)?.key : galleryMetaOf(value)?.key;
+  if (!key) return fail('这条投稿缺少图片信息', 500);
 
   try {
-    const pending = await readPendingCover(env, meta.key);
+    const pending = await readPendingImage(env, key);
     if (!pending) {
       return fail(
-        `待审图片在 KV 里找不到（key=${meta.key}）。常见原因是投稿时线上还是旧版本或换了存储，也可能已过期 —— 让投稿人重新上传即可`,
+        `待审图片在 KV 里找不到（key=${key}）。常见原因是投稿时线上还是旧版本或换了存储，也可能已过期 —— 让投稿人重新上传即可`,
         410
       );
     }
@@ -442,10 +564,11 @@ export async function handleAdminReview(request: Request, env: Env): Promise<Res
       )
         .bind(Date.now(), reviewer, rejectNote, id)
         .run();
-      /* 封面被驳回：KV 里的待审图没人会再来看了，直接删掉 */
-      if (sub.field === 'cover') {
-        const meta = coverMetaOf(parseStoredValue(sub.value));
-        if (meta) await dropPendingCover(env, meta.key);
+      /* 图片被驳回：KV 里的待审图没人会再来看了，直接删掉（R2 里没东西：通过时才落盘） */
+      if (sub.field === 'cover' || sub.field === 'gallery') {
+        const rejected = parseStoredValue(sub.value);
+        const meta = sub.field === 'cover' ? coverMetaOf(rejected) : galleryMetaOf(rejected);
+        if (meta) await dropPendingImage(env, meta.key);
       }
       results.push({ id, ok: true, status: 'rejected' });
       continue;
@@ -517,22 +640,39 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
    * 而每张图至少一次目录/文件读取、每个封面图一次 blob 上传，最后还有 tree/commit/ref 三次。
    * 攒批攒得越多越容易撞上限（线上真的撞过：HTTP 500 Too many subrequests）。
    * 超出的部分留在「待写回」，审核台会自动再发一次请求继续写 —— 每批一个 commit。
+   *
+   * 图片集投稿另有 GALLERY_PER_FLUSH 张的额度：每张要读一次 KV、写一次 R2、还要多读一份
+   * 清单，比文本投稿贵，所以单独限；额度用完的那几条状态不变，下一轮接着写。
    */
   const MAX_MAPS = 6;
   const picked = [...grouped.entries()].slice(0, MAX_MAPS);
   const rows = picked.flatMap(([, list]) => list);
-  const remainingRows = allRows.length - rows.length;
+  let remainingRows = allRows.length - rows.length;
   const remainingMaps = grouped.size - picked.length;
 
   const skipped: Array<{ id: number; reason: string }> = [];
   const files: CommitFile[] = [];
-  const pendingCovers: Array<{ id: number; key: string }> = [];
+  const pendingImages: Array<{ id: number; key: string }> = [];
   const authors = new Set<string>();
   const fieldSummary = new Set<string>();
+  /* 本批「轮不上写」的图片集投稿（额度用完），下一轮自动接着写 —— 不算失败 */
+  const deferred: number[] = [];
+  let galleryBudget = GALLERY_PER_FLUSH;
 
   try {
     /* 一次把所有要改的社区文档读回来（1 个子请求，而不是每张图一个） */
     const docs = await readCommunityDocs(env, picked.map(([slug]) => slug));
+
+    /*
+     * 图片集清单：只读本批**真的有图片投稿**的那几张图（通常 0~2 张，1 个子请求/张）。
+     * 清单不在社区文档那套模型里，所以单独读；读到就整批带在内存里改，
+     * 提交成功后随社区文档一起进同一个 commit。
+     */
+    const galleryDocs = new Map<string, { manifest: GalleryManifest; dirty: boolean }>();
+    for (const slug of new Set(rows.filter((r) => r.field === 'gallery').map((r) => r.map_slug))) {
+      const text = await readRepoText(env, galleryManifestPath(slug));
+      galleryDocs.set(slug, { manifest: parseManifest(text, slug), dirty: false });
+    }
 
     /* 本批有封面投稿时，先列一次封面目录（1 个子请求）—— 用来判断哪些扩展名真的存在，
        不存在的路径不能出现在删除条目里（见下面删旧扩展名处的说明）。
@@ -558,6 +698,71 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
           continue;
         }
 
+        /*
+         * 图片集：**图片进 R2，不进 git**（见 worker/gallery.ts 的说明），
+         * 仓库里只改那份几百字节的清单 —— 和社区文档同一个 commit、同一次重建。
+         * 注意这里不碰社区文档：清单是独立文件，所以不设 touched。
+         */
+        if (row.field === 'gallery') {
+          const gal = galleryDocs.get(slug);
+          if (!gal) {
+            skipped.push({ id: row.id, reason: '这张图的图片集清单没有读到，稍后重试' });
+            continue;
+          }
+          if (galleryBudget <= 0) {
+            /* 额度用完：状态保持 approved，下一轮（审核台会自动再发一次）接着写 */
+            deferred.push(row.id);
+            continue;
+          }
+          /* 一张图的图片集有上限：超了就留在待写回并说明原因（审核员可以驳回或删掉几张） */
+          if (gal.manifest.images.filter((i) => i.kind === 'user').length >= GALLERY_PER_MAP_MAX) {
+            skipped.push({
+              id: row.id,
+              reason: `这张图的图片集已经有 ${GALLERY_PER_MAP_MAX} 张玩家投稿，写不进去了`,
+            });
+            continue;
+          }
+          const meta = galleryMetaOf(value);
+          if (!meta) {
+            skipped.push({ id: row.id, reason: '缺少图片信息' });
+            continue;
+          }
+          const pending = await readPendingImage(env, meta.key);
+          if (!pending) {
+            skipped.push({ id: row.id, reason: 'KV 里的待审图片已不在（让投稿人重新上传）' });
+            continue;
+          }
+          const check = checkGalleryBytes(pending.bytes);
+          if (!check.ok || !check.format) {
+            skipped.push({ id: row.id, reason: `待审图片校验未通过：${check.error ?? '未知'}` });
+            continue;
+          }
+          const name = galleryEntryName(row.id, check.format);
+          try {
+            /* 先落 R2 再改清单：清单绝不能指向一张并不存在的图 */
+            await putGalleryImage(env, slug, name, pending.bytes, check.format);
+          } catch (err) {
+            skipped.push({
+              id: row.id,
+              reason: `写入图片存储失败：${err instanceof Error ? err.message : String(err)}`,
+            });
+            continue;
+          }
+          galleryBudget--;
+          const entry: GalleryEntry = {
+            src: galleryEntryUrl(slug, name),
+            kind: 'user',
+            caption: meta.caption || '玩家截图',
+          };
+          if (row.submitter) entry.by = row.submitter;
+          gal.manifest = withImages(gal.manifest, [entry]);
+          gal.dirty = true;
+          pendingImages.push({ id: row.id, key: meta.key });
+          fieldSummary.add(`${slug} 图片集`);
+          if (row.submitter) authors.add(row.submitter);
+          continue;
+        }
+
         /* 封面：图片进同一个 commit，文档里只记 URL */
         if (row.field === 'cover') {
           const meta = coverMetaOf(value);
@@ -565,7 +770,7 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
             skipped.push({ id: row.id, reason: '缺少图片信息' });
             continue;
           }
-          const pending = await readPendingCover(env, meta.key);
+          const pending = await readPendingImage(env, meta.key);
           if (!pending) {
             skipped.push({ id: row.id, reason: 'KV 里的待审图片已不在（让投稿人重新上传）' });
             continue;
@@ -591,7 +796,7 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
             if (!existingCovers.has(`${slug}.${ext}`.toLowerCase())) continue;
             files.push({ path: coverRepoPath(slug, ext), remove: true });
           }
-          pendingCovers.push({ id: row.id, key: meta.key });
+          pendingImages.push({ id: row.id, key: meta.key });
           applySubmission(doc, {
             id: row.id,
             field: 'cover',
@@ -618,11 +823,27 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
         touch(doc);
         files.push({ path: communityPath(slug), text: JSON.stringify(doc, null, 2) + '\n' });
       }
+      const gal = galleryDocs.get(slug);
+      if (gal?.dirty) files.push({ path: galleryManifestPath(slug), text: serializeManifest(gal.manifest) });
     }
 
-    const committedIds = rows.filter((r) => !skipped.some((s) => s.id === r.id));
+    const committedIds = rows.filter((r) => !skipped.some((s) => s.id === r.id) && !deferred.includes(r.id));
+    /* 额度用完、还没轮上写的也算「还没写完」：审核台会接着再发一次请求 */
+    remainingRows += deferred.length;
     if (!committedIds.length) {
       await markErrors(env, skipped);
+      /* 全是「额度用完、还没轮到写」的：状态没变，让审核台接着再发一次，别报成失败 */
+      if (deferred.length) {
+        return json({
+          ok: true,
+          committed: 0,
+          skipped,
+          files: 0,
+          remaining: remainingRows,
+          remainingMaps: 0,
+          note: `一次最多写 ${GALLERY_PER_FLUSH} 张图片集图片，还有 ${remainingRows} 条待写回，正在继续…`,
+        });
+      }
       return json({ ok: false, committed: 0, skipped, message: '没有可写回的投稿，见 skipped 原因' }, 409);
     }
 
@@ -643,7 +864,7 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
         .bind(commitSha, row.id)
         .run();
     }
-    for (const c of pendingCovers) await dropPendingCover(env, c.key);
+    for (const c of pendingImages) await dropPendingImage(env, c.key);
     await markErrors(env, skipped);
 
     return json({
@@ -653,6 +874,8 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
       files: fileCount,
       commit: commitSha,
       skipped,
+      /* 本批里额度用完、还没轮到写的图片集投稿（状态没变） */
+      deferred: deferred.length,
       /* 还没写完的（这一批之外的）：审核台会接着再发一次请求，每批一个 commit */
       remaining: remainingRows,
       remainingMaps,

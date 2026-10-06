@@ -13,7 +13,8 @@
  * 需要的绑定与密钥：
  *   DB                 D1（wrangler.jsonc）
  *   ASSETS             静态资源（wrangler.jsonc）
- *   UPLOADS            Workers KV：投稿封面的临时存放（wrangler.jsonc；没配只有封面接口不可用）
+ *   UPLOADS            Workers KV：待审图片的临时存放（封面 + 图片集；wrangler.jsonc）
+ *   TERR               R2：地形分片（/terr/* 同源回退）+ 玩家投稿的图片集图片
  *   IP_SALT            必须
  *   ADMIN_TOKEN        审核台必须
  *   GITHUB_TOKEN       审核台点「写回仓库」时必须（2026-10-05 起「通过」只入队，不直接写仓库）
@@ -31,14 +32,15 @@ import {
 } from './http';
 import {
   handleAdminBan,
-  handleAdminCover,
   handleAdminFlush,
+  handleAdminImage,
   handleAdminQueue,
   handleAdminReview,
   handleAdminUnstage,
   handleSubmissionStatus,
   handleSubmit,
   handleSubmitCover,
+  handleSubmitGallery,
 } from './submissions';
 import { handleStats, handleVote } from './votes';
 import { handleTerr } from './terr';
@@ -79,9 +81,11 @@ export default {
       if (path === '/api/admin/flush') return handleAdminFlush(request, env);
       if (path === '/api/admin/unstage') return handleAdminUnstage(request, env);
       if (path === '/api/admin/ban') return handleAdminBan(request, env);
-      /* 待审封面的缩略图：<img> 带不了自定义头，所以审核台用 fetch + Bearer 取 blob，
+      /* 待审图片的缩略图（封面 / 图片集）：<img> 带不了自定义头，所以审核台用 fetch + Bearer 取 blob，
          这样密钥不会出现在 URL 里（也就不进任何日志）。 */
-      if (path.startsWith('/api/admin/cover/')) return handleAdminCover(request, env, path);
+      if (path.startsWith('/api/admin/cover/') || path.startsWith('/api/admin/gallery/')) {
+        return handleAdminImage(request, env, path);
+      }
       return fail('未知接口', 404);
     }
 
@@ -102,6 +106,7 @@ export default {
     if (path === '/api/vote') return handleVote(request, env, ipHash);
     if (path === '/api/submit') return handleSubmit(request, env, ipHash, clientIp(request));
     if (path === '/api/submit-cover') return handleSubmitCover(request, env, ipHash, clientIp(request));
+    if (path === '/api/submit-gallery') return handleSubmitGallery(request, env, ipHash, clientIp(request));
     if (path === '/api/submission') return handleSubmissionStatus(request, env, url);
 
     return fail('未知接口', 404);
