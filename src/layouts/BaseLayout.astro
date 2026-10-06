@@ -24,6 +24,28 @@ const ogImage = image ? new URL(image, site).href : new URL('/images/hero-bg.jpg
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    {/*
+      「站内跳转一律新开标签页」——2026-10-07 站长的要求：可以连着点好几张地图，
+      每张都留在自己的标签里，方便来回对照，不用一路按返回。
+      一行覆盖全站所有 <a>：页头导航、地图卡片、标签、搜索结果（Pagefind 的链接是 JS 建的，
+      也一样吃这套）、分页、页脚，以及以后新加的链接 —— 不用在每个组件里记得写 target。
+
+      ⚠️ 三个必须知道的点：
+      1. **不含 href**：只写 target。带上 href 会把相对 URL 的基准改掉，全站链接会一起错。
+         （所以相对路径仍然按页面地址解析，行为不变。）
+      2. **同一个页面的锚点要豁免**：`<a href="#form">` 这类目录跳转会被它变成「新开一个
+         同样的页面」而不是滚动，所以那种链接逐个写了 target="_self"（见 contribute.astro、
+         index.astro 的「向下滚动」、preview.astro 的诊断链接）。
+      3. **noopener**：`<base>` 没法给链接加 rel，而 target="_blank" 的 noopener 早就是
+         浏览器的默认行为（Chrome 88 / Firefox 79 / Safari 12.1 起），所以新标签拿不到
+         window.opener，没有安全缺口；已有的外链仍显式写着 rel="noopener"。
+
+      另外：`<base target>` 也会作用于**没有 target 属性的原生 <form>**提交，本站唯一的
+      `<form>`（投稿表单）是 JS 接管 + fetch 提交的，不走原生提交，所以不受影响。
+    */}
+    <base target="_blank" />
+
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical.href} />
     <meta property="og:type" content="website" />

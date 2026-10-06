@@ -2567,6 +2567,9 @@ $('png').addEventListener('click', ()=>{
   if(!cur) return;
   const src = (S.mode==='3d' && GLok) ? cv3 : cv;
   const a=document.createElement('a');
+  /* 整站链接都在新标签页打开（layouts/BaseLayout.astro 的 <base target="_blank">），
+     但这个是「导出 PNG」：必须写死 _self，否则下载会变成开一个新标签。 */
+  a.target = '_self';
   a.download = '地图实体预览_'+(cur.m.cn||cur.m.m)+'_'+S.mode+'.png';
   a.href = src.toDataURL('image/png'); a.click();
 });

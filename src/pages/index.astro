@@ -64,7 +64,8 @@ const hotTags = Object.entries(tagCount)
         </div>
       </div>
     </div>
-    <a href="#featured" class="hero-scroll">向下滚动 ↓</a>
+    {/* 本页内跳转：target="_self" 覆盖 <base target="_blank">，否则会新开一个同样的首页 */}
+    <a href="#featured" class="hero-scroll" target="_self">向下滚动 ↓</a>
   </section>
 
   <div class="container">
