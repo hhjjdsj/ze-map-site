@@ -16,11 +16,15 @@ import {
   type CommitFile,
   type CommunityFile,
   commitFiles,
+  commitFilesViaContents,
   communityPath,
+  listRepoDir,
   readCommunityDoc,
   readCommunityDocs,
 } from './community';
 import {
+  COVER_DIR,
+  COVER_EXTS,
   checkCoverBytes,
   coverMetaOf,
   coverRepoPath,
@@ -530,6 +534,19 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
     /* 一次把所有要改的社区文档读回来（1 个子请求，而不是每张图一个） */
     const docs = await readCommunityDocs(env, picked.map(([slug]) => slug));
 
+    /* 本批有封面投稿时，先列一次封面目录（1 个子请求）—— 用来判断哪些扩展名真的存在，
+       不存在的路径不能出现在删除条目里（见下面删旧扩展名处的说明）。
+       列目录失败就当成「一个都没有」：宁可留下一个用不上的旧扩展名文件，
+       也不能让整批写回因为一个幽灵删除而失败。 */
+    const existingCovers = new Set<string>();
+    if (rows.some((r) => r.field === 'cover')) {
+      try {
+        for (const e of await listRepoDir(env, COVER_DIR)) existingCovers.add(e.name.toLowerCase());
+      } catch {
+        /* 忽略：existingCovers 留空 */
+      }
+    }
+
     for (const [slug, list] of picked) {
       const { doc } = docs.get(slug) ?? (await readCommunityDoc(env, slug));
       let touched = false;
@@ -564,8 +581,15 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
             bin += String.fromCharCode(...pending.bytes.subarray(i, i + CHUNK));
           }
           files.push({ path: coverRepoPath(slug, check.format), base64: btoa(bin) });
-          for (const ext of ['webp', 'png', 'jpg', 'jpeg']) {
-            if (ext !== check.format) files.push({ path: coverRepoPath(slug, ext), remove: true });
+          /* ⚠️ 只删**确实存在**的其它扩展名。
+             GitHub 的 Git Data API 对「删除一个并不存在的路径」会整单失败：
+             422 GitRPC::BadObjectState（2026-10-06 线上实遇，整个写回 500/409）。
+             以前这里无条件塞 3 个（webp/png/jpg/jpeg 里除当前格式外的），
+             而绝大多数地图只有一个扩展名的文件 —— 于是只有带封面的那批会炸。 */
+          for (const ext of COVER_EXTS) {
+            if (ext === check.format) continue;
+            if (!existingCovers.has(`${slug}.${ext}`.toLowerCase())) continue;
+            files.push({ path: coverRepoPath(slug, ext), remove: true });
           }
           pendingCovers.push({ id: row.id, key: meta.key });
           applySubmission(doc, {
@@ -608,7 +632,7 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
       : [...fieldSummary].join('、');
     const message = `社区投稿：${picked.length} 张图 · ${committedIds.length} 条（${summary}）（by ${who}${audit}）`;
 
-    const { sha: commitSha, files: fileCount } = await commitFiles(env, files, message);
+    const { sha: commitSha, files: fileCount } = await commitFilesWithFallback(env, files, message);
 
     /* 提交成功后才动 D1 与 KV */
     const now = Date.now();
@@ -646,8 +670,39 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
   }
 }
 
-/** 把「这条为什么没写回」记进 D1，审核台能直接看到（id=0 表示整体失败） */
-async function markErrors(env: Env, skipped: Array<{ id: number; reason: string }>): Promise<void> {
+/**
+ * 写回仓库：优先「一个 commit 装完一批」（Git Data API），失败再退化成逐文件写。
+ *
+ * 为什么要兜底：线上遇到过 Git Data API 返回
+ * `创建目录树失败（HTTP 422）：GitRPC::BadObjectState` —— 整批写回直接卡住，
+ * 审核员只能反复点。逐文件写慢、会多几次构建，但内容一定落地；
+ * 而且每批最多 6 张图，子请求数仍然安全（见 handleAdminFlush 的 MAX_MAPS）。
+ */
+async function commitFilesWithFallback(
+  env: Env,
+  files: CommitFile[],
+  message: string
+): Promise<{ sha: string; files: number }> {
+  try {
+    return await commitFiles(env, files, message);
+  } catch (err) {
+    const text = err instanceof Error ? err.message : String(err);
+    console.warn('Git Data API 写回失败，改用逐文件写：' + text);
+    try {
+      const r = await commitFilesViaContents(env, files, `${message}（Git Data API 失败，逐文件提交）`);
+      await markErrors(env, [{ id: 0, reason: `上一次批量提交失败（${text.slice(0, 120)}），已改用逐文件提交成功` }]);
+      return r;
+    } catch (err2) {
+      /* 两种都失败：把两次原因都带上，审核台能看到全貌 */
+      throw new GitError(
+        `${text}；改用逐文件写也失败：${err2 instanceof Error ? err2.message : String(err2)}`,
+        502
+      );
+    }
+  }
+}
+
+/** 把「这条为什么没写回」记进 D1，审核台能直接看到（id=0 表示整体失败） */async function markErrors(env: Env, skipped: Array<{ id: number; reason: string }>): Promise<void> {
   for (const s of skipped) {
     if (!s.id) continue;
     await env.DB.prepare(`UPDATE submissions SET error=?1 WHERE id=?2`)

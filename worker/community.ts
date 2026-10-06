@@ -43,6 +43,16 @@ function toBase64Utf8(str: string): string {
   return btoa(bin);
 }
 
+/** 字节数组 → base64（同上：走二进制字符串，避免 latin1 之外的内容出问题） */
+function bytesToBase64(bytes: Uint8Array): string {
+  let bin = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(bin);
+}
+
 function fromBase64Utf8(b64: string): string {
   const bin = atob(b64.replace(/\s+/g, ''));
   const bytes = new Uint8Array(bin.length);
@@ -423,11 +433,63 @@ export async function commitFiles(
     } catch (err) {
       lastError = err;
       const status = (err as GitError)?.status;
-      /* 只有「分支动了」值得重试，其它错误直接上抛 */
-      if (status !== 409) throw err;
+      const msg = err instanceof Error ? err.message : '';
+      /* 只有「更新分支时撞车」才值得换个 head 重试（那条错误信息里带「分支」）。
+         ghJson 把 422 也映射成 409，但 422 里最要命的是创建目录树的 BadObjectState ——
+         重试三次纯属浪费子请求，直接上抛，交给 commitFilesWithFallback 走逐文件兜底。 */
+      if (status !== 409 || !/分支/.test(msg)) throw err;
     }
   }
   throw lastError instanceof Error
     ? lastError
     : new GitError('分支连续被推过三次，请稍后再试', 409);
+}
+
+/**
+ * 兜底：用 contents API **逐文件**写（每次一个提交）。
+ *
+ * 什么时候会走到这里：Git Data API 整条路失败且重试无效 —— 线上遇到过
+ * `创建目录树失败（HTTP 422）：GitRPC::BadObjectState`，那种情况下整批写回会卡住，
+ * 而审核员只看到一句报错。这里退化成「一个文件一个提交」：慢一点、多几次构建，
+ * 但内容能落地，不会把投稿堵在队列里。
+ *
+ * 代价可控：每批最多 6 张图（见 handleAdminFlush 的 MAX_MAPS），
+ * 每个文件 1 次读 sha + 1 次写，仍远低于单次调用 50 个子请求的上限。
+ */
+export async function commitFilesViaContents(
+  env: Env,
+  files: CommitFile[],
+  message: string
+): Promise<{ sha: string; files: number }> {
+  let written = 0;
+  for (const f of files) {
+    const sha = await repoFileSha(env, f.path);
+    if (f.remove) {
+      if (sha) {
+        await deleteRepoFile(env, f.path, `${message}（清掉旧扩展名）`);
+        written++;
+      }
+      continue;
+    }
+    const content = f.base64 ?? bytesToBase64(new TextEncoder().encode(f.text ?? ''));
+    const res = await gh(env, `/repos/${repo(env)}/contents/${f.path}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        content,
+        branch: branch(env),
+        ...(sha ? { sha } : {}),
+      }),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      throw new GitError(
+        `逐文件写回失败（${f.path}，HTTP ${res.status}）${detail ? '：' + detail.slice(0, 160) : ''}`,
+        502
+      );
+    }
+    written++;
+  }
+  return { sha: `逐文件提交 ×${written}`, files: files.length };
 }
