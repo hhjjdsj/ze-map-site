@@ -23,9 +23,12 @@
 //    assets.binding    让脚本能 env.ASSETS.fetch()，把非 /api/* 的请求**原样交回**
 //                      静态资源。⚠️ 少了它就没法把未知路径交回 resources 层，
 //                      站内那个 404 页会被顶掉。
-//    run_worker_first  只有 /api/* 先走脚本。其余请求仍是官方的「静态资源优先」，
+//    run_worker_first  只有 /api/* 与 /terr/* 先走脚本。其余请求仍是官方的「静态资源优先」，
 //                      所以 800 多个页面照旧由边缘直接发出，速度不受影响，
-//                      脚本出问题也只是投票接口 500，站点照常访问。
+//                      脚本出问题也只是接口 500，站点照常访问。
+//                      ⚠️ /terr/* 必须列在这里：资源层对未命中的路径会**直接吐 404 页**、
+//                      不会再把请求交给 Worker（2026-10-05 实测：线上 /terr/xxx.bin 返回的是
+//                      站内 404 页，同源回退因此形同虚设）。
 //    d1_databases      投票数据（库名 ze-map-community）
 //    设计与分期：docs/community-editing-plan.md
 //
@@ -54,7 +57,7 @@
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/terr/*"]
   },
   "d1_databases": [
     {

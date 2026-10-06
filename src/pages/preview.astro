@@ -7,8 +7,20 @@
    脚本：     public/preview/app.js
    支持参数： ?map=<slug|内部名|中文名>&view=2d&stage=N */
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import catalog from '../../public/entity/catalog.json';
+/* app.js 的**源码文本**（`?raw` 由打包器解析路径，与运行时工作目录无关 ——
+   别改成 fs.readFile('public/...')：预渲染时 cwd 是 dist/.prerender，会直接构建失败）。 */
+import appJsSrc from '../../public/preview/app.js?raw';
 import '../styles/preview.css';
+
+/*
+ * app.js 放在 public/ 下、文件名不带哈希，而边缘默认给它
+ * `cache-control: public, max-age=600`（实测线上就是 HIT + 600 秒）——
+ * 每次发布后用户可能在最长 10 分钟里还在跑**旧代码**，表现就是「明明修好了还是不行」。
+ * 按内容算个短哈希挂在查询串上：内容一变 URL 就变，缓存自然失效；没变则继续命中缓存。
+ */
+const appJsVer = crypto.createHash('sha256').update(appJsSrc).digest('hex').slice(0, 10);
 
 const site = Astro.site ?? new URL('https://ze-map.cn');
 const canonical = new URL(Astro.url.pathname, site);
@@ -240,6 +252,6 @@ const desc = `CS2 僵尸逃跑地图实体预览：传送门、可破坏物、�
     window.__TERR_BASE__ = TERR_BASE;
     window.__ENTITY_BASE__ = ENTITY_BASE;
   </script>
-  <script is:inline src="/preview/app.js" defer></script>
+  <script is:inline src={`/preview/app.js?v=${appJsVer}`} defer></script>
 </body>
 </html>
