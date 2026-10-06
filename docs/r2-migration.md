@@ -27,6 +27,20 @@ npm run build             # 构建（dist 里不再有 terr）
 * 凭证在 `.env.r2`（已 gitignore，模板见 `.env.r2.example`）。
 * 想整体换位置：设 `TERR_OUT=<dir>`（烘焙输出）与 `TERR_SRC=<dir>`（上传来源）。
 
+### 同源回退（2026-10-05 加）
+
+预览页取分片的顺序是 **先直连 `terr.ze-map.cn`，失败再退回同源 `/terr/<工坊ID>.bin`**
+（`worker/terr.ts`：从同一个 R2 桶读，Cache API 缓存一年；`wrangler.jsonc` 里的 `r2_buckets` 绑定 `TERR`）。
+
+原因：R2 自定义域是**另一个域名**，国内手机网络 / App 内置浏览器里这个跨域请求可能直接
+`Failed to fetch`，而站点自己的域名是通的 —— 表现就是手机上「真实碰撞地形加载失败」，
+把块体一关一片空（2026-10-05 反馈）。走同源没有跨域这回事，也不需要 R2 的 CORS 配置。
+
+* 用户只看到「加载失败 · 点此重试」；`glDiagnose()`（图层浮层底部「🔎 场景诊断」）里会写明
+  当前用的是哪条：`地形分片源: /terr（已回退到同源 /terr）`。
+* 成功的来源记在 `localStorage.zmTerrBase`，下次直接走通的那条，不再先撞一次失败。
+* Worker 里 `/terr/*` 必须在「交回静态资源」之前处理，否则会被资源层当 404 吃掉。
+
 ## 回滚
 
 把 `PUBLIC_TERR_BASE=/terr` 传给构建，并把一份分片放回 `public/terr/` 即可回到同源；

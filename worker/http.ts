@@ -35,11 +35,18 @@ export interface KVLike {
   delete(key: string): Promise<void>;
 }
 
+/** 同理，只声明用到的 R2 接口（wrangler.jsonc 的 r2_buckets → TERR） */
+export interface R2Like {
+  get(key: string): Promise<{ body: ReadableStream; size: number } | null>;
+}
+
 export interface Env {
   DB: D1;
   ASSETS: { fetch(request: Request): Promise<Response> };
   /** 待审封面的临时存储（wrangler.jsonc 的 kv_namespaces → UPLOADS） */
   UPLOADS?: KVLike;
+  /** 地形分片所在的 R2 桶（wrangler.jsonc 的 r2_buckets → TERR）：/terr/* 同源回退用 */
+  TERR?: R2Like;
   /** IP 哈希用的盐，必须用 `wrangler secret put IP_SALT` 设置 */
   IP_SALT?: string;
   /** 审核台密钥，必须用 `wrangler secret put ADMIN_TOKEN` 设置 */

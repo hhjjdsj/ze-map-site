@@ -575,12 +575,56 @@ let meshErrKey = null;         // 加载失败的那张图（状态行显示「�
 /* 缓存的是 Promise 而不是结果：进 3D 与切图会几乎同时触发两次刷新，
    缓存结果的话两次都会穿透、把同一个分包下载两遍（实测 408 KB × 2）。
    失败的不留在缓存里，下次切换还能重试。 */
+
+/*
+ * 分片从哪取：主用 R2 自定义域（terr.ze-map.cn，快、不占 Worker），
+ * 失败就退回**同源** /terr/<id>.bin（Worker 代理同一个 R2 桶）。
+ *
+ * 为什么要这条回退：R2 是另一个域名，国内手机网络 / 内置浏览器里会直接
+ * 「Failed to fetch」（跨域被拦、或那个域根本不通），而站点自己的域名是通的 ——
+ * 用户看到的就是「真实碰撞地形加载失败：Failed to fetch」，隐藏块体后一片空（2026-10-05 反馈）。
+ * 一旦回退成功就记住，后续换图不再先撞一次失败（`terrBase` 只在本次会话内缓存）。
+ */
+const TERR_FALLBACK = '/terr';
+/* 记住上次成功的来源：如果这台设备连不上 R2 域（下面注释里那种情况），
+   第二次进来就直接走同源，不再先撞一次几十秒的失败。 */
+let terrBase = (() => {
+  try { return localStorage.getItem('zmTerrBase') || TERR_BASE; } catch { return TERR_BASE; }
+})();
+let terrBaseNote = terrBase === TERR_BASE ? '' : '上次这条通';   // 给诊断用
+let terrReach = '';             // 给诊断用：R2 域到底通不通（失败时探一次）
+
+/** 取一个分片（含回退）。404 也回退 —— 同源那条会给出更准确的 404/503。 */
+async function fetchTerrShard(wf){
+  /* 两条路都试：记住的那条优先，另一条兜底 */
+  const bases = terrBase === TERR_FALLBACK ? [TERR_FALLBACK, TERR_BASE] : [terrBase, TERR_FALLBACK];
+  let lastErr = null;
+  for(const base of bases){
+    try{
+      const res = await fetch(`${base}/${wf}.bin`);
+      if(!res.ok){
+        lastErr = new Error(`没有这张图的地形分包（HTTP ${res.status}）`);
+        continue;
+      }
+      if(base !== terrBase){
+        terrBase = base;
+        terrBaseNote = base === TERR_FALLBACK ? '已回退到同源 /terr' : '已切回 R2 域';
+        try { localStorage.setItem('zmTerrBase', base); } catch {}
+      }
+      return res;
+    }catch(err){
+      /* 网络层失败：Failed to fetch / 跨域被拦 / 断网。换下一条路再试 */
+      lastErr = new Error((err && err.message) ? err.message : '网络错误');
+    }
+  }
+  throw lastErr || new Error('取不到地形分包');
+}
+
 function fetchTerrMesh(wf){
   if(meshCache.has(wf)) return meshCache.get(wf);
   const p = (async () => {
     if(!hasDS()) throw new Error('浏览器不支持解压（DecompressionStream）');
-    const res = await fetch(`${TERR_BASE}/${wf}.bin`);
-    if(!res.ok) throw new Error(`没有这张图的地形分包（HTTP ${res.status}）`);
+    const res = await fetchTerrShard(wf);
     const ab = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
     const dv = new DataView(ab);
     const magic = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3));
@@ -645,7 +689,14 @@ function updateTerrRow(){
   else if(meshErrKey === S.key){
     st.textContent = '加载失败 · 点此重试';
     st.style.cursor = 'pointer';
-    st.title = '从 ' + TERR_BASE + ' 取地形分片失败：可能是网络问题，也可能是这张图还没上传。点一下重试。';
+    st.title = '取地形分片失败：R2 域（' + TERR_BASE + '）与同源 ' + TERR_FALLBACK +
+      ' 都试过了。可能是网络问题，也可能是这张图还没上传。点一下重试。';
+    /* 顺手探一下主机到底通不通：no-cors 能成功说明「域名可达、是跨域被拦」，
+       拿不到就说明「根本不通」—— 这两种原因的修法完全不同，反馈时有用。 */
+    terrReach = '探测中…';
+    fetch(TERR_BASE + '/__reach_probe__', { mode: 'no-cors', cache: 'no-store' })
+      .then(() => { terrReach = TERR_BASE + ' 可达（跨域被拦）'; })
+      .catch((e) => { terrReach = TERR_BASE + ' 不可达（' + (e && e.message ? e.message : '网络错误') + '）'; });
   }
   else if(GL3D.meshCount) st.textContent = fmt(GL3D.meshCount) + ' 面';
   else st.textContent = '加载中…';
@@ -1518,7 +1569,8 @@ function glDiagnose(){
     '场景: 块体 ' + GL3D.boxCount + ' · 点云 ' + GL3D.ptCount + ' · 地形 ' + GL3D.meshCount + ' 面',
     '开关: 块体=' + on('vbox') + ' 地形=' + on('terbox') + ' 点云大小=' + Math.round((S.psz || 1) * 100) + '%' +
       ' 地形不透明度=' + Math.round((S.topa === undefined ? 1 : S.topa) * 100) + '%',
-    '地形分片源: ' + TERR_BASE,
+    '地形分片源: ' + terrBase + (terrBaseNote ? '（' + terrBaseNote + '）' : ''),
+    'R2 域连通性: ' + (terrReach || '(未探测)'),
     '失败原因: ' + (window.__glerr || '(无记录)') + ' / ' + (GLerr || ''),
   ].join('\n');
 }

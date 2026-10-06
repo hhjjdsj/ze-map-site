@@ -71,5 +71,13 @@
       "id": "384e8441523d4da4bcc660f330f1bc2e"
     }
   ],
+  // 地形分片的 R2 桶：只给 /terr/<id>.bin 这条**同源回退**用（见 worker/terr.ts）。
+  // 正常情况下预览页直连 terr.ze-map.cn，不走这里；那个域不通的网络才落到这条路上。
+  "r2_buckets": [
+    {
+      "binding": "TERR",
+      "bucket_name": "ze-map-terr"
+    }
+  ],
   "previews": {}
 }

@@ -41,11 +41,18 @@ import {
   handleSubmitCover,
 } from './submissions';
 import { handleStats, handleVote } from './votes';
+import { handleTerr } from './terr';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
+
+    /*
+     * /terr/* 是地形分片的同源回退（见 worker/terr.ts）：正常情况前端直连 R2 自定义域，
+     * 在那个域不通的网络里才落到这里。必须在「交回资源」之前处理，否则会被当成静态资源。
+     */
+    if (path.startsWith('/terr/')) return handleTerr(request, env);
 
     /*
      * 非 /api/* 一律交回资源绑定（含未命中时的 404 兜底）。
