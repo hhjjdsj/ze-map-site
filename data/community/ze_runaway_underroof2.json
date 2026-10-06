@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_runaway_underroof2",
+  "updatedAt": "2026-10-06T14:15:44.892Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_runaway_underroof2.webp",
+      "by": "SiKi",
+      "at": "2026-10-06T13:11:46.983Z",
+      "submission": 109
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_runaway_underroof2.webp",
+      "by": "SiKi",
+      "at": "2026-10-06T13:11:46.983Z",
+      "submission": 109
+    }
+  ],
+  "items": []
+}

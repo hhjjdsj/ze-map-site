@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_stab_town_p",
+  "updatedAt": "2026-10-06T14:15:44.940Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_stab_town_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-06T13:11:47.358Z",
+      "submission": 110
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_stab_town_p.webp",
+      "by": "SiKi",
+      "at": "2026-10-06T13:11:47.358Z",
+      "submission": 110
+    }
+  ],
+  "items": []
+}
