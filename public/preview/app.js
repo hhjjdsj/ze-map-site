@@ -1218,7 +1218,11 @@ const cv = $('cv'), ctx = cv.getContext('2d');
 let W=0,H=0,DPR=1;
 
 function resize(){
-  DPR = window.devicePixelRatio || 1;
+  /* 手机上 DPR 常常是 3：2D 画布按 3 倍分配等于多画一倍多的像素，
+     而地图库那种密集点云在手机上本来就是瓶颈，所以窄屏收敛到 2 倍。
+     3D 那边在 size3D() 里另外有 RSCALE 动态降档。 */
+  const dpr = window.devicePixelRatio || 1;
+  DPR = window.innerWidth <= 820 ? Math.min(dpr, 2) : dpr;
   const r = cv.parentElement.getBoundingClientRect();
   W = Math.max(1, Math.round(r.width)); H = Math.max(1, Math.round(r.height));
   cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
@@ -1631,53 +1635,134 @@ function drawAxis(){
   }
 }
 
-/* --- 3D 交互 --- */
+/* --- 3D 交互 ---
+ *
+ * 触屏（2026-10-05 补）：单指旋转、双指捏合缩放、双指拖动平移。
+ * 以前只有 wheel 缩放、右键/Shift 平移 —— 手机上这两个都够不着，
+ * 触屏用户进 3D 只能转视角，既不能缩放也不能平移。
+ * 双指手势的换算与滚轮/右键保持一致：捏合 = 改 dist（自由视角改沿视线推拉），
+ * 拖动中点 = 屏幕平移 → 世界平移。
+ */
 let drag3 = null;
+const pts3 = new Map();     // pointerId -> {x,y}：用来分辨单指 / 双指
+let pinch3 = null;          // 双指手势的起始快照（缩放平移都从它算起，避免累积漂移）
+let multi3 = false;         // 这一段触摸出现过双指 → 抬手时不要当成「点选实体」
+
+/** 屏幕平移 → 世界平移（单指右键拖动与双指拖动共用） */
+function pan3(dx, dy, from){
+  const eye = camEye();
+  const d = camDir();
+  if(CAM.free){
+    /* 自由视角：直接平移眼睛，不挪轨道目标点。
+       右向量 / 上向量 / 系数都照软件的取法（rt = [-dz, 0, dx]，k = span/H*0.85），
+       用轨道那一套会让拖动方向反掉。 */
+    let rt = [-d[2], 0, d[0]];
+    const rl = Math.hypot(rt[0], rt[2]) || 1; rt = [rt[0]/rl, 0, rt[2]/rl];
+    const up = [-rt[2]*d[1], rt[2]*d[0]-rt[0]*d[2], rt[0]*d[1]];
+    const k = mapSpan() / Math.max(1, H) * 0.85;
+    CAM.ex = from.ex - (rt[0]*dx - up[0]*dy) * k;
+    CAM.ey = from.ey - (rt[1]*dx - up[1]*dy) * k;
+    CAM.ez = from.ez - (rt[2]*dx - up[2]*dy) * k;
+  } else {
+    // 轨道视角：屏幕平移 → 世界平移（沿相机右向 / 上向）
+    const f = [CAM.tx-eye[0], CAM.ty-eye[1], CAM.tz-eye[2]];
+    const fl = Math.hypot(...f)||1; const fw = f.map(x=>x/fl);
+    let rt = [fw[2], 0, -fw[0]]; const rl = Math.hypot(...rt)||1; rt = rt.map(x=>x/rl);
+    const up = [rt[1]*fw[2]-rt[2]*fw[1], rt[2]*fw[0]-rt[0]*fw[2], rt[0]*fw[1]-rt[1]*fw[0]];
+    const k = CAM.dist / Math.max(1, H) * 1.4;
+    CAM.tx = from.tx - (rt[0]*dx - up[0]*dy) * k;
+    CAM.ty = from.ty - (rt[1]*dx - up[1]*dy) * k;
+    CAM.tz = from.tz - (rt[2]*dx - up[2]*dy) * k;
+  }
+}
+
+/** 双指捏合：ratio > 1 = 放大。轨道视角改相机距离，自由视角沿视线推拉（与滚轮同义） */
+function pinchZoom3(ratio){
+  if(CAM.walk) return;                       // 行走模式没有缩放这一说
+  if(CAM.free){
+    const d = camDir();
+    const st = flySpeed() * CAM.fspd * 0.9 * (ratio - 1);
+    CAM.ex = pinch3.start.ex + d[0]*st;
+    CAM.ey = pinch3.start.ey + d[1]*st;
+    CAM.ez = pinch3.start.ez + d[2]*st;
+  } else {
+    CAM.dist = Math.max(40, Math.min(60000, pinch3.start.dist / ratio));
+  }
+}
+
 cv3.addEventListener('contextmenu', e => e.preventDefault());
 cv3.addEventListener('pointerdown', e => {
   if(!GLok) return;
   cv3.setPointerCapture(e.pointerId);
+  pts3.set(e.pointerId, { x:e.clientX, y:e.clientY });
   cv3.classList.add('grabbing');
+
+  if(pts3.size === 2){
+    const [p, q] = [...pts3.values()];
+    multi3 = true;
+    drag3 = null;                            // 双指期间不再转头
+    pinch3 = { d: Math.hypot(p.x-q.x, p.y-q.y) || 1,
+               mid: { x:(p.x+q.x)/2, y:(p.y+q.y)/2 },
+               start: { dist:CAM.dist, tx:CAM.tx, ty:CAM.ty, tz:CAM.tz,
+                        ex:CAM.ex, ey:CAM.ey, ez:CAM.ez } };
+    return;
+  }
+  if(pts3.size > 2) return;
+
+  /* 鼠标：右键 / Shift = 平移；触屏：单指一律旋转（双指才平移） */
   drag3 = { x:e.clientX, y:e.clientY, yaw:CAM.yaw, pitch:CAM.pitch,
             tx:CAM.tx, ty:CAM.ty, tz:CAM.tz,
             ex:CAM.ex, ey:CAM.ey, ez:CAM.ez,        // 自由视角平移要用
             pan: (e.button === 2 || e.shiftKey) };
 });
-cv3.addEventListener('pointerup', e => {
-  if(drag3){
-    const moved = Math.abs(e.clientX-drag3.x) + Math.abs(e.clientY-drag3.y);
-    if(moved < 4 && !drag3.pan) pick3(e);
+function endPtr3(e){
+  pts3.delete(e.pointerId);
+  if(pts3.size < 2) pinch3 = null;
+  if(pts3.size === 1 && multi3){
+    /* 双指里抬起一根手指：剩下的那根接着转视角（不然手感像「卡住了」）。
+       注意这里不清 multi3 —— 这一段触摸仍然是双指手势，最后抬手不该触发点选。 */
+    const [p] = [...pts3.values()];
+    drag3 = { x:p.x, y:p.y, yaw:CAM.yaw, pitch:CAM.pitch,
+              tx:CAM.tx, ty:CAM.ty, tz:CAM.tz,
+              ex:CAM.ex, ey:CAM.ey, ez:CAM.ez, pan:false };
+    return;
   }
-  drag3 = null; cv3.classList.remove('grabbing');
-});
+  if(pts3.size > 0) return;
+
+  cv3.classList.remove('grabbing');
+  if(drag3){
+    /* 手指点按会抖几像素，触屏的判定阈值放宽一些，否则「想选中实体」会变成没反应 */
+    const tol = e.pointerType === 'mouse' ? 4 : 12;
+    const moved = Math.abs(e.clientX-drag3.x) + Math.abs(e.clientY-drag3.y);
+    if(moved < tol && !drag3.pan && !multi3) pick3(e);
+  }
+  drag3 = null;
+  multi3 = false;
+}
+cv3.addEventListener('pointerup', endPtr3);
+cv3.addEventListener('pointercancel', endPtr3);
 cv3.addEventListener('pointermove', e => {
+  if(pts3.has(e.pointerId)) pts3.set(e.pointerId, { x:e.clientX, y:e.clientY });
+
+  /* 双指：捏合缩放 + 中点位移平移 */
+  if(pinch3 && pts3.size >= 2){
+    const [p, q] = [...pts3.values()];
+    const d = Math.hypot(p.x-q.x, p.y-q.y) || 1;
+    const mid = { x:(p.x+q.x)/2, y:(p.y+q.y)/2 };
+    pinchZoom3(d / pinch3.d);
+    /* 平移用「手势起点的轨道参数 + 当前的眼睛位置」：自由视角的缩放会改眼睛，
+       若两者都用起点快照，后一步会把前一步覆盖掉。 */
+    pan3(mid.x - pinch3.mid.x, mid.y - pinch3.mid.y,
+         { tx:pinch3.start.tx, ty:pinch3.start.ty, tz:pinch3.start.tz,
+           ex:CAM.ex, ey:CAM.ey, ez:CAM.ez });
+    render3D();
+    return;
+  }
+
   if(!drag3) return;
   const dx = e.clientX - drag3.x, dy = e.clientY - drag3.y;
   if(drag3.pan){
-    const eye = camEye();
-    const d = camDir();
-    if(CAM.free){
-      /* 自由视角：直接平移眼睛，不挪轨道目标点。
-         右向量 / 上向量 / 系数都照软件的取法（rt = [-dz, 0, dx]，k = span/H*0.85），
-         用轨道那一套会让拖动方向反掉。 */
-      let rt = [-d[2], 0, d[0]];
-      const rl = Math.hypot(rt[0], rt[2]) || 1; rt = [rt[0]/rl, 0, rt[2]/rl];
-      const up = [-rt[2]*d[1], rt[2]*d[0]-rt[0]*d[2], rt[0]*d[1]];
-      const k = mapSpan() / Math.max(1, H) * 0.85;
-      CAM.ex = drag3.ex - (rt[0]*dx - up[0]*dy) * k;
-      CAM.ey = drag3.ey - (rt[1]*dx - up[1]*dy) * k;
-      CAM.ez = drag3.ez - (rt[2]*dx - up[2]*dy) * k;
-    } else {
-      // 轨道视角：屏幕平移 → 世界平移（沿相机右向 / 上向）
-      const f = [CAM.tx-eye[0], CAM.ty-eye[1], CAM.tz-eye[2]];
-      const fl = Math.hypot(...f)||1; const fw = f.map(x=>x/fl);
-      let rt = [fw[2], 0, -fw[0]]; const rl = Math.hypot(...rt)||1; rt = rt.map(x=>x/rl);
-      const up = [rt[1]*fw[2]-rt[2]*fw[1], rt[2]*fw[0]-rt[0]*fw[2], rt[0]*fw[1]-rt[1]*fw[0]];
-      const k = CAM.dist / Math.max(1, H) * 1.4;
-      CAM.tx = drag3.tx - (rt[0]*dx - up[0]*dy) * k;
-      CAM.ty = drag3.ty - (rt[1]*dx - up[1]*dy) * k;
-      CAM.tz = drag3.tz - (rt[2]*dx - up[2]*dy) * k;
-    }
+    pan3(dx, dy, drag3);
   } else {
     /* 转头方向两种模式符号相反（软件里就是这么分的）：
        自由视角 = FPS 惯例（右拖右看），轨道视角 = 抓住世界拖（场景跟随光标）。 */
@@ -1857,11 +1942,45 @@ $('esres').addEventListener('click', e=>{
   selectEnt(o, true);
 });
 
-/* ============================ 交互 ============================ */
+/* ============================ 交互 ============================
+ *
+ * 2D 视图统一走 pointer 事件（2026-10-05）：以前是 mousedown/mousemove/mouseup，
+ * 触屏上拖拽平移基本不可用、缩放更是只有滚轮 —— 手机上「平面」视图等于只能看。
+ * 现在：单指/单键拖动平移、滚轮或双指捏合缩放、点按选中实体。
+ */
 let drag=null, downPos=null;
-cv.addEventListener('mousedown', e=>{ downPos=[e.clientX,e.clientY]; drag={x:e.clientX,y:e.clientY,ox:view.ox,oy:view.oy}; cv.style.cursor='grabbing'; });
-window.addEventListener('mouseup', ()=>{ drag=null; cv.style.cursor='crosshair'; });
+const pts2 = new Map();     // pointerId -> {x,y}
+let pinch2 = null;          // 双指手势起始快照
+let multi2 = false;         // 这一段出现过双指 → 抬手时不要当成「点选」
+
+cv.addEventListener('pointerdown', e=>{
+  cv.setPointerCapture(e.pointerId);
+  pts2.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if(pts2.size === 1) multi2 = false;
+
+  if(pts2.size === 2){
+    const [p,q] = [...pts2.values()];
+    multi2 = true; drag = null;
+    pinch2 = { d: Math.hypot(p.x-q.x, p.y-q.y) || 1,
+               mid: {x:(p.x+q.x)/2, y:(p.y+q.y)/2},
+               s: view.s, ox: view.ox, oy: view.oy };
+    return;
+  }
+  if(pts2.size > 2) return;
+
+  downPos=[e.clientX,e.clientY];
+  drag={x:e.clientX,y:e.clientY,ox:view.ox,oy:view.oy};
+  cv.style.cursor='grabbing';
+});
+function endPtr2(e){
+  pts2.delete(e.pointerId);
+  if(pts2.size < 2) pinch2 = null;
+  if(pts2.size === 0){ drag = null; cv.style.cursor='crosshair'; }
+}
+cv.addEventListener('pointerup', endPtr2);
+cv.addEventListener('pointercancel', endPtr2);
 cv.addEventListener('click', e=>{
+  if(multi2) return;
   if(downPos && (Math.abs(e.clientX-downPos[0])>4 || Math.abs(e.clientY-downPos[1])>4)) return;
   if(!cur) return;
   const r = cv.getBoundingClientRect();
@@ -1869,7 +1988,25 @@ cv.addEventListener('click', e=>{
   if(o){ selectEnt(o, false); }
   else { $('edetail').style.display='none'; if(S.sel){ S.sel=null; draw(); } }
 });
-cv.addEventListener('mousemove', e=>{
+cv.addEventListener('pointermove', e=>{
+  if(pts2.has(e.pointerId)) pts2.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
+  /* 双指：绕两指中点缩放，同时跟随中点整体平移 */
+  if(pinch2 && pts2.size >= 2){
+    const [p,q] = [...pts2.values()];
+    const d = Math.hypot(p.x-q.x, p.y-q.y) || 1;
+    const mid = {x:(p.x+q.x)/2, y:(p.y+q.y)/2};
+    const r = cv.getBoundingClientRect();
+    const s = Math.max(0.02, Math.min(40, pinch2.s * (d/pinch2.d)));
+    /* 起手时中点下的那个世界坐标要钉在当前中点上 —— 缩放和平移一步算完 */
+    const wx = (pinch2.mid.x - r.left - pinch2.ox)/pinch2.s;
+    const wy = (pinch2.mid.y - r.top  - pinch2.oy)/pinch2.s;
+    view.s = s;
+    view.ox = (mid.x - r.left) - wx*s;
+    view.oy = (mid.y - r.top ) - wy*s;
+    draw(); hideTip(); return;
+  }
+
   if(drag){
     view.ox = drag.ox + (e.clientX-drag.x);
     view.oy = drag.oy + (e.clientY-drag.y);
@@ -1877,7 +2014,7 @@ cv.addEventListener('mousemove', e=>{
   }
   hover(e);
 });
-cv.addEventListener('mouseleave', hideTip);
+cv.addEventListener('pointerleave', hideTip);
 cv.addEventListener('wheel', e=>{
   e.preventDefault();
   const r = cv.getBoundingClientRect();

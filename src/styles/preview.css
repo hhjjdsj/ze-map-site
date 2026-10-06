@@ -6,7 +6,10 @@
   --shadow:0 2px 10px rgba(190,120,150,.10);
 }
 *{box-sizing:border-box}
+/* 手机上 100vh 会算进被地址栏遮住的那一段（Safari / Chrome 都有这毛病），
+   导致底部面板被裁。有 dvh 就用 dvh，没有就退回 vh。 */
 html,body{height:100%;margin:0}
+@supports (height: 100dvh){ html,body{ height:100dvh } }
 body{
   font-family:"PingFang SC","Microsoft YaHei",-apple-system,"Segoe UI",system-ui,sans-serif;
   background:var(--bg); color:var(--ink); overflow:hidden;
@@ -62,9 +65,21 @@ aside{width:262px;flex:0 0 262px;background:var(--panel);border-right:1px solid 
 .btn{border:1px solid var(--line2);background:#fff;border-radius:8px;padding:4px 10px;
   font-size:11.5px;cursor:pointer;color:var(--ink2);font-family:inherit}
 .btn:hover{border-color:var(--accent2);color:var(--accent)}
+/* 次要控件容器：桌面端 display:contents = 完全不参与布局（与以前逐像素一致），
+   窄屏才变成一个可横向滚动的条（见文末媒体查询）。 */
+.bar-more{display:contents}
 .stage{flex:1;position:relative;min-height:0;background:
   radial-gradient(circle at 30% 20%,#fffafc,#fdf3f7 70%)}
 canvas{display:block;width:100%;height:100%;cursor:crosshair}
+/* 触屏上必须由我们自己接管手势：否则单指拖动会被浏览器当成滚动/下拉刷新，
+   2D 的平移与缩放根本收不到事件（3D canvas 在下面单独也设了一次）。 */
+.stage canvas,.stage3d canvas{touch-action:none;-webkit-user-select:none;user-select:none}
+.touch-only{display:none}
+/* 手指操作的设备（手机 / 平板）：显示触屏提示、隐藏鼠标键盘提示 */
+@media (pointer:coarse){
+  .touch-only{display:block}
+  .v3hud .keys:not(.touch-only){display:none}
+}
 .tip{position:absolute;pointer-events:none;background:rgba(45,35,41,.94);color:#fff;
   padding:7px 10px;border-radius:8px;font-size:11.5px;line-height:1.55;max-width:290px;
   display:none;z-index:9;box-shadow:0 4px 16px rgba(0,0,0,.22);word-break:break-all}
@@ -265,16 +280,68 @@ aside{ background:var(--panel); border-right-color:var(--line); }
   .bar .mtitle{ flex: 1 1 auto; min-width: 0; }
   .bar .mtitle #mtitle{ font-size: 14px; }
   .seg, .ctl{ font-size: 11.5px; }
+
+  /* 次要控件改成一条横向滚动的条：以前它们换行成 3~4 层，把画布高度吃掉一大截。
+     首行只留「☰ 地图 / 地图名 / 3D-平面 / 适应窗口」，其余左右滑动可达。 */
+  .bar-more{
+    display: flex; flex-wrap: nowrap; align-items: center; gap: 8px;
+    flex: 1 1 100%; min-width: 0;
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; padding-bottom: 1px;
+  }
+  .bar-more::-webkit-scrollbar{ display: none }
+  .bar-more > *{ flex: 0 0 auto }
+  /* 手指点按目标：11.5px + 3px 内边距太小，容易点空 */
+  .bar .btn, .bar .seg button{ min-height: 32px; padding: 6px 11px; font-size: 12px }
+  /* 首行要塞进「☰ 地图 / 地图名 / 3D-平面 / 适应窗口」四样：地图名后面那串
+     「内部名 · 版本」先让位（中文名已经在标题里了），模式按钮再收窄一点。
+     少了这一手，适应窗口会被挤到第二行，整条工具栏就从 2 行变 3 行。 */
+  .bar .mtitle code{ display: none }
+  .bar #mode button{ padding: 6px 9px }
+  /* ☰ 后面那两个字让给地图名（aria-label 仍在，无障碍不受影响） */
+  .bar #side-toggle .stx{ display: none }
+  .bar .ctl{ min-height: 32px }
+  .bar .ctl input[type=range]{ width: 88px; height: 22px }
+
   .hud{ display: none; }
-  .esearch{ left: 10px; right: 10px; width: auto; max-width: none; top: auto; bottom: 10px; }
-  .esearch input{ width: 100%; box-sizing: border-box; font-size: 12.5px; }
+  /* 统计条在手机上也会折成三四行，占掉一大块画布高度 —— 改成一条横向滚动 */
+  .stats{
+    flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 8px 10px;
+  }
+  .stats::-webkit-scrollbar{ display: none }
+  .stats .chip{ flex: 0 0 auto }
+  .esearch{ left: 10px; right: 10px; width: auto; max-width: none; top: auto;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .esearch input{ width: 100%; box-sizing: border-box; font-size: 13px; padding: 10px 12px; }
   .layers{
-    left: 10px; right: 10px; top: auto; bottom: 10px;
+    left: 10px; right: 10px; top: auto;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     width: auto; max-width: none; max-height: 58vh; overflow: auto;
   }
+  /* 面板里的行也放大一点，手指点得中 */
+  .layers .li, .layers .si{ min-height: 32px; padding: 6px 8px }
+  .layers .cutrow{ padding: 8px 10px }
+  .layers .cutrow input[type=range]{ height: 24px }
+  .layers h4{ padding: 10px 12px; font-size: 13px }
   .card.keys{ display: none; }
-  .edetail{ left: 10px; right: 10px; width: auto; max-width: none; }
-  #ltoggle{ font-size: 12px; padding: 6px 10px; }
+  .edetail{ left: 10px; right: 10px; width: auto; max-width: none;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+  #ltoggle{ font-size: 12px; padding: 7px 11px; top: calc(10px + env(safe-area-inset-top, 0px)) }
+  .axiscue,#stage3d canvas.axiscue{ top: calc(10px + env(safe-area-inset-top, 0px)) }
+  /* 3D 左下角那两块提示卡要抬到实体搜索框上面去，否则被搜索框盖住（DOM 里搜索框在后，画在上层）。
+     竖排：手机上横排会超出屏幕宽度。 */
+  .v3hud{ left: 10px; right: 10px; bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+    flex-direction: column; align-items: flex-start; gap: 6px }
+  .v3hud .card{ max-width: 100% }
+}
+/* 触屏专属（不限宽度：平板也适用）：
+   · 显示触屏提示卡（上面那条窄屏规则把鼠标提示藏了）
+   · 自由视角 / 行走模式靠 WASD，手指操作不了，藏掉免得白点一下没反应 */
+@media (pointer:coarse){
+  .card.keys.touch-only{ display: block }
+  .bar #fly, .bar #walk{ display: none }
 }
 
 /* 抽屉开关按钮（仅窄屏显示） */

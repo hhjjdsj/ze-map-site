@@ -99,12 +99,18 @@ const desc = `CS2 僵尸逃跑地图实体预览：传送门、可破坏物、�
 
   <section class="viewer">
     <div class="bar">
-      <button id="side-toggle" type="button" aria-label="地图列表">☰ 地图</button>
+      <button id="side-toggle" type="button" aria-label="地图列表">☰<span class="stx"> 地图</span></button>
       <div class="mtitle"><span id="mtitle">—</span><code id="mcode"></code></div>
       <div class="seg" id="mode">
         <button data-m="3d" class="on">🧊 3D 视图</button>
         <button data-m="2d">🗺️ 平面</button>
       </div>
+      <button class="btn" id="fit">适应窗口</button>
+      {/*
+        次要控件（投影切换、着色、点径、各种模式、导出）在窄屏收进一条横向滚动条里。
+        桌面端 .bar-more 是 display:contents —— 布局与以前逐像素一致，只是换了个 DOM 位置。
+      */}
+      <div class="bar-more">
       <div class="seg" id="proj">
         <button data-p="xy" class="on">俯视 XY</button>
         <button data-p="xz">侧视 XZ</button>
@@ -126,8 +132,8 @@ const desc = `CS2 僵尸逃跑地图实体预览：传送门、可破坏物、�
        <button class="btn" id="fly" title="自由飞行视角（F 键切换）：不受轨道限制，可飞到任意位置">🕊 自由视角</button>
        <button class="btn" id="orbit" title="环绕视角：围绕地图中心旋转、平移和缩放">🔄 环绕视角</button>
        <button class="btn" id="walk" title="第一人称行走（V 键切换）：贴着真实碰撞地形跑图，可穿墙、无墙体碰撞">🚶 行走模式</button>
-      <button class="btn" id="fit">适应窗口</button>
       <button class="btn" id="png">导出 PNG</button>
+      </div>
     </div>
 
     <div class="stage" id="stage">
@@ -140,6 +146,10 @@ const desc = `CS2 僵尸逃跑地图实体预览：传送门、可破坏物、�
           <div class="card keys" id="camkeys">
             <span>左键拖拽</span> 旋转 · <span>右键/Shift</span> 平移 · <span>滚轮</span> 缩放 ·
             <span>R</span> 复位 · <span>T</span> 俯视 · <span>V</span> 行走
+          </div>
+          {/* 触屏提示：只在指针为「粗」（手指）的设备上显示，见 preview.css 的 .touch-only */}
+          <div class="card keys touch-only" id="camkeysT">
+            <span>单指</span> 旋转 · <span>双指捏合</span> 缩放 · <span>双指拖动</span> 平移 · <span>点按</span> 选中实体
           </div>
           <div class="card" id="v3info">—</div>
         </div>
