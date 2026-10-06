@@ -77,7 +77,15 @@ window.GL3D = (function(){
     '  gl_Position = uVP * vec4(w, 1.0);',
     '}'].join('\n');
   const MFS = [
+    /* 片元着色器里 highp 是**可选**能力：一部分手机 GPU（尤其安卓的 Mali / 老 Adreno）
+       不支持，直接写 precision highp float 会让整段着色器编译失败 ——
+       而编译失败以前是静默降级到平面视图，表现就是「手机上没有 3D」。
+       所以按 GLSL 的标准写法取条件精度：不支持就退到 mediump（雾会略糙，但能画）。 */
+    '#ifdef GL_FRAGMENT_PRECISION_HIGH',
     'precision highp float;',
+    '#else',
+    'precision mediump float;',
+    '#endif',
     'uniform vec3 uEye;','uniform float uFogK;','uniform vec3 uFogC;','uniform float uCutY;','uniform float uCutLo;',
     'uniform float uA;',
     'varying vec3 vN;','varying vec3 vW;',
@@ -143,43 +151,77 @@ window.GL3D = (function(){
     return { p, u:o };
   }
 
+  /** 在给定上下文上建好三套 program 与 GL 状态；任何一步失败都抛异常（调用方负责降级重试） */
+  function build(c){
+    gl = c;
+    const a = mk(VS, FS); prog = a.p; Object.assign(U, a.u);
+    const b = mk(PVS, PFS); pprog = b.p; Object.assign(UP, b.u);
+    const d = mk(MVS, MFS); mprog = d.p; Object.assign(UM, d.u);
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    bufB = gl.createBuffer(); bufP = gl.createBuffer(); bufM = gl.createBuffer();
+    ready = true;
+  }
+
+  const OPTS = [
+    {alpha:true, antialias:true, premultipliedAlpha:false, depth:true, preserveDrawingBuffer:true},
+    {alpha:true, antialias:false, premultipliedAlpha:false, depth:true, preserveDrawingBuffer:true},
+    {alpha:true, depth:true, preserveDrawingBuffer:true},
+    {alpha:false, depth:true},
+  ];
+  const KINDS = ['webgl2', 'webgl', 'experimental-webgl'];
+  const tagOf = (o, k) => k + (o.antialias ? '+aa' : '') + (o.preserveDrawingBuffer ? '+pdb' : '');
+
+  /**
+   * 初始化 3D。
+   *
+   * 为什么要「临时 canvas 先探一遍」：**一张 canvas 只能绑定一种上下文** ——
+   * 一旦在 cv3 上拿到 webgl2，之后想退回 webgl1 是拿不到的（getContext 只会返回 null）。
+   * 而手机上的失败往往正是「webgl2 拿得到、着色器却编译不过」，
+   * 所以先用一张一次性 canvas 试通「上下文 + 三套 program」，再动正式那张。
+   *
+   * 失败原因全部收集进 window.__glerr（会显示在页面上，方便用户直接反馈）。
+   */
   function init(cv){
-    try{
-      /* 上下文属性逐级降级再试。手机上（尤其 iOS Safari 与各家内置浏览器）带
-         antialias + preserveDrawingBuffer 的请求是有可能直接被拒的，而一旦被拒
-         页面就只剩平面视图 —— 用户只看到「3D 没了」，不知道原因。 */
-      const OPTS = [
-        {alpha:true, antialias:true, premultipliedAlpha:false, depth:true,
-         preserveDrawingBuffer:true},
-        {alpha:true, antialias:false, premultipliedAlpha:false, depth:true,
-         preserveDrawingBuffer:true},
-        {alpha:true, depth:true, preserveDrawingBuffer:true},
-        {alpha:false, depth:true},
-      ];
+    const errs = [];
+    for(const kind of KINDS){
+      if(kind !== 'webgl2' && typeof window.WebGLRenderingContext === 'undefined') continue;
+
+      /* 第一关：这种上下文类型在这台设备上到底能不能跑我们的着色器。
+         用一次性 canvas 探（正式那张只能绑一种上下文，探错了就回不了头），
+         每种类型只探一次，免得把浏览器的 WebGL 上下文数量上限吃满。 */
+      let why = '';
+      try{
+        const pc = document.createElement('canvas').getContext(kind, OPTS[0]);
+        if(!pc) why = '拿不到上下文';
+        else { try{ build(pc); }catch(e){ why = '着色器编译失败：' + String(e.message || e).slice(0, 90); } }
+      }catch(e){ why = '抛异常：' + e.message; }
+      if(why){ errs.push(kind + ' ' + why); continue; }
+
+      /* 第二关：正式 canvas 上按属性逐级降级 */
       for(const opt of OPTS){
-        gl = cv.getContext('webgl2', opt);
-        GL2 = !!gl;
-        if(!gl) gl = cv.getContext('webgl', opt) || cv.getContext('experimental-webgl', opt);
-        if(gl) break;
+        let real;
+        try{ real = cv.getContext(kind, opt); }
+        catch(e){ errs.push(tagOf(opt, kind) + ' 正式 canvas 抛异常：' + e.message); continue; }
+        if(!real){ errs.push(tagOf(opt, kind) + ' 正式 canvas 拿不到上下文'); continue; }
+        if(real.isContextLost && real.isContextLost()){ errs.push(tagOf(opt, kind) + ' 上下文已被回收'); continue; }
+        try{
+          build(real);
+          GL2 = kind === 'webgl2';
+          window.__glerr = '';
+          return true;
+        }catch(e){
+          errs.push(tagOf(opt, kind) + ' 正式初始化失败：' + String(e.message || e).slice(0, 90));
+        }
       }
-      if(!gl) return false;
-      if(gl.isContextLost && gl.isContextLost()){ window.__glerr = '图形上下文已被系统回收'; return false; }
-      const a = mk(VS, FS); prog = a.p; Object.assign(U, a.u);
-      const b = mk(PVS, PFS); pprog = b.p; Object.assign(UP, b.u);
-      const c = mk(MVS, MFS); mprog = c.p; Object.assign(UM, c.u);
-      gl.enable(gl.DEPTH_TEST);
-      gl.depthFunc(gl.LEQUAL);
-      gl.enable(gl.CULL_FACE);
-      gl.cullFace(gl.BACK);
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      bufB = gl.createBuffer(); bufP = gl.createBuffer(); bufM = gl.createBuffer();
-      ready = true;
-      return true;
-    }catch(e){
-      window.__glerr = e.message;
-      return false;
     }
+    ready = false; gl = null;
+    window.__glerr = errs.slice(0, 3).join('；') || '未知原因';
+    return false;
   }
 
   /* boxes: [{x,y,z,ex,ey,ez,c:[r,g,b],a}]  —— 半长为 ex/ey/ez */
@@ -1418,8 +1460,48 @@ function mark3DUnavailable(reason){
     btn.classList.add('off');
     btn.title = '3D 视图不可用：' + hint + '（点一下可重试）';
   }
+  const bar = $('glwarn');
+  if(bar){
+    bar.hidden = false;
+    $('glwarn-tx').innerHTML = '⚠️ 3D 视图不可用：' + esc(String(hint).slice(0, 160)) +
+      '　<span style="opacity:.75">已切到平面视图，点「3D 视图」可重试</span>';
+  }
   flashMsg('3D 视图不可用：' + hint + '。已切到平面视图，点「3D 视图」可重试', 9000);
 }
+
+/** 给反馈用的诊断文本（点「复制诊断」拿到的就是这一段） */
+function glDiagnose(){
+  let sup = '未知';
+  try{
+    const c = document.createElement('canvas');
+    sup = ['webgl2', 'webgl', 'experimental-webgl']
+      .map(k => k + '=' + (c.getContext(k) ? '有' : '无')).join(' ');
+  }catch(e){ sup = '探测异常：' + e.message; }
+  const cv = document.getElementById('cv3');
+  return [
+    'ZE 地图站 · 3D 诊断',
+    'UA: ' + navigator.userAgent,
+    '视口: ' + innerWidth + '×' + innerHeight + ' @' + (window.devicePixelRatio || 1) + 'x',
+    'WebGL 支持: ' + sup,
+    '3D 画布: ' + (cv ? cv.width + '×' + cv.height : '没有') + ' · GLok=' + GLok,
+    '失败原因: ' + (window.__glerr || '(无记录)') + ' / ' + (GLerr || ''),
+  ].join('\n');
+}
+$('glwarn-cp')?.addEventListener('click', async () => {
+  const txt = glDiagnose();
+  try{
+    await navigator.clipboard.writeText(txt);
+    flashMsg('诊断信息已复制，直接发给站长即可');
+  }catch(e){
+    /* 手机浏览器可能不给剪贴板权限：退回到「显示出来让用户手选」 */
+    const bar = $('glwarn');
+    if(bar){
+      bar.hidden = false;
+      $('glwarn-tx').textContent = txt;
+    }
+    flashMsg('复制失败：已把内容显示在提示条上，长按选中即可');
+  }
+});
 
 /** 清掉「3D 不可用」标记（重试成功后） */
 function clear3DUnavailable(){
@@ -1427,6 +1509,8 @@ function clear3DUnavailable(){
   if(btn){ btn.classList.remove('off'); btn.title = ''; }
   const e = $('glerr');
   if(e) e.style.display = 'none';
+  const bar = $('glwarn');
+  if(bar) bar.hidden = true;
   window.__glerr = '';
 }
 

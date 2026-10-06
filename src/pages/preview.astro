@@ -136,6 +136,13 @@ const desc = `CS2 僵尸逃跑地图实体预览：传送门、可破坏物、�
       </div>
     </div>
 
+    {/* 3D 不可用时常驻的一行说明：toast 一会儿就没了，这一条会留着，
+        并且能一键复制完整诊断信息（反馈时直接贴给我就行）。 */}
+    <div class="glwarn" id="glwarn" hidden>
+      <span id="glwarn-tx"></span>
+      <button class="btn" type="button" id="glwarn-cp">复制诊断</button>
+    </div>
+
     <div class="stage" id="stage">
       <canvas id="cv"></canvas>
       <div class="stage3d" id="stage3d">

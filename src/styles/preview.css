@@ -65,6 +65,17 @@ aside{width:262px;flex:0 0 262px;background:var(--panel);border-right:1px solid 
 .btn{border:1px solid var(--line2);background:#fff;border-radius:8px;padding:4px 10px;
   font-size:11.5px;cursor:pointer;color:var(--ink2);font-family:inherit}
 .btn:hover{border-color:var(--accent2);color:var(--accent)}
+/* 3D 不可用时的常驻说明条（toast 会消失，这条留着，并能复制诊断信息） */
+.glwarn{
+  flex:0 0 auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:7px 12px; font-size:11.5px; line-height:1.5;
+  background:#2a1a12; color:#ffd9a8; border-bottom:1px solid #4a3320;
+}
+.glwarn[hidden]{ display:none }
+.glwarn .btn{ padding:3px 9px; font-size:11.5px; background:#3a2418; color:#ffd9a8; border-color:#5a3f28 }
+.glwarn .btn:hover{ border-color:#ffb765; color:#fff }
+.glwarn code{ background:rgba(255,255,255,.08); padding:0 4px; border-radius:4px }
+
 /* 3D 用不了时的「降级」标记：看得见、点得动（点了会重试） */
 .seg button.off{color:var(--ink3);text-decoration:line-through;opacity:.65}
 /* 次要控件容器：桌面端 display:contents = 完全不参与布局（与以前逐像素一致），
