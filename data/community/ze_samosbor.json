@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_samosbor",
+  "updatedAt": "2026-10-06T14:15:57.356Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_samosbor.webp",
+      "by": "SiKi",
+      "at": "2026-10-06T13:11:49.192Z",
+      "submission": 115
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_samosbor.webp",
+      "by": "SiKi",
+      "at": "2026-10-06T13:11:49.192Z",
+      "submission": 115
+    }
+  ],
+  "items": []
+}

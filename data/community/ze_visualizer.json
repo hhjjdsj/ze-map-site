@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "slug": "ze_visualizer",
+  "updatedAt": "2026-10-06T14:15:57.518Z",
+  "fields": {
+    "cover": {
+      "v": "/images/covers/custom/ze_visualizer.webp",
+      "by": "SiKi",
+      "at": "2026-10-06T13:11:50.273Z",
+      "submission": 118
+    }
+  },
+  "notes": [],
+  "log": [
+    {
+      "field": "cover",
+      "from": null,
+      "to": "/images/covers/custom/ze_visualizer.webp",
+      "by": "SiKi",
+      "at": "2026-10-06T13:11:50.273Z",
+      "submission": 118
+    }
+  ],
+  "items": []
+}
