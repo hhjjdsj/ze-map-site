@@ -620,7 +620,11 @@ async function refreshTerrain(){
     HFG = null;
     if(CAM.walk) setWalk(false);              // 地形没了就没法贴地，退出行走
     meshErrKey = forKey;
-    console.warn('地形加载失败：' + (err && err.message ? err.message : err));
+    const why = err && err.message ? err.message : String(err);
+    console.warn('地形加载失败：' + why);
+    /* 光在图层面板里写一行小字没人会注意 —— 用户会以为「这张图本来就没有地形」，
+       然后发现「隐藏块体后什么都没有」。这里直接弹一句，并说明去哪重试。 */
+    if(S.mode === '3d' && S.terrain) flashMsg('真实碰撞地形加载失败：' + why + '（图层面板里那行可以点着重试）', 9000);
   }
   updateTerrRow();
   if(S.mode === '3d') render3D();
@@ -1503,12 +1507,18 @@ function glDiagnose(){
       .map(k => k + '=' + (c.getContext(k) ? '有' : '无')).join(' ');
   }catch(e){ sup = '探测异常：' + e.message; }
   const cv = document.getElementById('cv3');
+  const on = (id) => { const el = document.getElementById(id); return el ? (el.checked ? '开' : '关') : '无'; };
   return [
     'ZE 地图站 · 3D 诊断',
     'UA: ' + navigator.userAgent,
     '视口: ' + innerWidth + '×' + innerHeight + ' @' + (window.devicePixelRatio || 1) + 'x',
     'WebGL 支持: ' + sup,
     '3D 画布: ' + (cv ? cv.width + '×' + cv.height : '没有') + ' · GLok=' + GLok,
+    /* 场景里到底画了多少东西：把「看不见」拆成「没加载」还是「被关掉」 */
+    '场景: 块体 ' + GL3D.boxCount + ' · 点云 ' + GL3D.ptCount + ' · 地形 ' + GL3D.meshCount + ' 面',
+    '开关: 块体=' + on('vbox') + ' 地形=' + on('terbox') + ' 点云大小=' + Math.round((S.psz || 1) * 100) + '%' +
+      ' 地形不透明度=' + Math.round((S.topa === undefined ? 1 : S.topa) * 100) + '%',
+    '地形分片源: ' + TERR_BASE,
     '失败原因: ' + (window.__glerr || '(无记录)') + ' / ' + (GLerr || ''),
   ].join('\n');
 }
@@ -1519,13 +1529,20 @@ $('glwarn-cp')?.addEventListener('click', async () => {
     flashMsg('诊断信息已复制，直接发给站长即可');
   }catch(e){
     /* 手机浏览器可能不给剪贴板权限：退回到「显示出来让用户手选」 */
-    const bar = $('glwarn');
-    if(bar){
-      bar.hidden = false;
-      $('glwarn-tx').textContent = txt;
-    }
-    flashMsg('复制失败：已把内容显示在提示条上，长按选中即可');
+    showDiag(txt);
   }
+});
+/* 图层浮层底部那行「场景诊断」：3D 正常时也能随时把现场数据调出来
+   （看不见东西往往是「某一层没加载 / 被关掉」，光看画面判断不出来） */
+function showDiag(txt){
+  const bar = $('glwarn');
+  if(!bar) return;
+  bar.hidden = false;
+  $('glwarn-tx').textContent = txt;
+}
+$('diaglink')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  showDiag(glDiagnose());
 });
 
 /** 清掉「3D 不可用」标记（重试成功后） */
