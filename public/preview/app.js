@@ -1228,7 +1228,7 @@ function renderLayers(){
       (cur.cnsize[id]?.[b]||0)-(cur.cnsize[id]?.[a]||0) || a.localeCompare(b, 'en'));
     const hidden = cns.filter(c=>S.coff.has(c));
     const visible = cur.groups[id] - hidden.reduce((n,c)=>n+cur.cncnt[id][c],0);
-    const on = !S.off.has(id) && (!S.solo || S.solo===id);
+    const on = layerDrawn(id);
     const sub = S.xopen.has(id) && cns.length > 1 ? `<div class="subs">${cns.map(c=>{
       const off = S.coff.has(c);
       const size = cur.cnsize[id]?.[c]||0;
@@ -1243,8 +1243,23 @@ function renderLayers(){
       ${cns.length>1?`<span class="xbtn${S.xopen.has(id)?' open':''}" data-g="${id}" title="展开细类，可单独隐藏">${S.xopen.has(id)?'▾':'▸'}</span>`:''}
       </div>${sub}</div>`;
   }).join('');
-  const shown = ids.filter(id=>!S.off.has(id) && (!S.solo||S.solo===id)).length;
+  const shown = ids.filter(layerDrawn).length;
   $('lvis').textContent = ` ${shown}/${ids.length} 层`;
+}
+
+/**
+ * 环境点在三维视图里**默认不画**（2026-10-05 反馈：「那些白点不要，为什么要出现」）。
+ *
+ * 它们是灯光、粒子、音效这类不参与玩法的实体，数量动辄几百上千；
+ * 二维里它们组成「地形轮廓」密度底图，有意义；三维里叠在真实地形上只是密密麻麻的白点噪点。
+ * 在图层面板点开「环境点」就会画（env3d = true），点了就按用户的意愿来。
+ */
+let env3d = false;
+function layerDrawn(id){
+  if(S.off.has(id)) return false;
+  if(S.solo && S.solo !== id) return false;
+  if(S.mode === '3d' && id === 'env' && !env3d) return false;
+  return true;
 }
 function renderStats(){
   const m = cur.m;
@@ -1673,7 +1688,8 @@ function build3D(){
   const boxes = [];
   const parr = [];
   for(const o of cur.pts){
-    if(S.off.has(o.gid) || (S.solo && S.solo !== o.gid)) continue;
+    /* 用 layerDrawn 而不是直接查 S.off：三维里「环境点」默认不画（见 layerDrawn 的说明） */
+    if(!layerDrawn(o.gid)) continue;
     if(S.coff.has(o.cn)) continue;
     if(!stageOk(o)) continue;
     const g = gmap[o.gid]; if(!g) continue;
@@ -2364,6 +2380,14 @@ $('lbody').addEventListener('click', e=>{
   const li = e.target.closest('.li'); if(!li) return;
   const g = li.dataset.g;
   if(e.detail>1){ S.solo = (S.solo===g) ? null : g; }
+  else if(g === 'env' && S.mode === '3d'){
+    /* 三维里「环境点」默认不画，但它并不在 S.off 里 —— 如果照旧按 S.off 取反，
+       第一次点击会变成「再关一次」，用户看着没反应（实测踩到）。
+       所以这里按**实际显示状态**取反。 */
+    const wantOn = !layerDrawn('env');
+    if(wantOn){ S.off.delete('env'); env3d = true; }
+    else { S.off.add('env'); env3d = false; if(S.solo === 'env') S.solo = null; }
+  }
   else {
     if(S.off.has(g)){ S.off.delete(g); if(S.solo===g) S.solo=null; }
     else S.off.add(g);
@@ -2389,7 +2413,7 @@ const GDESC = {
   spawn: {desc:'玩家出生与复活位置。开局站位、重生点与防守压力分布的参考。',cls:'info_player_start · info_player_terrorist / counterterrorist'},
   item:  {desc:'武器与道具生成点。捡补给、拿装备的位置参考。',cls:'weapon_* · item_* · game_*'},
   prop:  {desc:'装饰与动态模型：雕像、招牌、场景摆设等视觉元素，一般不影响玩法；可打碎的物理道具已归入「可破坏物」。',cls:'prop_dynamic · prop_static · prop_ragdoll'},
-  env:   {desc:'灯光、粒子、音效、天空盒等环境实体，不参与玩法；抽样后其分布用于生成「地形轮廓」密度底图。',cls:'light_* · info_particle_system · ambient_generic'},
+  env:   {desc:'灯光、粒子、音效、天空盒等环境实体，不参与玩法；抽样后其分布用于生成「地形轮廓」密度底图。三维视图里默认不画（数量多、叠在地形上像噪点），需要时点这一行打开。',cls:'light_* · info_particle_system · ambient_generic'},
   misc:  {desc:'未归入上述类别的杂项实体，通常数量极少。',cls:'其余 classname'}
 };
 const ltipEl = $('ltip');
