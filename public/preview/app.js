@@ -38,9 +38,14 @@ window.GL3D = (function(){
     '  float a = uAlpha * clamp(0.55 + 0.45 * fog, 0.0, 1.0);',
     '  gl_FragColor = vec4(col, a);',
     '}'].join('\n');
+  /* ⚠️ 顶点/片元之间**同名 uniform 的精度必须一致**（GLSL ES 1.00 的规定）。
+     顶点着色器里不写限定符时默认是 highp，片元着色器里由 `precision mediump float;` 决定 ——
+     于是 `uXray` 一个 highp 一个 mediump，桌面 ANGLE 睁只眼闭只眼，
+     而手机内核（夸克 U4 / 华为机上实测）会直接链接失败 → 整个 3D 打不开。
+     所以跨阶段的 uniform 一律显式写 mediump，两边逐字一致（2026-10-05 实测修复）。 */
   const PVS = [
     'attribute vec3 aPos;','attribute vec3 aCol;','attribute float aSz;',
-     'uniform mat4 uVP;','uniform float uPx;','uniform float uXray;',
+     'uniform mat4 uVP;','uniform mediump float uPx;','uniform mediump float uXray;',
     'varying vec3 vC;',
     'void main(){',
     '  vC = aCol;',
@@ -50,7 +55,7 @@ window.GL3D = (function(){
     '}'].join('\n');
   const PFS = [
     'precision mediump float;',
-     'uniform float uAlpha;','uniform float uXray;','uniform vec3 uFogC;','uniform float uFogK;','uniform vec3 uEye;',
+     'uniform float uAlpha;','uniform mediump float uXray;','uniform vec3 uFogC;','uniform float uFogK;','uniform vec3 uEye;',
     'varying vec3 vC;',
     'void main(){',
     '  vec2 c = gl_PointCoord - vec2(0.5);',
@@ -132,18 +137,24 @@ window.GL3D = (function(){
   let mO=[0,0,0], mS=[1,1,1];
   const U = {}, UP = {}, UM = {};
 
-  function sh(t, s){
+  function sh(t, s, label){
     const o = gl.createShader(t);
     gl.shaderSource(o, s); gl.compileShader(o);
-    if(!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o));
+    if(!gl.getShaderParameter(o, gl.COMPILE_STATUS)){
+      throw new Error(label + ' 编译失败：' + String(gl.getShaderInfoLog(o) || '').trim());
+    }
     return o;
   }
-  function mk(vs, fs){
+  /* 名字带上「哪套 program + 哪个阶段」：手机上的失败原因会显示给用户，
+     「着色器编译失败」这种笼统说法没法定位（链接失败也会走到这里）。 */
+  function mk(vs, fs, name){
     const p = gl.createProgram();
-    gl.attachShader(p, sh(gl.VERTEX_SHADER, vs));
-    gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+    gl.attachShader(p, sh(gl.VERTEX_SHADER, vs, name + ' 顶点着色器'));
+    gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs, name + ' 片元着色器'));
     gl.linkProgram(p);
-    if(!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    if(!gl.getProgramParameter(p, gl.LINK_STATUS)){
+      throw new Error(name + ' 链接失败：' + String(gl.getProgramInfoLog(p) || '').trim());
+    }
     const o = {}; const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
     for(let i=0;i<n;i++){ const u = gl.getActiveUniform(p, i); o[u.name] = gl.getUniformLocation(p, u.name); }
     const na = gl.getProgramParameter(p, gl.ACTIVE_ATTRIBUTES);
@@ -154,9 +165,9 @@ window.GL3D = (function(){
   /** 在给定上下文上建好三套 program 与 GL 状态；任何一步失败都抛异常（调用方负责降级重试） */
   function build(c){
     gl = c;
-    const a = mk(VS, FS); prog = a.p; Object.assign(U, a.u);
-    const b = mk(PVS, PFS); pprog = b.p; Object.assign(UP, b.u);
-    const d = mk(MVS, MFS); mprog = d.p; Object.assign(UM, d.u);
+    const a = mk(VS, FS, '实体块'); prog = a.p; Object.assign(U, a.u);
+    const b = mk(PVS, PFS, '点云'); pprog = b.p; Object.assign(UP, b.u);
+    const d = mk(MVS, MFS, '地形'); mprog = d.p; Object.assign(UM, d.u);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
     gl.enable(gl.CULL_FACE);
@@ -198,29 +209,34 @@ window.GL3D = (function(){
       try{
         const pc = document.createElement('canvas').getContext(kind, OPTS[0]);
         if(!pc) why = '拿不到上下文';
-        else { try{ build(pc); }catch(e){ why = '着色器编译失败：' + String(e.message || e).slice(0, 90); } }
+        else { try{ build(pc); }catch(e){ why = String(e.message || e).slice(0, 110); } }
       }catch(e){ why = '抛异常：' + e.message; }
-      if(why){ errs.push(kind + ' ' + why); continue; }
+      /* 着色器编译/链接失败时，三种上下文类型给出的原因通常逐字相同（同一份源码、同一个编译器）
+         —— 收集时先按 kind 记着，最后再去重，免得页面上把同一句话重复三遍 */
+      if(why){ errs.push({ kind, why }); continue; }
 
       /* 第二关：正式 canvas 上按属性逐级降级 */
       for(const opt of OPTS){
         let real;
         try{ real = cv.getContext(kind, opt); }
-        catch(e){ errs.push(tagOf(opt, kind) + ' 正式 canvas 抛异常：' + e.message); continue; }
-        if(!real){ errs.push(tagOf(opt, kind) + ' 正式 canvas 拿不到上下文'); continue; }
-        if(real.isContextLost && real.isContextLost()){ errs.push(tagOf(opt, kind) + ' 上下文已被回收'); continue; }
+        catch(e){ errs.push({ kind: tagOf(opt, kind), why: '正式 canvas 抛异常：' + e.message }); continue; }
+        if(!real){ errs.push({ kind: tagOf(opt, kind), why: '正式 canvas 拿不到上下文' }); continue; }
+        if(real.isContextLost && real.isContextLost()){ errs.push({ kind: tagOf(opt, kind), why: '上下文已被回收' }); continue; }
         try{
           build(real);
           GL2 = kind === 'webgl2';
           window.__glerr = '';
           return true;
         }catch(e){
-          errs.push(tagOf(opt, kind) + ' 正式初始化失败：' + String(e.message || e).slice(0, 90));
+          errs.push({ kind: tagOf(opt, kind), why: '正式初始化失败：' + String(e.message || e).slice(0, 110) });
         }
       }
     }
     ready = false; gl = null;
-    window.__glerr = errs.slice(0, 3).join('；') || '未知原因';
+    const whys = [...new Set(errs.map((e) => e.why))];
+    window.__glerr = !errs.length ? '未知原因'
+      : whys.length === 1 ? `${whys[0]}（${errs.map((e) => e.kind).join(' / ')} 都试过了）`
+      : errs.slice(0, 3).map((e) => e.kind + '：' + e.why).join('；');
     return false;
   }
 

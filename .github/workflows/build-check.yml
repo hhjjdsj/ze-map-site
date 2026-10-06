@@ -75,5 +75,10 @@ jobs:
       - name: 检查地图条目（是不是手改了生成物）
         run: npm run content:mdx
 
+      # GLSL 的跨阶段 uniform 精度不一致只在手机内核上炸（桌面 ANGLE 放行），
+      # 电脑上永远复现不了，所以做成静态检查（2026-10-05 夸克/华为机的 3D 打不开就是这个）
+      - name: 检查 3D 着色器（跨阶段 uniform 精度必须一致）
+        run: npm run content:shaders
+
       - name: 检查站内死链
         run: npm run content:links
