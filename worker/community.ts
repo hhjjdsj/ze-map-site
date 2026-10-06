@@ -79,8 +79,7 @@ export async function readCommunityDoc(env: Env, slug: string): Promise<Communit
   const res = await gh(
     env,
     `/repos/${repo(env)}/contents/${communityPath(slug)}?ref=${encodeURIComponent(branch(env))}`
-  );
-  if (res.status === 404) return { doc: normalizeDoc(slug, null), sha: null };
+  );  if (res.status === 404) return { doc: normalizeDoc(slug, null), sha: null };
   if (!res.ok) throw new GitError(`读取仓库文件失败（HTTP ${res.status}）`, 502);
 
   const data = (await res.json()) as { content?: string; sha?: string };
@@ -94,6 +93,56 @@ export async function readCommunityDoc(env: Env, slug: string): Promise<Communit
     }
   }
   return { doc: normalizeDoc(slug, parsed), sha: data.sha ?? null };
+}
+
+/**
+ * 一次读多份社区文档（按 slug 批量）。
+ *
+ * 为什么要批量：Workers 免费版**单次调用最多 50 个子请求**（fetch 出去一次算一个），
+ * 而「写回仓库」以前是每张图一次 GET —— 十几条投稿就能把额度吃光，
+ * 线上表现是 HTTP 500「Too many subrequests by single Worker invocation」（2026-10-06 实遇）。
+ * 目录接口一次就能把所有文件的 base64 内容带回来（每份文档才 1~3 KB），
+ * 于是 N 次读完变成 1 次；目录里没带内容的再按单个文件补读。
+ */
+export async function readCommunityDocs(
+  env: Env,
+  slugs: string[]
+): Promise<Map<string, CommunityFile>> {
+  const out = new Map<string, CommunityFile>();
+  const want = new Set(slugs.filter(Boolean));
+  if (!want.size) return out;
+
+  let listed: Array<{ name?: string; content?: string; sha?: string }> = [];
+  try {
+    const res = await gh(
+      env,
+      `/repos/${repo(env)}/contents/data/community?ref=${encodeURIComponent(branch(env))}`
+    );
+    if (res.ok) {
+      const data = (await res.json()) as unknown;
+      if (Array.isArray(data)) listed = data as typeof listed;
+    }
+  } catch {
+    /* 目录读不到就退化成逐文件读（下面那段） */
+  }
+
+  for (const f of listed) {
+    const m = /^(.+)\.json$/.exec(String(f.name ?? ''));
+    if (!m || !want.has(m[1]) || !f.content) continue;
+    let parsed: unknown = null;
+    try {
+      parsed = JSON.parse(fromBase64Utf8(f.content));
+    } catch {
+      parsed = null;      // 坏文件当空文档，写回时会重写成合法结构
+    }
+    out.set(m[1], { doc: normalizeDoc(m[1], parsed), sha: f.sha ?? null });
+  }
+
+  for (const slug of want) {
+    if (out.has(slug)) continue;
+    out.set(slug, await readCommunityDoc(env, slug));
+  }
+  return out;
 }
 
 /**

@@ -431,26 +431,47 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     await load();
   }
 
-  /** 把待写回的投稿一次写回仓库（一个 commit、一次重建） */
+  /**
+   * 把待写回的投稿写回仓库。
+   *
+   * 服务端**每批最多写 6 张图**（一次 Worker 调用只有 50 个子请求额度，
+   * 十几条投稿一起写会撞上限，线上真的报过 500 Too many subrequests）。
+   * 所以这里循环：一批成功后如果还有剩下的，自动再发一次 —— 每批一个 commit，
+   * 页面上把每批的结果累积显示出来。
+   */
   async function flush() {
     const btn = $<HTMLButtonElement>('a-flush-go');
     const out = $<HTMLElement>('a-flush-out');
     btn.disabled = true;
     const old = btn.textContent;
-    btn.textContent = '正在写回…';
     out.textContent = '';
+    let done = 0, maps = 0, files = 0;
+    const skippedAll: Array<{ id: number; reason: string }> = [];
+    const commits: string[] = [];
     try {
-      const { status, data } = await api('/api/admin/flush', { method: 'POST', body: { reviewer } });
-      if (status !== 200) {
-        out.textContent = `${data?.error ?? '写回失败'}（HTTP ${status}）—— 投稿仍留在「待写回」，修好后重试即可`;
-        setStatus('写回失败', true);
-        return;
+      for (let round = 1; round <= 20; round++) {
+        btn.textContent = round === 1 ? '正在写回…' : `正在写回…（第 ${round} 批）`;
+        const { status, data } = await api('/api/admin/flush', { method: 'POST', body: { reviewer } });
+        if (status !== 200) {
+          out.textContent =
+            (commits.length ? `已写回 ${done} 条（${commits.length} 个提交）后中断：` : '') +
+            `${data?.error ?? '写回失败'}（HTTP ${status}）—— 剩下的仍留在「待写回」，修好后重试即可`;
+          setStatus('写回失败', true);
+          return;
+        }
+        done += Number(data.committed ?? 0);
+        maps += Number(data.maps ?? 0);
+        files += Number(data.files ?? 0);
+        skippedAll.push(...((data.skipped ?? []) as Array<{ id: number; reason: string }>));
+        if (data.commit) commits.push(String(data.commit).slice(0, 8));
+        out.textContent =
+          `✅ 已写回 ${done} 条 / ${maps} 张图 · ${files} 个文件 · 提交 ${commits.join('、')}` +
+          (skippedAll.length
+            ? `　⚠️ 跳过 ${skippedAll.length} 条：${skippedAll.map((s) => `#${s.id} ${s.reason}`).join('；')}`
+            : '') +
+          (data.remaining ? `　还有 ${data.remaining} 条，继续…` : '　（Cloudflare 1~2 分钟后重建上线）');
+        if (!data.remaining) break;
       }
-      const skipped = (data.skipped ?? []) as Array<{ id: number; reason: string }>;
-      out.textContent =
-        `✅ 已写回 ${data.committed} 条 / ${data.maps} 张图 · ${data.files} 个文件 · 提交 ${String(data.commit).slice(0, 8)}` +
-        (skipped.length ? `　⚠️ 跳过 ${skipped.length} 条：${skipped.map((s) => `#${s.id} ${s.reason}`).join('；')}` : '') +
-        '　（Cloudflare 1~2 分钟后重建上线）';
       setStatus('写回完成');
     } finally {
       btn.disabled = false;

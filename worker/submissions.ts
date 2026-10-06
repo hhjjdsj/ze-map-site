@@ -18,6 +18,7 @@ import {
   commitFiles,
   communityPath,
   readCommunityDoc,
+  readCommunityDocs,
 } from './community';
 import {
   checkCoverBytes,
@@ -494,18 +495,30 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
   const reviewer = reviewerRaw.value;
   const audit = reviewer ? `，审核 ${reviewer}` : '';
 
-  const { results: rows } = await env.DB.prepare(
+  const { results: allRows } = await env.DB.prepare(
     `SELECT * FROM submissions WHERE status='approved' ORDER BY created_at ASC LIMIT 200`
   ).all<SubmissionRow>();
-  if (!rows?.length) return json({ ok: true, committed: 0, message: '没有待写回的投稿' });
+  if (!allRows?.length) return json({ ok: true, committed: 0, message: '没有待写回的投稿' });
 
   /* 按地图分组：同一张图的多条投稿合并进同一份文档 */
-  const bySlug = new Map<string, SubmissionRow[]>();
-  for (const row of rows) {
-    const list = bySlug.get(row.map_slug) ?? [];
+  const grouped = new Map<string, SubmissionRow[]>();
+  for (const row of allRows) {
+    const list = grouped.get(row.map_slug) ?? [];
     list.push(row);
-    bySlug.set(row.map_slug, list);
+    grouped.set(row.map_slug, list);
   }
+
+  /*
+   * 一批最多写这么多张图：Workers 免费版一次调用只有 50 个子请求，
+   * 而每张图至少一次目录/文件读取、每个封面图一次 blob 上传，最后还有 tree/commit/ref 三次。
+   * 攒批攒得越多越容易撞上限（线上真的撞过：HTTP 500 Too many subrequests）。
+   * 超出的部分留在「待写回」，审核台会自动再发一次请求继续写 —— 每批一个 commit。
+   */
+  const MAX_MAPS = 6;
+  const picked = [...grouped.entries()].slice(0, MAX_MAPS);
+  const rows = picked.flatMap(([, list]) => list);
+  const remainingRows = allRows.length - rows.length;
+  const remainingMaps = grouped.size - picked.length;
 
   const skipped: Array<{ id: number; reason: string }> = [];
   const files: CommitFile[] = [];
@@ -514,8 +527,11 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
   const fieldSummary = new Set<string>();
 
   try {
-    for (const [slug, list] of bySlug) {
-      const { doc } = await readCommunityDoc(env, slug);
+    /* 一次把所有要改的社区文档读回来（1 个子请求，而不是每张图一个） */
+    const docs = await readCommunityDocs(env, picked.map(([slug]) => slug));
+
+    for (const [slug, list] of picked) {
+      const { doc } = docs.get(slug) ?? (await readCommunityDoc(env, slug));
       let touched = false;
 
       for (const row of list) {
@@ -590,7 +606,7 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
     const summary = fieldSummary.size > 4
       ? `${[...fieldSummary].slice(0, 4).join('、')} 等 ${fieldSummary.size} 项`
       : [...fieldSummary].join('、');
-    const message = `社区投稿：${bySlug.size} 张图 · ${committedIds.length} 条（${summary}）（by ${who}${audit}）`;
+    const message = `社区投稿：${picked.length} 张图 · ${committedIds.length} 条（${summary}）（by ${who}${audit}）`;
 
     const { sha: commitSha, files: fileCount } = await commitFiles(env, files, message);
 
@@ -609,11 +625,16 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
     return json({
       ok: true,
       committed: committedIds.length,
-      maps: bySlug.size,
+      maps: picked.length,
       files: fileCount,
       commit: commitSha,
       skipped,
-      note: '已写回仓库，Cloudflare 会在 1~2 分钟内重建上线（一次提交只重建一次）',
+      /* 还没写完的（这一批之外的）：审核台会接着再发一次请求，每批一个 commit */
+      remaining: remainingRows,
+      remainingMaps,
+      note: remainingRows
+        ? `本批已写回 ${committedIds.length} 条（一个 commit），还有 ${remainingRows} 条待写回，正在继续…`
+        : '已写回仓库，Cloudflare 会在 1~2 分钟内重建上线（一次提交只重建一次）',
       _now: now,
     });
   } catch (err) {
