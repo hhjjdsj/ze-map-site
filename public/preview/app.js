@@ -626,14 +626,23 @@ async function refreshTerrain(){
   if(S.mode === '3d') render3D();
 }
 
-/* 工具面板里那行状态文字 */
+/* 工具面板里那行状态文字。
+   失败时写成可点的一句话，而不是干巴巴的「本地无地形」—— 地形是从 R2 拉的，
+   手机上网络抖一下、或者本地预览用的 origin 不在 R2 的 CORS 白名单里，都会失败，
+   而用户看到「无地形」只能以为这张图本来就没有（2026-10-05 反馈）。 */
 function updateTerrRow(){
   const st = $('tstat');
   if(!st) return;
   const wf = S.entry && S.entry.f;
+  st.style.cursor = '';
+  st.title = '';
   if(!S.terrain) st.textContent = '已关';
   else if(!wf) st.textContent = '此图无数据';
-  else if(meshErrKey === S.key) st.textContent = '本地无地形';
+  else if(meshErrKey === S.key){
+    st.textContent = '加载失败 · 点此重试';
+    st.style.cursor = 'pointer';
+    st.title = '从 ' + TERR_BASE + ' 取地形分片失败：可能是网络问题，也可能是这张图还没上传。点一下重试。';
+  }
   else if(GL3D.meshCount) st.textContent = fmt(GL3D.meshCount) + ' 面';
   else st.textContent = '加载中…';
 }
@@ -1734,7 +1743,15 @@ function render3D(){
   GL3D.draw({
     vp, eye,
     alpha: 1.0,
-    px: W / 700 * S.psz,           // psz = 点云大小倍率
+    /* 点云点径。着色器里算的是 gl_PointSize = aSz * uPx / 距离，
+       而本站的 aSz 只是「1.0 / 环境点 0.55」这种倍率（不是世界尺寸），
+       所以 uPx 得自己把「世界直径」换算成屏幕像素：
+         px = 直径 · (1/tan(fovy/2)) · (视口高度/2)，fovy=45° → 系数 1.207
+       并且要用**帧缓冲**高度（DPR / RSCALE 之后），因为 gl_PointSize 的单位是设备像素。
+       以前这里写的是 W/700（约等于 2），算下来恒被 clamp 到 1px ——
+       「把块体隐藏后就看不见任何东西」（2026-10-05 反馈）就是这个原因：
+       白点（环境点）其实一直在画，只是每个点只有 1 个设备像素。 */
+    px: pointDot() * (1 / Math.tan(45 * Math.PI / 360)) * 0.5 * (cv3.height || H) * S.psz,
     pAlpha: 0.85,
     solid: S.vbox,
     fogK: CAM.fogK, fog: CAM.fog,
@@ -1746,6 +1763,14 @@ function render3D(){
   drawGrid(vp);
   drawAxis();
 }
+/* 点的世界直径：随图幅缩放（大图/小图的观感才一致）。
+   0.005 = 图幅的千分之五：3 万单位的图约 150 单位，默认机位下约 5 个设备像素；
+   环境点还有 0.55 的倍率（aSz），实际约 3 像素 —— 和平面视图里那些白点的分量相当。
+   嫌小可以拉图层面板里的「点云」滑杆（20%~250%）。 */
+function pointDot(){
+  return mapSpan() * 0.005;
+}
+
 /* 地面网格 + 高度参考框（帮助建立三维空间感） */
 function drawGrid(vp){
   const b = S.full ? cur.m.fb : cur.m.b;
@@ -2351,6 +2376,8 @@ $('psize').addEventListener('input', e=>{ S.psize=parseFloat(e.target.value); dr
 $('vbox').addEventListener('change', e=>{ S.vbox=e.target.checked; build3D(); render3D(); });
 { const el=$('vbig'); if(el) el.addEventListener('change', e=>{ S.vbig=e.target.checked; build3D(); render3D(); }); }
 $('terbox').addEventListener('change', e=>{ S.terrain=e.target.checked; refreshTerrain(); });
+/* 地形那行的状态文字：加载失败时点一下重试（见 updateTerrRow 的说明） */
+$('tstat')?.addEventListener('click', ()=>{ if(meshErrKey && S.terrain) refreshTerrain(); });
 
 /* ===== 自由视角 / 行走模式：按钮与滑杆（设置自动记忆）=====
    用 on() 而不是直接 $().addEventListener：万一页面是旧的缓存版本、元素不存在，
