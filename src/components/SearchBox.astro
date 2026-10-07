@@ -7,11 +7,18 @@
  * 1. **回车走真实表单提交**（`<form action="/search/" method="get" name=q>`）：
  *    没有 JS 也能用，而且因为 layouts/BaseLayout.astro 里那句 `<base target="_blank">`，
  *    结果页会在新标签打开（跟站长要的「所有跳转都新开」一致）。
+ *    ⚠️ **刻意不放提交按钮**（2026-10-07 站长问「旁边那个搜索按钮真有必要吗」）：
+ *    回车就能提交，联想列表最后一行「在站内搜索「xxx」→」也是可点的链接 ——
+ *    多一个按钮只是占宽度（窄屏上尤其明显），而且容易让人以为"不点它就不搜"。
  * 2. **联想数据只拉 /search/maps.json**（图名 + 标签，几十 KB，第一次输入才拉）：
  *    不碰 Pagefind，所以输入再快也不会卡；索引加载失败就静默退化成「纯搜索框」。
  * 3. **只做连续子串匹配**：搜「后室」只出名字 / 标签里真的连着写「后室」的图和标签，
  *    不会像 Pagefind 那样把「惊魂实验室」这种「后」「室」分开的页面也列出来 ——
  *    分词 / 模糊匹配的活留给结果页的 Pagefind。
+ * 4. **鼠标划过不算选中**（2026-10-07 反馈的坑）：只有 ↑↓ 才会选中某一行。
+ *    以前 hover 也调 setActive，而联想列表是**突然出现在指针下面**的 ——
+ *    浏览器这时就会补一个 mouseenter，于是"打着字、鼠标恰好停在列表上"的人
+ *    一回车就跳去了某张地图，而不是搜索结果页。现在 hover 只有 CSS 高亮。
  *
  * 结果页那边同样有这层连续匹配（见 src/pages/search.astro 的 exactHits）。
  */
@@ -33,7 +40,12 @@
       aria-expanded="false"
       aria-controls="sbox-list"
     />
-    <button class="sbox-go" type="submit" aria-label="搜索">↵</button>
+    {/*
+      看不见的提交按钮：只为「隐式提交」兜底 —— 表单里只有一个输入框时，浏览器本来
+      就会回车即提交；但以后万一有人再加一个输入框，没有默认按钮就**不会**提交了。
+      它不占宽度、不进 Tab 顺序，也不会出现在页面上。
+    */}
+    <button type="submit" hidden>搜索</button>
   </form>
   <div class="sbox-list" id="sbox-list" role="listbox" aria-label="搜索联想" hidden></div>
 </div>
@@ -210,13 +222,16 @@
       list!.textContent = '';
       rows = [];
       for (const el of nodes) {
-        const a = el as HTMLAnchorElement;
-        rows.push({ el, href: a.getAttribute('href') ?? '' });
-        /* 鼠标移到某一行就把它设为当前项，回车即打开它 */
-        el.addEventListener('mouseenter', () => setActive(rows.findIndex((r) => r.el === el)));
+        rows.push({ el, href: (el as HTMLAnchorElement).getAttribute('href') ?? '' });
         list!.append(el);
       }
       list!.hidden = rows.length === 0;
+      /*
+       * 每次重绘都把选中状态清空，并且**不给行绑 mouseenter**：
+       * 联想列表是突然出现在指针下面的，浏览器会补一个 mouseenter ——
+       * 那样"鼠标恰好停在列表上"的人一回车就会跳去某张地图（2026-10-07 反馈）。
+       * 现在只有 ↑↓ 能选中，鼠标划过只有 CSS :hover 的高亮，回车默认去结果页。
+       */
       active = -1;
       input!.setAttribute('aria-expanded', rows.length ? 'true' : 'false');
     }

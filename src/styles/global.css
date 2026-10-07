@@ -249,7 +249,7 @@ img { max-width: 100%; display: block; }
   align-items: center;
   gap: 6px;
   height: 38px;
-  padding: 0 6px 0 10px;
+  padding: 0 10px;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -276,21 +276,6 @@ img { max-width: 100%; display: block; }
 
 /* Safari 的搜索框自带清除按钮，样式会跟深色主题打架 */
 .sbox-input::-webkit-search-cancel-button { -webkit-appearance: none; }
-
-.sbox-go {
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  border: 0;
-  border-radius: 7px;
-  background: var(--panel-2);
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.sbox-go:hover { color: var(--text); border-color: var(--accent-2); }
 
 .sbox-list {
   position: absolute;
