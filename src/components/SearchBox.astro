@@ -1,0 +1,278 @@
+---
+/**
+ * 页头常驻搜索框（2026-10-07）——像百科站那样，每个页面顶部都有，输入即出联想，回车进结果页。
+ *
+ * 三个刻意的设计：
+ *
+ * 1. **回车走真实表单提交**（`<form action="/search/" method="get" name=q>`）：
+ *    没有 JS 也能用，而且因为 layouts/BaseLayout.astro 里那句 `<base target="_blank">`，
+ *    结果页会在新标签打开（跟站长要的「所有跳转都新开」一致）。
+ * 2. **联想数据只拉 /search/maps.json**（图名 + 标签，几十 KB，第一次输入才拉）：
+ *    不碰 Pagefind，所以输入再快也不会卡；索引加载失败就静默退化成「纯搜索框」。
+ * 3. **只做连续子串匹配**：搜「后室」只出名字 / 标签里真的连着写「后室」的图和标签，
+ *    不会像 Pagefind 那样把「惊魂实验室」这种「后」「室」分开的页面也列出来 ——
+ *    分词 / 模糊匹配的活留给结果页的 Pagefind。
+ *
+ * 结果页那边同样有这层连续匹配（见 src/pages/search.astro 的 exactHits）。
+ */
+---
+
+<div class="sbox" id="sbox">
+  <form class="sbox-form" action="/search/" method="get" role="search">
+    <span class="sbox-icon" aria-hidden="true">🔍</span>
+    <input
+      id="sbox-input"
+      class="sbox-input"
+      type="search"
+      name="q"
+      placeholder="搜索地图 / 标签…"
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="站内搜索（回车查看全部结果）"
+      role="combobox"
+      aria-expanded="false"
+      aria-controls="sbox-list"
+    />
+    <button class="sbox-go" type="submit" aria-label="搜索">↵</button>
+  </form>
+  <div class="sbox-list" id="sbox-list" role="listbox" aria-label="搜索联想" hidden></div>
+</div>
+
+<script>
+  type MapRow = { s: string; t: string; e: string; d: string; g?: string[] };
+  type TagRow = { n: string; c: number };
+  type Index = { maps: MapRow[]; tags: TagRow[] };
+
+  const box = document.getElementById('sbox');
+  const form = box?.querySelector('form') as HTMLFormElement | null;
+  const input = document.getElementById('sbox-input') as HTMLInputElement | null;
+  const list = document.getElementById('sbox-list');
+
+  if (box && form && input && list) {
+    const MAX_MAPS = 6;
+    const MAX_TAGS = 3;
+
+    /** 归一化：全角转半角 + 小写。查询和索引两边都过一遍，'ＢＯＳＳ' 也能搜到 'Boss' */
+    const norm = (s: unknown) => String(s ?? '').normalize('NFKC').toLowerCase();
+
+    let index: Index | null = null;
+    let loading: Promise<void> | null = null;
+    let rows: Array<{ el: HTMLElement; href: string }> = [];
+    let active = -1;
+    let timer: number | undefined;
+
+    /** 第一次要用才拉索引（页头在每个页面都在，不能拖慢首屏） */
+    function loadIndex(): Promise<void> {
+      if (!loading) {
+        loading = fetch('/search/maps.json')
+          .then((r) => r.json())
+          .then((d: Index) => {
+            index = { maps: Array.isArray(d?.maps) ? d.maps : [], tags: Array.isArray(d?.tags) ? d.tags : [] };
+          })
+          .catch(() => {
+            index = { maps: [], tags: [] };
+          });
+      }
+      return loading;
+    }
+
+    /** 把 needle 命中的那一段包进 <mark>；只用 textContent 拼节点，不碰 innerHTML */
+    function markInto(parent: HTMLElement, text: string, needle: string): void {
+      const at = needle ? norm(text).indexOf(needle) : -1;
+      if (at === -1) {
+        parent.textContent = text;
+        return;
+      }
+      parent.append(
+        document.createTextNode(text.slice(0, at)),
+        Object.assign(document.createElement('mark'), { textContent: text.slice(at, at + needle.length) }),
+        document.createTextNode(text.slice(at + needle.length))
+      );
+    }
+
+    function badge(text: string, cls: string): HTMLElement {
+      return Object.assign(document.createElement('span'), { className: `sbox-badge ${cls}`, textContent: text });
+    }
+
+    /** 连续子串打分：完全相同 > 以它开头 > 中间包含 */
+    function scoreOf(value: string, q: string): number {
+      const at = value.indexOf(q);
+      if (at === -1) return -1;
+      return value === q ? 3 : at === 0 ? 2 : 1;
+    }
+
+    function suggest(q: string): HTMLElement[] {
+      const out: HTMLElement[] = [];
+      if (!index) return out;
+
+      /* --- 地图：中文名 / 英文名 / 标签，三处都只认连续子串 --- */
+      const maps: Array<{ m: MapRow; score: number; tag?: string }> = [];
+      for (const m of index.maps) {
+        let best = Math.max(scoreOf(norm(m.t), q) * 10 + 3, scoreOf(norm(m.e), q) * 10 + 2);
+        /* 命中的是标签时，把那个标签显示出来（说明它为什么出现在这里） */
+        let tag: string | undefined;
+        for (const g of m.g ?? []) {
+          const gs = scoreOf(norm(g), q) * 10 + 1;
+          if (gs > best) {
+            best = gs;
+            tag = g;
+          }
+        }
+        if (best > 0) maps.push({ m, score: best, tag });
+      }
+      maps.sort((a, b) => b.score - a.score || a.m.t.localeCompare(b.m.t, 'zh'));
+
+      for (const { m, tag } of maps.slice(0, MAX_MAPS)) {
+        const a = document.createElement('a');
+        a.className = 'sbox-row';
+        a.href = `/maps/${m.s}/`;
+        a.setAttribute('role', 'option');
+
+        const main = document.createElement('span');
+        main.className = 'sbox-row-main';
+        markInto(main, m.t, q);
+        a.append(main);
+
+        const sub = document.createElement('span');
+        sub.className = 'sbox-row-sub';
+        sub.textContent = m.e;
+        a.append(sub);
+
+        a.append(badge(m.d, 'diff'));
+        if (tag) a.append(badge(`#${tag}`, 'tag'));
+        out.push(a);
+      }
+
+      /* --- 标签页：整个标签名连续命中才给（数量少，放在地图后面） --- */
+      const tags = index.tags
+        .map((t) => ({ t, score: scoreOf(norm(t.n), q) }))
+        .filter((x) => x.score > 0)
+        .sort((a, b) => b.score - a.score || b.t.c - a.t.c);
+      for (const { t } of tags.slice(0, MAX_TAGS)) {
+        const a = document.createElement('a');
+        a.className = 'sbox-row sbox-row-tag';
+        a.href = `/tags/${encodeURIComponent(t.n)}/`;
+        a.setAttribute('role', 'option');
+
+        const main = document.createElement('span');
+        main.className = 'sbox-row-main';
+        main.append(document.createTextNode('🏷️ '));
+        markInto(main, t.n, q);
+        a.append(main);
+
+        const sub = document.createElement('span');
+        sub.className = 'sbox-row-sub';
+        sub.textContent = `${t.c} 张地图`;
+        a.append(sub);
+        out.push(a);
+      }
+
+      /* --- 最后一行永远是「查看全部结果」：回车（不选具体条目时）也是它 --- */
+      const all = document.createElement('a');
+      all.className = 'sbox-row sbox-row-all';
+      all.href = `/search/?q=${encodeURIComponent(input!.value.trim())}`;
+      all.setAttribute('role', 'option');
+      const allMain = document.createElement('span');
+      allMain.className = 'sbox-row-main';
+      allMain.textContent = `在站内搜索「${input!.value.trim()}」→`;
+      all.append(allMain);
+      out.push(all);
+
+      return out;
+    }
+
+    function close(): void {
+      list!.hidden = true;
+      list!.textContent = '';
+      rows = [];
+      active = -1;
+      input!.setAttribute('aria-expanded', 'false');
+    }
+
+    function setActive(next: number): void {
+      if (!rows.length) return;
+      active = (next + rows.length) % rows.length;
+      rows.forEach((r, i) => {
+        const on = i === active;
+        r.el.classList.toggle('on', on);
+        r.el.setAttribute('aria-selected', on ? 'true' : 'false');
+        if (on) r.el.scrollIntoView({ block: 'nearest' });
+      });
+    }
+
+    function show(): void {
+      const q = norm(input!.value.trim());
+      if (!q) {
+        close();
+        return;
+      }
+      const nodes = suggest(q);
+      list!.textContent = '';
+      rows = [];
+      for (const el of nodes) {
+        const a = el as HTMLAnchorElement;
+        rows.push({ el, href: a.getAttribute('href') ?? '' });
+        /* 鼠标移到某一行就把它设为当前项，回车即打开它 */
+        el.addEventListener('mouseenter', () => setActive(rows.findIndex((r) => r.el === el)));
+        list!.append(el);
+      }
+      list!.hidden = rows.length === 0;
+      active = -1;
+      input!.setAttribute('aria-expanded', rows.length ? 'true' : 'false');
+    }
+
+    /* 输入：先让索引加载完再出联想（第一次会等一小会儿，之后是内存里查） */
+    input.addEventListener('input', () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        void loadIndex().then(show);
+      }, 90);
+    });
+
+    input.addEventListener('focus', () => {
+      void loadIndex().then(() => {
+        if (input.value.trim()) show();
+      });
+    });
+
+    input.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown' && !list!.hidden) {
+        e.preventDefault();
+        setActive(active + 1);
+        return;
+      }
+      if (e.key === 'ArrowUp' && !list!.hidden) {
+        e.preventDefault();
+        setActive(active - 1);
+        return;
+      }
+      if (e.key === 'Escape') {
+        close();
+        return;
+      }
+      if (e.key === 'Enter' && active >= 0 && rows[active]) {
+        /* 选中的是具体条目：直接去那一页。用 window.open 跟 <base target="_blank"> 保持一致 */
+        e.preventDefault();
+        window.open(rows[active].href, '_blank', 'noopener');
+        close();
+      }
+      /* 没选中条目时：不拦，交给表单提交（新标签打开 /search/?q=…） */
+    });
+
+    form.addEventListener('submit', () => {
+      close();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!box.contains(e.target as Node)) close();
+    });
+
+    /* 从结果页返回 / 直接落在结果页时，把当前关键词填回搜索框 */
+    try {
+      const q = new URLSearchParams(location.search).get('q');
+      if (q && !input.value) input.value = q;
+    } catch {
+      /* 忽略 */
+    }
+  }
+</script>

@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import SearchBox from '../components/SearchBox.astro';
 
 interface Props {
   title?: string;
@@ -73,6 +74,8 @@ const ogImage = image ? new URL(image, site).href : new URL('/images/hero-bg.jpg
           <span class="logo-mark">ZE</span>
           <span class="logo-text">地图资料站</span>
         </a>
+
+        <SearchBox />
 
         <button id="menu-toggle" class="menu-toggle" aria-label="菜单">
           <span></span><span></span><span></span>

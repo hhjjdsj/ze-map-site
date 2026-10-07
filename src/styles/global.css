@@ -233,6 +233,141 @@ img { max-width: 100%; display: block; }
   body:has(.main-nav.open) { overflow: hidden; }
 }
 
+/* ===== 页头搜索框（2026-10-07）=====
+   像百科站那样常驻页头：输入即出联想（图名 / 标签，只认连续子串），回车进 /search/?q=。
+   联想列表是绝对定位的浮层，不占布局高度；窄屏把输入框压窄、隐藏 logo 文字，保持一行放得下。 */
+.sbox {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 300px;
+  margin-left: 8px;
+}
+
+.sbox-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 6px 0 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sbox-form:focus-within {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+}
+
+.sbox-icon { font-size: 13px; opacity: 0.75; flex-shrink: 0; }
+
+.sbox-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: inherit;
+}
+
+/* Safari 的搜索框自带清除按钮，样式会跟深色主题打架 */
+.sbox-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.sbox-go {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sbox-go:hover { color: var(--text); border-color: var(--accent-2); }
+
+.sbox-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 120;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.sbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13.5px;
+}
+
+.sbox-row.on,
+.sbox-row:hover { background: var(--panel-2); }
+
+.sbox-row-main { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.sbox-row-main mark {
+  background: transparent;
+  color: var(--accent-2);
+  font-weight: 800;
+}
+
+.sbox-row-sub {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.sbox-badge {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.sbox-row-tag .sbox-row-main { font-weight: 500; }
+
+.sbox-row-all {
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px;
+  color: var(--accent-2);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .sbox { max-width: none; }
+}
+
+@media (max-width: 620px) {
+  /* 一行要放下：logo 方块 + 搜索框 + 菜单 + 主题；logo 文字和导航先让位 */
+  .logo-text { display: none; }
+  .header-inner { gap: 10px; }
+  .sbox { margin-left: 0; }
+  .sbox-input { font-size: 13px; }
+  .sbox-list { left: auto; right: 0; width: min(92vw, 420px); }
+}
+
 /* ===== 主题切换按钮 ===== */
 .theme-toggle {
   background: var(--panel);
@@ -1542,7 +1677,7 @@ img { max-width: 100%; display: block; }
 }
 .pf-result-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
 
-/* 图名精确匹配那一行：轻微底色，跟下面的全文检索结果区分开 */
+/* 图名 / 标签精确匹配那一行：轻微底色，跟下面的全文检索结果区分开 */
 .pf-result-exact {
   background: rgba(255, 77, 77, 0.06);
   border-radius: 10px;
@@ -1551,6 +1686,16 @@ img { max-width: 100%; display: block; }
 }
 
 .pf-result-exact .badge.exact { background: var(--accent); color: #fff; }
+
+/* 标签行里那一排地图链接（点进去就是那张图的条目） */
+.pf-tagchip {
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.pf-tagchip:hover { border-color: var(--accent-2); color: var(--accent-2); }
+
 [data-theme="light"] .pf-result-exact { background: rgba(255, 77, 77, 0.08); }
 [data-theme="light"] .pf-result-excerpt { color: var(--text); }
 

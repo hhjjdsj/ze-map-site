@@ -54,6 +54,23 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
 
     <button class="load-more" id="pf-more" type="button" style="display:none">显示更多</button>
 
+    {/*
+      宽松匹配：Pagefind 把中文按字索引，搜「后室」它会连「惊魂实验室」这种
+      「后」「室」分开的页面一起返回。默认**不显示**这些，只在这里折叠着，
+      由用户自己决定要不要看（2026-10-07 站长的要求：搜后室就必须是连在一起的）。
+
+      data-pagefind-ignore：这段说明文字里举了「后室」当例子，不忽略的话
+      本页自己会被搜「后室」搜出来（真的发生过），跟地图抢位置。
+    */}
+    <div id="pf-relaxed-box" data-pagefind-ignore style="display:none; margin-top: 26px">
+      <button class="load-more" id="pf-relaxed-go" type="button"></button>
+      <p class="form-hint" id="pf-relaxed-note" style="margin-top:8px; display:none">
+        下面这些页面里<strong>并没有连着出现</strong>你搜的词，只是这些字分别出现过
+        （比如搜某个词时，命中的其实是「实验<u>室</u>」和「最<u>后</u>」两个字）。列在这里仅供参考。
+      </p>
+      <div id="pf-relaxed" class="pf-results" data-pagefind-ignore style="display:none"></div>
+    </div>
+
     <div id="pf-empty" class="empty-state" style="display:none; margin-top: 24px;">
       <p><b id="pf-empty-text">没有找到相关内容。</b></p>
       <p style="font-size: 13px">换个关键词试试，或者放宽上面的筛选条件。</p>
@@ -112,6 +129,10 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
     var moreBtn = byId('pf-more');
     var resetBtn = byId('pf-reset');
     var cfgEl = byId('pf-config');
+    var relaxedBox = byId('pf-relaxed-box');
+    var relaxedBtn = byId('pf-relaxed-go');
+    var relaxedEl = byId('pf-relaxed');
+    var relaxedNote = byId('pf-relaxed-note');
 
     var diffClass = {};
     try {
@@ -124,6 +145,14 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
     var timer = null;
     var seq = 0; // 防止慢的旧搜索覆盖快的新结果
     var shown = PER_PAGE;
+    /** 一次最多核对多少条 Pagefind 结果（每条要取一次分片，中文单字查询可能几百条） */
+    var MAX_SCAN = 100;
+
+    /* 三类结果分开存：图名/标签命中、正文连续命中（这两个才算"搜到"）、宽松命中（折叠） */
+    var idxMaps = [];
+    var idxTags = [];
+    var exactRows = [];
+    var relaxedRows = [];
 
     function currentFilters() {
       var f = {};
@@ -209,53 +238,125 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
       return row;
     }
 
-    /* ===== 图名精确匹配兜底 =====
+    /* ===== 图名 / 标签索引 + 连续词（短语）匹配 =====
      *
-     * 为什么需要这一层：Pagefind 的中文分词对短词组不可靠。实测（2026-09-24）：
-     *   · 搜「指环王」→ 7 条，**标题就叫《指环王：米那斯提力斯》的那张图一条都不在**，
-     *     返回的是正文里出现过「指」的页面（摘要里高亮的是「指挥」「指引」）
-     *   · 但那一页正文里「指环王」出现 9 次、h1 就是它；单搜「指」它排第 1，「王」排第 5
-     *   · 搜「米那斯提力斯」（更长）它反而排第 1
-     * 换排序参数救不了：标题权重 12、termSimilarity 2、termSaturation 0.8、pageLength 1
-     * 五组配置都试过，结果一模一样 —— 因为问题出在「匹不匹配」，不是「排第几」。
+     * 两个问题，一个方案（都靠构建期生成的 /search/maps.json，几十 KB，第一次搜索时拉）：
      *
-     * 所以这里用构建期生成的图名索引（/search/maps.json）自己兜一层：
-     * 中文名或英文名精确 / 前缀 / 包含命中的，直接置顶并标出来。
-     * 索引只有 4 个字段，拉失败也不影响搜索本身（退化成纯 Pagefind 结果）。
+     * 1. Pagefind 的中文分词对短词组不可靠。实测（2026-09-24）：
+     *    · 搜「指环王」→ 7 条，**标题就叫《指环王：米那斯提力斯》的那张图一条都不在**，
+     *      返回的是正文里出现过「指」的页面（摘要里高亮的是「指挥」「指引」）
+     *    · 但那一页正文里「指环王」出现 9 次、h1 就是它；单搜「指」它排第 1，「王」排第 5
+     *    换排序参数救不了（因为问题出在「匹不匹配」，不是「排第几」），所以自己兜一层：
+     *    中文名 / 英文名 / 标签里**连续包含**查询词的地图直接置顶并标出命中原因。
+     *
+     * 2. **连续词匹配只能自己算**。Pagefind 不支持引号短语（产物里没有任何 phrase 相关代码），
+     *    中文按字索引，于是搜「后室」会把「惊魂实验室」这种「后」「室」分开的页面也算命中：
+     *    2026-10-07 实测 20 条结果里只有 8 条真的连着。data() 带整页正文（content），
+     *    所以这里逐个核对，不连续的丢进「宽松匹配」折叠区。
      */
-    var titleIndexPromise = null;
+    var indexPromise = null;
+    var MAP_INDEX = [];
+    var TAG_INDEX = [];
 
-    function loadTitleIndex() {
-      if (!titleIndexPromise) {
-        titleIndexPromise = fetch('/search/maps.json')
+    function loadIndex() {
+      if (!indexPromise) {
+        indexPromise = fetch('/search/maps.json')
           .then(function (r) {
             return r.json();
           })
+          .then(function (d) {
+            MAP_INDEX = (d && d.maps) || [];
+            TAG_INDEX = (d && d.tags) || [];
+          })
           .catch(function () {
-            return [];
+            MAP_INDEX = [];
+            TAG_INDEX = [];
           });
       }
-      return titleIndexPromise;
+      return indexPromise;
     }
 
-    function titleMatches(list, q) {
-      var s = String(q || '').trim().toLowerCase();
-      if (!list || s.length < 2) return [];
-      var exact = [];
-      var partial = [];
-      for (var i = 0; i < list.length; i++) {
-        var it = list[i];
-        var t = String(it.t || '').toLowerCase();
-        var e = String(it.e || '').toLowerCase();
-        if (t === s || e === s) exact.push(it);
-        else if (t.indexOf(s) === 0 || e.indexOf(s) === 0) partial.push(it);
-        else if (t.indexOf(s) !== -1) partial.push(it);
+    /** 归一化：全角转半角 + 小写 + 去掉零宽空格（Pagefind 的正文里可能残留） */
+    function normalize(s) {
+      return String(s == null ? '' : s)
+        .normalize('NFKC')
+        .replace(/\u200B/g, '')
+        .toLowerCase();
+    }
+
+    /** 查询分词：按空白切开（地图内部名里的下划线在 run() 里已经换成空格） */
+    function queryTokens(term) {
+      return normalize(term)
+        .split(/\s+/)
+        .filter(function (t) {
+          return t.length > 0;
+        });
+    }
+
+    /** 每个词都必须在正文里**连着**出现一次（多词 = AND，不是"字都在就行"） */
+    function phraseHit(content, tokens) {
+      var hay = normalize(content);
+      for (var i = 0; i < tokens.length; i++) {
+        if (hay.indexOf(tokens[i]) === -1) return false;
       }
-      return exact.concat(partial).slice(0, 3);
+      return true;
     }
 
-    /** 置顶那一行：数据来自图名索引，带「图名匹配」标记 */
-    function makeTitleRow(it) {
+    /**
+     * 连续子串打分：完全相同 3 / 以它开头 2 / 中间包含 1。
+     * ⚠️ **没命中必须返回 -1**（不能返回 0）：下面统一写成 `分数 * 10 + 权重`，
+     * 权重是正数（+3/+2/+1），要是拿 0 当"没命中"，`0*10+3 = 3` 会被 `best > 0`
+     * 当成命中 —— 于是每一张图都被算进「图名匹配」，按拼音排在真结果后面
+     * （2026-10-07 实测：搜「后室」多出 2021圣诞世界 / 阿波罗 / 阿卡纳之心 这类假条目）。
+     */
+    function scoreOf(value, q) {
+      var at = value.indexOf(q);
+      if (at === -1) return -1;
+      return value === q ? 3 : at === 0 ? 2 : 1;
+    }
+
+    /** 在索引里找图名 / 标签命中（同样只认连续子串） */
+    function indexHits(q) {
+      var nq = normalize(q);
+      var maps = [];
+      var tags = [];
+      if (!nq) return { maps: maps, tags: tags };
+
+      for (var i = 0; i < MAP_INDEX.length; i++) {
+        var m = MAP_INDEX[i];
+        var best = Math.max(scoreOf(normalize(m.t), nq) * 10 + 3, scoreOf(normalize(m.e), nq) * 10 + 2);
+        var tag = '';
+        var g = m.g || [];
+        for (var j = 0; j < g.length; j++) {
+          var gs = scoreOf(normalize(g[j]), nq) * 10 + 1;
+          if (gs > best) {
+            best = gs;
+            tag = g[j]; // 命中标签时把它显示出来，说明这张图为什么在这儿
+          }
+        }
+        if (best > 0) maps.push({ m: m, score: best, tag: tag });
+      }
+      maps.sort(function (a, b) {
+        return b.score - a.score || String(a.m.t).localeCompare(String(b.m.t), 'zh');
+      });
+
+      for (var k = 0; k < TAG_INDEX.length; k++) {
+        var t = TAG_INDEX[k];
+        var s = scoreOf(normalize(t.n), nq);
+        if (s > 0) tags.push({ t: t, score: s });
+      }
+      tags.sort(function (a, b) {
+        return b.score - a.score || b.t.c - a.t.c;
+      });
+
+      return { maps: maps.slice(0, 10), tags: tags.slice(0, 4) };
+    }
+
+    var TAG_CHIPS = 12; // 标签行里最多列几张地图（更多的去标签页看）
+
+    /** 置顶那一行：数据来自索引，带「图名匹配」/「#标签」标记 */
+    function makeIndexRow(hit) {
+      var it = hit.m;
       var url = '/maps/' + it.s + '/';
       var row = document.createElement('div');
       row.className = 'pf-result pf-result-exact';
@@ -268,14 +369,14 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
 
       var path = document.createElement('div');
       path.className = 'pf-result-path';
-      path.textContent = url;
+      path.textContent = url + (it.e ? '　·　' + it.e : '');
       row.appendChild(path);
 
       var badges = document.createElement('div');
       badges.className = 'pf-result-badges';
       var mark = document.createElement('span');
       mark.className = 'badge exact';
-      mark.textContent = '图名匹配';
+      mark.textContent = hit.tag ? '标签「' + hit.tag + '」' : '图名匹配';
       badges.appendChild(mark);
       if (it.d) {
         var b = document.createElement('span');
@@ -288,6 +389,46 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
       return row;
     }
 
+    /** 标签命中：一行说明「这个标签有几张图」，再跟一排地图链接（连续匹配，天然精确） */
+    function makeTagRow(hit) {
+      var row = document.createElement('div');
+      row.className = 'pf-result pf-result-exact';
+
+      var a = document.createElement('a');
+      a.className = 'pf-result-title';
+      a.href = '/tags/' + encodeURIComponent(hit.t.n) + '/';
+      a.textContent = '🏷️ ' + hit.t.n;
+      row.appendChild(a);
+
+      var path = document.createElement('div');
+      path.className = 'pf-result-path';
+      path.textContent = '/tags/' + hit.t.n + '/　·　共 ' + hit.t.c + ' 张地图';
+      row.appendChild(path);
+
+      var chips = document.createElement('div');
+      chips.className = 'pf-result-badges';
+      var n = 0;
+      for (var i = 0; i < MAP_INDEX.length && n < TAG_CHIPS; i++) {
+        var m = MAP_INDEX[i];
+        if (!m.g || m.g.indexOf(hit.t.n) === -1) continue;
+        var c = document.createElement('a');
+        c.className = 'badge pf-tagchip';
+        c.href = '/maps/' + m.s + '/';
+        c.textContent = m.t;
+        chips.appendChild(c);
+        n++;
+      }
+      if (n < hit.t.c) {
+        var more = document.createElement('span');
+        more.className = 'badge';
+        more.textContent = '还有 ' + (hit.t.c - n) + ' 张 →';
+        chips.appendChild(more);
+      }
+      row.appendChild(chips);
+
+      return row;
+    }
+
     async function run() {
       var mine = ++seq;
       try {
@@ -295,6 +436,7 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
           listEl.innerHTML = '';
           emptyEl.style.display = 'none';
           moreBtn.style.display = 'none';
+          relaxedBox.style.display = 'none';
           countEl.textContent = '输入关键词开始搜索，或直接选上面的难度 / 分类筛选';
           syncUrl();
           return;
@@ -310,36 +452,90 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
         // 连字符 / 点 / 冒号都正常（ze-mako、ze.mako 都是 9 条），所以只换下划线。
         var typed = input.value.trim();
         var term = typed.replace(/_/g, ' ');
+        var tokens = queryTokens(term);
+        // 单个字不做连续判定：一个字的"连续"没有意义，只会白白削弱召回
+        var strict = tokens.join('').length >= 2;
         syncUrl();
         shown = PER_PAGE;
         countEl.textContent = '搜索中…';
+        relaxedBox.style.display = 'none';
+        relaxedEl.style.display = 'none';
+        relaxedEl.innerHTML = '';
 
         // 关键词为空时传 null：Pagefind 会只按筛选条件列出全部匹配页
         var res = await pf.search(term || null, { filters: currentFilters() });
         if (mine !== seq) return;
 
-        // 图名兜底（见上面 titleMatches 的说明）：先用用户原样输入匹配，不行再用规整过的
-        var index = await loadTitleIndex();
+        // 图名 / 标签命中（连续匹配，天然精确）
+        await loadIndex();
         if (mine !== seq) return;
-        var titleHits = typed ? titleMatches(index, typed) : [];
-        if (!titleHits.length && term !== typed) titleHits = titleMatches(index, term);
-        var exactUrls = {};
-        for (var ti = 0; ti < titleHits.length; ti++) exactUrls['/maps/' + titleHits[ti].s + '/'] = 1;
+        var hits = typed ? indexHits(typed) : { maps: [], tags: [] };
+        idxMaps = hits.maps;
+        idxTags = hits.tags;
 
+        var indexUrls = {};
+        for (var ti = 0; ti < idxMaps.length; ti++) indexUrls['/maps/' + idxMaps[ti].m.s + '/'] = 1;
+        /* 标签行已经把它列出来了，Pagefind 那边同一条（标签页本身）就别再出现一次 */
+        var tagUrls = {};
+        for (var tj = 0; tj < idxTags.length; tj++) {
+          var tn = idxTags[tj].t.n;
+          tagUrls['/tags/' + tn + '/'] = 1;
+          tagUrls['/tags/' + encodeURIComponent(tn) + '/'] = 1;
+        }
+
+        /*
+         * 逐条核对 Pagefind 的结果是不是**真的连着**出现了查询词。
+         * 为什么要自己核：Pagefind 中文按字索引，也不支持引号短语（产物里没有 phrase 代码），
+         * 搜「后室」会把「惊魂实验室」这类页面也返回（2026-10-07 实测 20 条里 12 条是假的）。
+         * data() 里带整页正文（content），不用额外请求；中文单字查询可能有几百条结果，
+         * 所以只核对前 MAX_SCAN 条（排序靠前的那些），够填满一页还有富余。
+         */
         var total = res.results.length;
+        var scan = res.results.slice(0, MAX_SCAN);
+        var datas = await Promise.all(
+          scan.map(function (r) {
+            return r.data();
+          })
+        );
+        if (mine !== seq) return;
+
+        exactRows = [];
+        relaxedRows = [];
+        for (var i = 0; i < datas.length; i++) {
+          var d = datas[i];
+          if (indexUrls[d.url] || tagUrls[d.url]) continue; // 已经在图名 / 标签那一组里了
+          if (!strict || phraseHit(d.content || d.excerpt || '', tokens)) exactRows.push(d);
+          else relaxedRows.push(d);
+        }
+        var unscanned = Math.max(0, total - MAX_SCAN);
+
         var ft = filterText();
+        var exactTotal = idxMaps.length + exactRows.length;
         var msg;
         if (typed) {
-          msg = titleHits.length
-            ? '图名匹配 ' + titleHits.length + ' 条 · 全文检索 ' + total + ' 条'
-            : '找到 ' + total + ' 条与「' + typed + '」相关的结果';
+          if (exactTotal === 0) {
+            msg =
+              '没有页面连着出现「' +
+              typed +
+              '」这些字' +
+              (relaxedRows.length ? '　下方有 ' + relaxedRows.length + ' 条相近结果（这些字分别出现过）' : '');
+          } else {
+            var bits = [];
+            if (idxTags.length) bits.push('标签 ' + idxTags.length + ' 个');
+            if (idxMaps.length) bits.push('图名匹配 ' + idxMaps.length + ' 张');
+            bits.push('正文连续命中 ' + exactRows.length + ' 条');
+            msg = '找到 ' + exactTotal + ' 条与「' + typed + '」相关的结果（' + bits.join(' · ') + '）';
+            if (relaxedRows.length) msg += '　另有 ' + relaxedRows.length + ' 条只是字分别出现';
+            if (unscanned) msg += '　（' + unscanned + ' 条未核对）';
+          }
         } else {
-          msg = '符合条件的有 ' + total + ' 条';
+          msg = '符合条件的有 ' + (exactRows.length || total) + ' 条';
         }
         if (ft) msg += '（' + ft + '）';
         countEl.textContent = msg;
 
-        if (total === 0 && titleHits.length === 0) {
+        var nothing = exactTotal === 0;
+        if (nothing && relaxedRows.length === 0) {
           listEl.innerHTML = '';
           moreBtn.style.display = 'none';
           emptyTextEl.textContent = typed ? '没有找到「' + typed + '」相关的内容' : '没有符合这些条件的内容';
@@ -348,55 +544,59 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
         }
         emptyEl.style.display = 'none';
 
-        var datas = await Promise.all(
-          res.results.slice(0, shown).map(function (r) {
-            return r.data();
-          })
-        );
-        if (mine !== seq) return;
+        listEl.innerHTML = '';
+        for (var a1 = 0; a1 < idxTags.length; a1++) listEl.appendChild(makeTagRow(idxTags[a1]));
+        for (var a2 = 0; a2 < idxMaps.length; a2++) listEl.appendChild(makeIndexRow(idxMaps[a2]));
+        var body = exactRows.slice(0, shown);
+        for (var a3 = 0; a3 < body.length; a3++) listEl.appendChild(makeRow(body[a3]));
+
+        /* 精确结果一条都没有时说明白点，别让人以为搜索坏了 */
+        if (nothing) {
+          var tip = document.createElement('p');
+          tip.className = 'list-count';
+          tip.textContent = typed
+            ? '没有页面连着出现「' + typed + '」这些字 —— 下面是分别出现的相近结果。'
+            : '没有符合这些条件的内容。';
+          listEl.appendChild(tip);
+        }
+
+        moreBtn.style.display = exactRows.length > shown ? '' : 'none';
 
         /*
-         * 核对一下这些结果是不是真的命中了搜的词。
-         * 为什么需要：Pagefind 在「一个词都没匹配上」时**不会**返回 0 条，而是给一批
-         * 相近的结果，而且响应里只有 results / unfilteredResultCount / filters /
-         * totalFilters / timings —— 没有「我实际换成了哪个词」这个信息，界面无从得知。
-         * 实测（2026-09-24）：qqqq → 11 条、zzzz…（16 个 z）→ 1 条、神器123 → 11 条，
-         * 而这些字符串在这些页面里根本不存在（grep 构建产物 0 处）。
-         * 所以自己核一遍：前几条里一个词都没出现，就如实说明这是相近结果。
-         * 拼写容错是好事（makoo → 9 条且目标排第 1），所以结果照旧列出，只是别让
-         * 用户以为「搜到了」。
+         * 宽松匹配折叠区：默认收起。这是「后」「室」分别出现的那批 ——
+         * 不是用户要的结果，但直接扔掉会让「拼错一个字母」的搜索变成 0 条，
+         * 所以留着，让人自己决定看不看。
          */
-        var tokens = term.split(/\s+/).filter(function (t) {
-          return t.length >= 2; // 单字母查询本来就模糊，不参与判定
-        });
-        var exact = titleHits.length > 0 || tokens.length === 0;
-        for (var i = 0; i < datas.length && !exact; i++) {
-          var d = datas[i];
-          var hay = (((d.meta && d.meta.title) || '') + ' ' + d.url + ' ' + (d.excerpt || '')).toLowerCase();
-          for (var j = 0; j < tokens.length; j++) {
-            if (hay.indexOf(tokens[j].toLowerCase()) !== -1) {
-              exact = true;
-              break;
-            }
-          }
+        if (relaxedRows.length) {
+          relaxedBtn.textContent = '显示 ' + relaxedRows.length + ' 条「字分别出现」的相近结果 ▾';
+          relaxedBox.style.display = '';
+          relaxedNote.style.display = 'none';
+          relaxedBtn.setAttribute('aria-expanded', 'false');
+        } else {
+          relaxedBox.style.display = 'none';
         }
-        if (!exact) countEl.textContent = msg + ' · 没有精确匹配，下面是相近的结果';
-
-        // 图名匹配的置顶，剩下的照旧；同一条不重复出现
-        listEl.innerHTML = '';
-        for (var k = 0; k < titleHits.length; k++) listEl.appendChild(makeTitleRow(titleHits[k]));
-        for (var m = 0; m < datas.length; m++) {
-          if (!exactUrls[datas[m].url]) listEl.appendChild(makeRow(datas[m]));
-        }
-        moreBtn.style.display = total > shown ? '' : 'none';
       } catch (e) {
         if (mine === seq) {
           listEl.innerHTML = '';
           moreBtn.style.display = 'none';
+          relaxedBox.style.display = 'none';
           emptyTextEl.textContent = '搜索出错了：' + (e && e.message ? e.message : e);
           emptyEl.style.display = '';
         }
       }
+    }
+
+    /** 展开 / 收起「宽松匹配」那一批 */
+    function toggleRelaxed() {
+      var open = relaxedEl.style.display === 'none';
+      if (open && !relaxedEl.childNodes.length) {
+        for (var i = 0; i < relaxedRows.length; i++) relaxedEl.appendChild(makeRow(relaxedRows[i]));
+      }
+      relaxedEl.style.display = open ? '' : 'none';
+      relaxedNote.style.display = open ? '' : 'none';
+      relaxedBtn.textContent =
+        (open ? '收起这 ' : '显示 ') + relaxedRows.length + ' 条「字分别出现」的相近结果 ' + (open ? '▴' : '▾');
+      relaxedBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
 
     function loadMore() {
@@ -415,6 +615,7 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
     });
     moreBtn.addEventListener('click', loadMore);
     resetBtn.addEventListener('click', clearAll);
+    relaxedBtn.addEventListener('click', toggleRelaxed);
 
     async function boot() {
       try {
@@ -430,8 +631,8 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
         selData.disabled = true;
         return;
       }
-      // 提前把图名索引拉起来（第一次搜索时就不用等它了）
-      loadTitleIndex();
+      // 提前把图名 / 标签索引拉起来（第一次搜索时就不用等它了）
+      loadIndex();
 
       var sp = new URLSearchParams(location.search);
       if (sp.get('q')) input.value = sp.get('q');
