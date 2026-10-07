@@ -2,7 +2,7 @@
  "slug": "ze_obf_rescape",
  "title": "行动代号：浴火重生",
  "summary": "**题材与作者**：原作 zs_obj_rescape 是 Trazix 在 2016 年于 Garry's Mod 僵尸生存模式发布的地图，也是他本人的第一张 obj 图（他后来做了 rampage、npst 等）。作者在 HellsGamers 论坛的原帖里自述这是「只有最强的玩家才能通关」的 40 分钟地图，人类要顶住不断增生的僵尸潮；致谢名单里列了配乐 Joel Nielsen（Black Mesa 原声作者）与 Crowbar Collective 的 Black Mesa 模型团队。Rescapé 是法语词，作者自己解释意为「从一场灾难里活下来」。原版从 beta 一路更新到 v5c 与 ultimate v2，期间加入过毒僵尸、快速僵尸、幽灵、电梯陷阱、火车段与电闸等。\n\n**CS 版与时长**：2022 年 Nino 把它移植进僵尸逃跑模式，CSGO 版名为 ze_obj_rescape_v1，单关、流程约 35 分钟、共用了 15 首不同的音乐，作者原话大意是 Objective Rescapé 是他 2016 年的第一张 OBJ 图、六年后由 Nino 移植成 35 分钟的单关 ZE 图。音乐合集视频列出的曲目包括 God Is An Astronaut 的 Helios Erebus、Distant Dream 的 Luminosity 与 Lost in the universe 等、Alex Yarmark 的数首作品，以及收尾的 Celldweller 与 Sixx:A.M。工坊条目 ze_Obf_Rescape 的中文名是「行动代号：浴火重生」，署名 Map by Trazix、CSGO Port by Nino、CS2 Port by @Seth.。\n\n**玩法与机关**：流程靠密集的倒计时和目标提示推进，地图内置的 GameText 文本能看到 DOOR OPEN 20、Get ready to act、Ready to Move、Last Fight 10 这类逐秒播报。站内实体 dump 记录 2070 个实体，其中传送与落点 147 个、机关 138 个、危险区 20 个、可破坏物 166 个；命名上还能看出音乐继电器（music_1 到 music_9）、火车段（trainbrush 系列、Train_klaxone）、升降机（logic_elevator）、下雨与明暗天空切换（rain_s1、sky_dark、sky_light）以及大量爆炸物（explo_prop 系列）。CS2 移植版里另有一批以 SETH_FIX_TP 命名的修缮用传送点。\n\n**社区评价**：ZED 僵尸乐园 2022 年 11 月 22 日的正式版首通记录里写着「从九点多开始一直打到凌晨一点半，终于首通了」，可见这张图的通关成本。2026 年 ZED 的 OBJ 参数测试视频作者说「人类压力比以前大，40 人以下难以通关」。CS2 时期风云社、EXG、ZED 都留有指挥视角或整场录像，也有「断后小技巧」「AK 刷分」这类玩法向内容。",
- "difficulty": "困难",
+ "difficulty": "火星",
  "author": "Trazix（原作）；Nino（CSGO 移植）；@Seth.（CS2 移植）",
  "players": "40 人以上（据 ZED 参数测试视频：40 人以下难以通关）",
  "duration": "约 35 分钟（作者自述的单关流程）",

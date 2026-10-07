@@ -1,7 +1,7 @@
 {
   "slug": "ze_squid_game",
   "title": "鱿鱼游戏",
-  "difficulty": "简单",
+  "difficulty": "困难",
   "summary": "以 Netflix 韩剧《鱿鱼游戏》为题材的僵尸逃跑地图，工坊上这份是 CS2 移植版。页面说明写得很短：「Port from csgo / Map by liroy / Based on css version by koen & jaek」，并感谢 Stepanof 与 NiceShot；上传者留了 Discord（neroun4534）收集 bug 反馈和改图建议。也就是说这张图有一条 CS:S → CS:GO → CS2 的移植链，liroy 是地图作者，koen 与 jaek 做的是更早的 CSS 版本。\n\n地图为单关卡结构，人类需要一路推进到流程最后的人性抉择环节。中文社区对它的讨论几乎都集中在难度上：UB 游戏社区的「困难地图的新手标签添加建议」一帖里，玩家把 ze_squid_game_v1 描述为「除了最后考研人性，别的都算简单」，并请管理员为它补上新手标签；管理员随后回复批准了对 ze_squid_game_v1 的添加，同一批里被否掉的是 ze_rev_a6_3、ze_rush_b 与 ze_dev_r4a_d_csgo2 三张图。换句话说，社区共识是前面几段对新手足够友好，真正的压力在结尾那个「考验人性」的环节。\n\n目前没有找到关于这张图神器配置、具体小游戏关卡或通关时长的可引用记录，中文侧的讨论基本停留在难度与标签层面；工坊页面本身除了移植信息与致谢之外，没有写关卡分段或玩法说明。",
   "author": "liroy",
   "tags": [

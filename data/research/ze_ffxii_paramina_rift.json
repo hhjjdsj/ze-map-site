@@ -1,6 +1,6 @@
 {
   "_说明": "改这个文件就行。difficulty 只能填：入门/简单/普通/困难/火星/入土/未知；summary 写介绍正文（分段就在段与段之间打 \\n\\n）；tags 是标签数组，例如 [\"神器\", \"多关卡\"]；videoUrls 放视频链接。改完点页面下面的 Commit changes 提交即可。",
-  "difficulty": "未知",
+  "difficulty": "入土",
   "summary": null,
   "tags": [],
   "videoUrls": [],

@@ -3,7 +3,7 @@
   "title": "流光幻境",
   "summary": "《流光幻境》的原作是 CS:GO 上的 `ze_aoraitsu`（社区常见版本名 `ze_aoraitsu_r6f`），中文绰号「油桶世界」；CS2 分支由花澪墨音❀ 制作，2024 年 7 月 10 日上传创意工坊，简介写着「Aoraitsu Swan / 流光幻境 Swan / 或者说.. 油桶世界 ? 欢迎来到流光幻境的CS2分支」。CS:GO 版的音乐合辑是按 Episode 0、Episode 1、Episode 2 分组的（Aranone - Cytisus；Taishi - Withered Gait、Aoi - Eggdrasil；Satella - Secret Place、83key - Toward To The Skyline、Aoi - βlαnoir），这种 EP 式分级在 CS2 版里留下了「调关房」按钮，玩家报告过选 EP0 会进 EP1 的老 bug。\n\n玩法是三关弹幕图，B 站通关录像给出的定位是「中等难度弹幕图」。神器方面玩家在评论区提到过球（`item_ball_maker` / `item_ball_button`）、定身球、锁、人类奶（治疗）和油桶；作者 2025 年 10 月的更新集中修了这些：「修复定身球推人」「修复人类奶开不出来」「修复了僵尸秒无伤害」「移除了 boss 激光技能残留」，还处理了开局可能会没收刀、部分刀无法捡起的问题。GFL 配置里登记的 Boss 是 Reloaded、Break、Aoraitsu 三个。\n\n「油桶世界」这个绰号来自图里的 OBJ 油桶——玩家可以拿油桶在 Boss 房搭出掩体无伤打 Boss，甚至无伤躲过第三关的最终弹幕，作者对此的态度是「油桶逃课的话，就是给你们这么玩的」。油桶也带来一串物理 bug（第一关神器会卡电梯、OBJ 油桶模型有时看不见、电梯更新后仍会卡人），作者先后重做了电梯和油桶，2025 年 10 月又加了「关底 team win 钛合金油桶」，11 月把钛合金油桶改成增加血量。\n\n从 2024 年 7 月到 2025 年 11 月，这张图累计有 44 条改动说明，作者维护得很勤（其间也删掉了被吐槽「太吵」的垃圾话生成器）。工坊评价 28 条、订阅数 2954，B 站有 EXG 社区的完整通关录像。",
   "author": "花澪墨音❀（CS2 分支）",
-  "difficulty": "普通",
+  "difficulty": "困难",
   "duration": "3 关；B 站 CS2 全流程录像约 28 分钟",
   "tags": [
     "弹幕",
