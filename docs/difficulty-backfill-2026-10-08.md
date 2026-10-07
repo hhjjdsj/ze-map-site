@@ -67,11 +67,40 @@
   `ze_mlgsurf`、`ze_obscura_tower`、`ze_silenthill_pt`、`ze_trepang`、`ze_verdant`、
   `ze_bioshock_v6_cs2`、`ze_bluearchive_abydos`。想补的话走 `npm run map:add`。
 
-## 还剩 9 张未知（视频里没有它们）
+## 还剩 1 张未知
 
-`ze_lemonysnickets_p`（神秘孤岛）、`ze_puta_p`（普塔工厂）、`ze_studying_the_factory`（工厂研学记）、
-`ze_surf_sparks_cs2`（火花滑翔）、`ze_surf_vortex_p`（漩涡滑翔）、`ze_tesv_skyrim_i`、
-`ze_toggle_theory`（绯蓝节奏）、`ze_winter`（凛冬小镇）、`ze_zombie_scenario_lostcity`（失落之城）。
+`ze_zombie_scenario_lostcity`（失落之城，工坊已下架、没进那个服务器的图池）。
+等着站内的**难度投票**补（入口在地图页，见 `/api/vote`），或者哪次玩到了直接告诉我。
 
-这 9 张要么没进那个服务器的图池，要么工坊已下架。后面可以靠站内的**难度投票**慢慢补齐
-（入口在地图页，见 `/api/vote`）。
+## 追加（同日，站长直接给了值）
+
+站长随后手动补齐了最后一批，现在 **未知 = 1 张**：
+
+| 地图 | 难度 | 说明 |
+| --- | --- | --- |
+| ze_lemonysnickets_p | 简单 | |
+| ze_puta_p | 简单 | |
+| ze_studying_the_factory | 简单 | |
+| ze_surf_sparks_cs2 | 简单 | |
+| ze_surf_vortex_p | 简单 | 资料文件里原本连 `difficulty` 键都没有，本次插入 |
+| ze_toggle_theory | 困难 | |
+| ze_winter | 简单 | |
+| ze_tesv_skyrim_i | 火星 | ⚠️ 站长写的是 `ze_tesv_skyrim_p`（那张本来就是火星）；站内唯一还是未知的是 `_i`，按同一张图处理，两张都设为火星。另外它是全站唯一没有资料文件的地图，本次补建 |
+
+同时为 **11 张「视频里有、本站还没有条目」的地图**先建了资料 stub
+（`data/research/<slug>.json`：只写 difficulty + 一条 `_待建条目` 说明）。
+它们**不会**出现在站点上（生成器只认工坊地图包里有实体数据的图），
+但等哪天用 `npm run map:add -- <工坊ID>` 把图加进来，难度会自动生效：
+
+`ze_grace` 困难 · `ze_halo3_thestorm` 困难 · `ze_light_shadow_cs2` 困难 · `ze_little_trip` 普通 ·
+`ze_mlgsurf` 简单 · `ze_obscura_tower` 困难 · `ze_silenthill_pt` 简单 · `ze_trepang` 火星 ·
+`ze_verdant` 困难 · `ze_bioshock_v6_cs2` 困难 · `ze_bluearchive_abydos` 困难
+
+⚠️ 这 11 张在 `public/entity/catalog.json`（646 张工坊地图的实体目录）里**一个都没有** ——
+所以加图这件事不只是写个条目：得先把地图包加进工坊订阅、重跑实体烘焙，才会有 3D 预览和实体数据。
+
+## 最终分布
+
+| 难度 | 入门 | 简单 | 普通 | 困难 | 火星 | 入土 | 未知 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 张数 | 51 | 157 | 91 | 171 | 67 | 10 | **1** |
