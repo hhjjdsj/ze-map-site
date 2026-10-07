@@ -281,7 +281,8 @@ img { max-width: 100%; display: block; }
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  right: 0;
+  /* 比输入框宽：一行要放下中文名 + 内部名 + 徽章，300px 会把中文名挤成「后…」 */
+  min-width: min(92vw, 430px);
   z-index: 120;
   max-height: 70vh;
   overflow-y: auto;
@@ -305,8 +306,21 @@ img { max-width: 100%; display: block; }
 .sbox-row.on,
 .sbox-row:hover { background: var(--panel-2); }
 
-.sbox-row-main { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/*
+ * 主次：中文名（主角）优先占位，内部名（ze_xxx）**先被压缩**。
+ * 两者都设 min-width:0 才能真的收缩；内部名的 flex-shrink 给大值，
+ * 于是窄的时候它先变成 "ze_backroo…"，而不是把中文名挤成「后…」（2026-10-07 截图的问题）。
+ */
+.sbox-row-main {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
+/* 命中的那几个字：高亮，让「为什么它会出现」一眼可见 */
 .sbox-row-main mark {
   background: transparent;
   color: var(--accent-2);
@@ -314,11 +328,15 @@ img { max-width: 100%; display: block; }
 }
 
 .sbox-row-sub {
+  flex: 0 24 auto;
+  min-width: 0;
   margin-left: auto;
-  flex-shrink: 0;
   color: var(--muted);
   font-size: 11.5px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sbox-badge {
@@ -350,7 +368,26 @@ img { max-width: 100%; display: block; }
   .header-inner { gap: 10px; }
   .sbox { margin-left: 0; }
   .sbox-input { font-size: 13px; }
-  .sbox-list { left: auto; right: 0; width: min(92vw, 420px); }
+  /*
+   * 窄屏浮层改成「贴在页头下方的一条」：把 .sbox 的定位去掉，让绝对定位的参照物
+   * 变成 .site-header（sticky 也是"已定位"元素），于是 left/right 可以直接按屏幕算。
+   * ⚠️ 别再用 right:0 + 93vw 那种写法：那是相对输入框右边缘对齐的，
+   * 宽度一大就**从左边溢出屏幕**（2026-10-07 手机截图里标题被切成了「公室」）。
+   */
+  .sbox { position: static; }
+  .sbox-list {
+    top: calc(100% + 2px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+    min-width: 0;
+    max-height: 66vh;
+  }
+}
+
+/* 手机上一行放不下「中文名 + 内部名 + 徽章」三样：内部名让位（中文名才是要找的东西） */
+@media (max-width: 560px) {
+  .sbox-row-sub { display: none; }
 }
 
 /* ===== 主题切换按钮 ===== */

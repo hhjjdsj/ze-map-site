@@ -303,16 +303,39 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
     }
 
     /**
-     * 连续子串打分：完全相同 3 / 以它开头 2 / 中间包含 1。
-     * ⚠️ **没命中必须返回 -1**（不能返回 0）：下面统一写成 `分数 * 10 + 权重`，
-     * 权重是正数（+3/+2/+1），要是拿 0 当"没命中"，`0*10+3 = 3` 会被 `best > 0`
-     * 当成命中 —— 于是每一张图都被算进「图名匹配」，按拼音排在真结果后面
-     * （2026-10-07 实测：搜「后室」多出 2021圣诞世界 / 阿波罗 / 阿卡纳之心 这类假条目）。
+     * 连续子串打分：完全相同 3 / 以它开头 2 / 中间包含 1，**没命中 -1**。
+     * ⚠️ **没命中必须返回 -1**（不能返回 0）：调用方只判 `> 0`，
+     * 拿 0 当"没命中"会把整站地图都算成命中（2026-10-07 实测：搜「后室」多出
+     * 2021圣诞世界 / 阿波罗 这类按拼音排的假条目）。
      */
     function scoreOf(value, q) {
       var at = value.indexOf(q);
       if (at === -1) return -1;
       return value === q ? 3 : at === 0 ? 2 : 1;
+    }
+
+    /**
+     * 命中排名：**先看命中在哪个字段（中文名 3 > 英文名 2 > 标签 1），再看命中方式**
+     * （完全相同 3 > 开头 2 > 包含 1）。返回 null = 三处都没连续命中。
+     *
+     * 为什么用两层而不是加权总分：单值打分容易倒挂 —— 试过「标签完全相同 60 分」压过
+     * 「标题包含 52 分」，于是搜「后室」时「池塘」（只是打了标签）排在「逃离后室」前面。
+     * 层级的规则一句话说得清，也不会再出现这种意外。
+     */
+    function hitRank(m, q) {
+      var best = null;
+      var consider = function (rank, value, tag) {
+        var match = scoreOf(value, q);
+        if (match <= 0) return;
+        if (!best || rank > best.rank || (rank === best.rank && match > best.match)) {
+          best = { rank: rank, match: match, tag: tag || '' };
+        }
+      };
+      consider(3, normalize(m.t));
+      consider(2, normalize(m.e));
+      var g = m.g || [];
+      for (var i = 0; i < g.length; i++) consider(1, normalize(g[i]), g[i]);
+      return best;
     }
 
     /** 在索引里找图名 / 标签命中（同样只认连续子串） */
@@ -324,20 +347,15 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
 
       for (var i = 0; i < MAP_INDEX.length; i++) {
         var m = MAP_INDEX[i];
-        var best = Math.max(scoreOf(normalize(m.t), nq) * 10 + 3, scoreOf(normalize(m.e), nq) * 10 + 2);
-        var tag = '';
-        var g = m.g || [];
-        for (var j = 0; j < g.length; j++) {
-          var gs = scoreOf(normalize(g[j]), nq) * 10 + 1;
-          if (gs > best) {
-            best = gs;
-            tag = g[j]; // 命中标签时把它显示出来，说明这张图为什么在这儿
-          }
-        }
-        if (best > 0) maps.push({ m: m, score: best, tag: tag });
+        var hit = hitRank(m, nq);
+        if (hit) maps.push({ m: m, rank: hit.rank, match: hit.match, tag: hit.tag });
       }
       maps.sort(function (a, b) {
-        return b.score - a.score || String(a.m.t).localeCompare(String(b.m.t), 'zh');
+        return (
+          b.rank - a.rank ||
+          b.match - a.match ||
+          String(a.m.t).localeCompare(String(b.m.t), 'zh')
+        );
       });
 
       for (var k = 0; k < TAG_INDEX.length; k++) {

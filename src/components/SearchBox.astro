@@ -106,11 +106,37 @@
       return Object.assign(document.createElement('span'), { className: `sbox-badge ${cls}`, textContent: text });
     }
 
-    /** 连续子串打分：完全相同 > 以它开头 > 中间包含 */
+    /**
+     * 连续子串打分：完全相同 3 / 以它开头 2 / 中间包含 1，**没命中 -1**。
+     * ⚠️ 返回 -1 而不是 0：0 会被当成"命中了但要排最后"，而调用方只判 `> 0`。
+     */
     function scoreOf(value: string, q: string): number {
       const at = value.indexOf(q);
       if (at === -1) return -1;
       return value === q ? 3 : at === 0 ? 2 : 1;
+    }
+
+    /**
+     * 命中排名：**先看命中在哪个字段，再看命中方式**（两层，不是一个总分）。
+     *
+     * 为什么不用加权总分：单值打分很容易倒挂 —— 试过「标签完全相同 60 分」vs
+     * 「标题包含 52 分」，结果搜「后室」时「池塘」（只是打了 后室 标签）排在
+     * 「逃离后室」（标题里就写着）前面（2026-10-07 截图里就是这个顺序，用户直接看出来了）。
+     * 层级排序的规则一句话说得清：**中文名 > 英文名 > 标签**，同一层里 完全相同 > 开头 > 包含。
+     */
+    function hitRank(m: MapRow, q: string): { rank: number; match: number; tag?: string } | null {
+      let best: { rank: number; match: number; tag?: string } | null = null;
+      const consider = (rank: number, value: string, tag?: string) => {
+        const match = scoreOf(value, q);
+        if (match <= 0) return;
+        if (!best || rank > best.rank || (rank === best.rank && match > best.match)) {
+          best = { rank, match, ...(tag ? { tag } : {}) };
+        }
+      };
+      consider(3, norm(m.t));
+      consider(2, norm(m.e));
+      for (const g of m.g ?? []) consider(1, norm(g), g);
+      return best;
     }
 
     function suggest(q: string): HTMLElement[] {
@@ -118,21 +144,15 @@
       if (!index) return out;
 
       /* --- 地图：中文名 / 英文名 / 标签，三处都只认连续子串 --- */
-      const maps: Array<{ m: MapRow; score: number; tag?: string }> = [];
+      const maps: Array<{ m: MapRow; rank: number; match: number; tag?: string }> = [];
       for (const m of index.maps) {
-        let best = Math.max(scoreOf(norm(m.t), q) * 10 + 3, scoreOf(norm(m.e), q) * 10 + 2);
-        /* 命中的是标签时，把那个标签显示出来（说明它为什么出现在这里） */
-        let tag: string | undefined;
-        for (const g of m.g ?? []) {
-          const gs = scoreOf(norm(g), q) * 10 + 1;
-          if (gs > best) {
-            best = gs;
-            tag = g;
-          }
-        }
-        if (best > 0) maps.push({ m, score: best, tag });
+        const hit = hitRank(m, q);
+        if (hit) maps.push({ m, ...hit });
       }
-      maps.sort((a, b) => b.score - a.score || a.m.t.localeCompare(b.m.t, 'zh'));
+      maps.sort(
+        (a, b) =>
+          b.rank - a.rank || b.match - a.match || String(a.m.t).localeCompare(String(b.m.t), 'zh')
+      );
 
       for (const { m, tag } of maps.slice(0, MAX_MAPS)) {
         const a = document.createElement('a');
@@ -160,6 +180,7 @@
         .map((t) => ({ t, score: scoreOf(norm(t.n), q) }))
         .filter((x) => x.score > 0)
         .sort((a, b) => b.score - a.score || b.t.c - a.t.c);
+
       for (const { t } of tags.slice(0, MAX_TAGS)) {
         const a = document.createElement('a');
         a.className = 'sbox-row sbox-row-tag';

@@ -84,7 +84,12 @@ const ogImage = image ? new URL(image, site).href : new URL('/images/hero-bg.jpg
         <nav class="main-nav" id="main-nav">
           <a href="/maps/">地图库</a>
           <a href="/preview/">实体预览</a>
-          <a href="/search/">搜索</a>
+          {/*
+            这里原本还有一个「搜索」导航项 —— 2026-10-07 撤掉：页头已经有常驻搜索框
+            （components/SearchBox.astro），再留一个跳 /search/ 的入口就是重复。
+            结果页依然可达：在搜索框里打字回车 / 直接回车（空关键词会进带筛选的搜索页），
+            另外 404 页也留了一个「🔍 站内搜索」的入口。
+          */}
           <a href="/tags/">标签</a>
           <a href="/contribute/">投稿</a>
           <a href="/about/">关于</a>
