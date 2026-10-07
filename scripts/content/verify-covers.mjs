@@ -159,10 +159,11 @@ console.log(`  → 其中会覆盖渲染图的：${bySlug.size} 张`);
  * 是**封面优先级第 2 层**（人工封面 > 工坊图 > 渲染图）。
  * 规矩比人工封面简单，但也得拦两件事：文件名对不上地图（永远不会生效）、
  * 以及有人工封面时那张纯属占地方。
+ * wsSlugs 在外面声明：下面核「封面有没有真的落到页面上」要用同一份名单。
  */
+const wsSlugs = new Set();
 if (fs.existsSync(WORKSHOP_DIR)) {
   const wsFiles = fs.readdirSync(WORKSHOP_DIR).filter((f) => !f.startsWith('.') && !isDoc(f));
-  const wsSlugs = new Set();
   for (const file of wsFiles) {
     const ext = path.extname(file).slice(1).toLowerCase();
     const slug = path.basename(file, path.extname(file));
@@ -185,6 +186,63 @@ if (fs.existsSync(WORKSHOP_DIR)) {
   }
   console.log(`工坊封面 ${wsFiles.length} 张（作者上传的预览图，555×312 为主）`);
   console.log(`  → 封面构成：人工 ${bySlug.size} · 工坊 ${wsSlugs.size} · 其余用渲染图`);
+}
+
+/*
+ * 封面层级到底有没有落到页面上。
+ * 2026-10-08 的教训：手写正文的三张图（魔晄炉 / 米纳斯 / 黑珍珠号）frontmatter 是写正文那天
+ * 冻结的，生成器当时只补正文、不补 cover —— 于是「仓库里有作者工坊图 / 有人工封面」和
+ * 「页面上挂着黑底密度点图」同时成立；那张兜底图叠在详情页顶部只有 22% 透明度，
+ * 看上去就是「这张图没有封面」，而构建、CI、这个脚本当时全是绿的。
+ * 现在生成器每轮都按层级重写这三页的 cover 行，这里再独立核一遍：
+ * 指向的封面文件必须在，且**磁盘上有更好的那层时不能还指着渲染图**。
+ */
+const coverTierOf = (rel) =>
+  rel.includes('/covers/custom/') ? 'custom'
+  : rel.includes('/covers/workshop/') ? 'workshop'
+  : rel.includes('/covers/') ? 'render'
+  : 'other';
+const tierCount = { custom: 0, workshop: 0, render: 0, other: 0, none: 0 };
+const staleCovers = [];
+const fallbackOnly = [];
+for (const f of fs.readdirSync(MAPS_DIR).filter((x) => x.endsWith('.mdx'))) {
+  const slug = f.replace(/\.mdx$/, '');
+  const rel = (/^cover:\s*"?([^"\r\n]+?)"?\s*$/m.exec(fs.readFileSync(path.join(MAPS_DIR, f), 'utf8')) || [])[1];
+  if (!rel) {
+    tierCount.none++;
+    fallbackOnly.push(slug);
+    continue;
+  }
+  const tier = coverTierOf(rel);
+  tierCount[tier]++;
+  if (!fs.existsSync(path.join(ROOT, 'public', rel))) {
+    errors.push(`${f}: cover 指的 ${rel} 不存在（页面会没有封面图）`);
+  }
+  const lower = slug.toLowerCase();
+  const better = bySlug.has(lower) ? '人工封面' : wsSlugs.has(lower) ? '工坊预览图' : null;
+  if (tier === 'render' && better) {
+    staleCovers.push(`${slug}: cover 还指着渲染图（${rel}），但 public/images/covers/ 里已经有${better}了`);
+  }
+  if (tier === 'render' || tier === 'none') fallbackOnly.push(slug);
+}
+if (staleCovers.length) {
+  errors.push(
+    ...staleCovers.map((s) => `${s} —— 跑 npm run maps:generate 让它按层级重算（手写正文条目的 cover 行由生成器改写）`)
+  );
+}
+console.log(
+  `页面封面：人工 ${tierCount.custom} · 工坊 ${tierCount.workshop} · 渲染兜底 ${tierCount.render}` +
+    (tierCount.none ? ` · 没有 cover 行 ${tierCount.none}` : '')
+);
+/* 渲染兜底图是**黑底彩色点**的俯视密度图，当封面约等于没有。这些图基本是工坊条目
+   已被作者删除（Steam 接口 result=9），拿不到作者截图，属于已知的、无害的短板：
+   只在有人真去补图时才需要看这份名单，所以按提醒列出、不判错。 */
+if (fallbackOnly.length) {
+  warns.push(
+    `仍在用渲染兜底图的 ${fallbackOnly.length} 张（黑底点位图，视觉上≈没有封面，多为工坊条目已被删除）：` +
+      fallbackOnly.slice(0, 24).join('、') +
+      (fallbackOnly.length > 24 ? ` 等 ${fallbackOnly.length} 张` : '')
+  );
 }
 
 if (warns.length) {

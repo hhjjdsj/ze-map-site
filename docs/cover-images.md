@@ -11,6 +11,16 @@
 生成器在写 `src/content/maps/*.mdx` 的 `cover:` 时按这个顺序找，找到哪个用哪个。
 第 1 层删掉就自动回落到第 2 层，第 2 层也删掉才回落到渲染图 —— **不需要改任何配置**。
 
+> **手写正文的三张图**（魔晄炉 `ze_ffvii_mako_reactor` / 米纳斯 `ze_lotr_minas_tirith` /
+> 黑珍珠号 `ze_pirates_port_royal`）走的是另一条生成路径：正文从 `data/research/<slug>.json`
+> 的 `document` 原样搬过来，**但 `cover:` 这一行照样按上表重算** —— 生成器只替换 frontmatter
+> 里的那一行，正文一个字不动。
+> 2026-10-08 之前不是这样，于是这三页的封面永远停在「写正文那天」：魔晄炉后来补了作者工坊图、
+> 米纳斯和黑珍珠号补了人工封面，页面上却一直挂着黑底密度点图 —— 看起来就是「这张图没有封面」，
+> 而构建、CI、`cover:verify` 全是绿的。
+> 给这三张换封面同样走 `cover:set` / `custom/`；**不要去改 `document` 里那行 `cover:`**，
+> 改了下一轮构建也会被层级重算掉（`npm run maps:generate` 会打印它改写了哪几页）。
+
 ## 第 2 层：作者工坊图（为什么有它、怎么更新）
 
 没有人工封面的地图，以前用的是渲染图 —— 那是本站算出来的密度雷达示意图，跟「地图长什么样」差得远。
@@ -29,6 +39,29 @@ npm run cover:verify               # 4) 核对（会打印「人工 88 · 工坊
 - 尺寸够用：详情页顶上只把它当 **22% 透明度**的氛围底图（还有遮罩渐隐），卡片按 16:9 裁切，
   而它本来就是 16:9，不会变形。
 - ⚠️ 图片集里的同一张工坊图不会再重复出现：地图页在地工坊图当封面时，会把图片集里那条 `kind: workshop` 过滤掉。
+
+## 第 3 层：渲染兜底图（以及为什么有 18 张看起来「没有封面」）
+
+第 3 层是 `npm run data:covers` 从实体数据画出来的**俯视密度图**：黑底 + 彩色点位。
+它信息量不小（一眼看出机关、传送门都堆在哪），但详情页顶部只把它当 **22% 透明度**的氛围底图，
+在深色页面上几乎看不见；卡片列表里就是一张黑图 —— 观感上等于没有封面。
+
+截至 2026-10-08 还有 **18 张**停在这一层，`npm run cover:verify` 会把它们列出来：
+
+```
+ze_bang_dream_mygo、ze_cursed_bear_tales、ze_doom、ze_ice_cavern_z、ze_italy_town_z、
+ze_laser_competition、ze_laser_island_z、ze_mgden_z、ze_mission_escape、ze_naruto_z、
+ze_outlast、ze_project_codex_z、ze_scp_containment_breach、ze_steyliff_grove、
+ze_sunkentemple、ze_tesv_skyrim_i、ze_tesv_skyrim_p、ze_theback_bureau
+```
+
+原因不是漏抓：这些图的创意工坊条目**已被作者删除 / 下架**（Steam 接口返回 `result=9`，
+没有 `preview_url`），作者预览图根本拿不到；这些图也基本没有投稿视频可以截帧。
+要救只能靠人工封面：
+
+```bash
+npm run cover:set -- ze_doom "D:\图片\游戏内截图.png"
+```
 
 ## 怎么做（人工封面，优先级最高）
 

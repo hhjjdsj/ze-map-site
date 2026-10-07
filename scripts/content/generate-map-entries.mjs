@@ -308,6 +308,40 @@ const coverIn = (index, dir, mapName) => {
 const customCoverOf = (mapName) => coverIn(customCoverIndex, '/images/covers/custom', mapName);
 const workshopCoverOf = (mapName) => coverIn(workshopCoverIndex, '/images/covers/workshop', mapName);
 
+/**
+ * 一张图最终用哪张封面：人工 > 工坊预览图 > 渲染兜底。
+ * 兜底图是本站在实体数据上算出来的俯视密度点图（黑底彩点），当 hero 底图几乎等于没有 ——
+ * 所以三层必须**都走这一个函数**，不然就会漏（2026-10-08：手写正文的三张图漏了，
+ * 魔晄炉明明已经有作者预览图，页面上却一直挂着那张黑底点图）。
+ *
+ * `pageSlug` 是页面文件名，跟实体名不一定一样：魔晄炉的页面是 ze_ffvii_mako_reactor，
+ * 实体却叫 ze_ffvii_mako_reactor_v6_p —— 人工/工坊图按**页面名**命名（人挑图时看的是页面），
+ * 所以两个名字都要试；层级顺序不因此改变（先两个名字里找人工，再两个名字里找工坊）。
+ */
+const resolveCover = (rec, pageSlug = rec.m) => {
+  const names = pageSlug === rec.m ? [rec.m] : [pageSlug, rec.m];
+  const rel =
+    names.map((nm) => customCoverOf(nm)).find(Boolean) ??
+    names.map((nm) => workshopCoverOf(nm)).find(Boolean) ??
+    `/images/covers/${rec.s}.webp`;
+  return fs.existsSync(path.join(ROOT, 'public', rel)) ? rel : null;
+};
+
+/**
+ * 手写正文条目的封面：**只动 frontmatter 里的 cover 行**，正文一个字不碰。
+ * 没有 cover 行就补在 frontmatter 末尾；frontmatter 结构不认识就原样返回，绝不瞎猜。
+ */
+const withResolvedCover = (text, coverRel) => {
+  if (!coverRel || !text.startsWith('---\n')) return text;
+  const end = text.indexOf('\n---', 3);
+  if (end < 0) return text;
+  const head = text.slice(0, end + 1);
+  const rest = text.slice(end + 1);
+  const line = `cover: ${JSON.stringify(coverRel)}`;
+  const next = /^cover:.*$/m.test(head) ? head.replace(/^cover:.*$/m, line) : `${head}${line}\n`;
+  return next + rest;
+};
+
 /* ---------------- 生成一个条目的 MDX ---------------- */
 function renderEntry(rec, research, wsRec, gfl) {
   const slug = rec.m;
@@ -363,11 +397,8 @@ function renderEntry(rec, research, wsRec, gfl) {
    * 查找走 customCoverOf() / workshopCoverOf()：**大小写不敏感**，
    * 且返回磁盘上的真实文件名（见上方索引注释）。
    */
-  const customCoverRel = customCoverOf(rec.m);
-  const workshopCoverRel = workshopCoverOf(rec.m);
-  const renderCoverRel = `/images/covers/${rec.s}.webp`;
-  const coverRel = customCoverRel ?? workshopCoverRel ?? renderCoverRel;
-  const hasCover = fs.existsSync(path.join(ROOT, 'public', coverRel));
+  const coverRel = resolveCover(rec);
+  const hasCover = Boolean(coverRel);
   // 上传者昵称：仅在正文说明里用，不冒充「作者」（很多是 CS2 移植上传者）
   const uploader = wsRec?.result === 1 ? uploaderOf(wsRec.creator) : '';
   // 作者署名可能很长（多作者 / 原作与移植的区分）：侧栏只显示第一段，完整署名放 authorNote
@@ -598,6 +629,8 @@ for (const [slug, research] of researchFiles) {
 }
 
 const existing = new Map(fs.readdirSync(MAPS_DIR).filter((f) => f.endsWith('.mdx')).map((f) => [f.replace(/\.mdx$/, ''), fs.readFileSync(path.join(MAPS_DIR, f), 'utf8')]));
+/** 手写正文条目的封面被层级改写过的（正常情况下只该在补了新封面时出现） */
+const curatedCoverFixes = [];
 
 /* 收集标签写法：富内容 JSON 文档中的标签优先当作规范写法 */
 const parseFmTags = (text) => {
@@ -675,15 +708,23 @@ for (const slug of Object.keys(LINKS).filter((s) => !s.startsWith('_'))) {
     communityRows
   );
   const changed = merged.rows.filter((r) => r.kind !== 'server');
-  const mdx = changed.length
+  const withItems = changed.length
     ? `${document}\n${itemsBlock(changed, {
         title: '神器 / 道具更正（社区投稿）',
         lead: `上面的神器表由本站人工整理；以下是[社区投稿](/contribute/)的更正与补充（${changed.length} 件），未列出的行仍以原表为准：`,
         showNote: true,
       }).join('\n')}`
     : document;
+  /* 正文一字不改，但 frontmatter 的 cover 得跟其它 545 张走同一套层级 ——
+     这几页的 frontmatter 是写正文那天冻结的，后来补的人工封面 / 工坊预览图永远进不来 */
+  const rec = zeMaps.find((m) => m.m === (LINKS[slug].primary || slug)) ?? zeMaps.find((m) => m.m === slug);
+  const mdx = rec ? withResolvedCover(withItems, resolveCover(rec, slug)) : withItems;
 
   const prev = existing.get(slug);
+  /* 封面被层级改写过就说一声：这三页的封面历史上冻结过，静默改动容易让人以为图挂了 */
+  const oldCover = (prev?.match(/^cover:.*$/m) || [])[0];
+  const newCover = (mdx.match(/^cover:.*$/m) || [])[0];
+  if (oldCover !== newCover) curatedCoverFixes.push(`${slug}  ${oldCover || '（无）'} → ${newCover || '（无）'}`);
   if (prev?.replace(/\r\n/g, '\n') === mdx) continue;
   if (DRY) { if (prev) updated++; else created++; continue; }
   if (prev) updated++; else created++;
@@ -697,6 +738,10 @@ console.log(`  其中带线上检索资料：${enriched} 张`);
 console.log(
   `  封面：人工 ${customCoverIndex.size} · 工坊预览图 ${workshopCoverIndex.size} · 其余用渲染图`
 );
+if (curatedCoverFixes.length) {
+  console.log(`  手写正文条目按层级改写封面 ${curatedCoverFixes.length} 张：`);
+  for (const f of curatedCoverFixes.slice(0, 10)) console.log(`    ${f}`);
+}
 if (stageFix.length) {
   console.log(`  关卡数按实体命名修正 ${stageFix.length} 张：`);
   for (const s of stageFix.slice(0, 25)) console.log(`    ${s}`);
