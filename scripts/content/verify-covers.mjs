@@ -27,6 +27,8 @@ import { imageSize } from '../../shared/image-size.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const DIR = path.join(ROOT, 'public/images/covers/custom');
+/** 工坊预览图当封面用的目录（import-workshop-covers.mjs 的产物，机器生成、不走人工提交流程） */
+const WORKSHOP_DIR = path.join(ROOT, 'public/images/covers/workshop');
 const MAPS_DIR = path.join(ROOT, 'src/content/maps');
 const RESEARCH_DIR = path.join(ROOT, 'data/research');
 
@@ -151,6 +153,39 @@ for (const [key, names] of byKey) {
 const total = files.length;
 console.log(`人工封面 ${total} 张${total ? `（${[...bySlug.keys()].slice(0, 5).join('、')}${bySlug.size > 5 ? ' 等' : ''}）` : ''}`);
 console.log(`  → 其中会覆盖渲染图的：${bySlug.size} 张`);
+
+/*
+ * 工坊封面（public/images/covers/workshop/）：机器从 bake/gallery 导进来的作者预览图，
+ * 是**封面优先级第 2 层**（人工封面 > 工坊图 > 渲染图）。
+ * 规矩比人工封面简单，但也得拦两件事：文件名对不上地图（永远不会生效）、
+ * 以及有人工封面时那张纯属占地方。
+ */
+if (fs.existsSync(WORKSHOP_DIR)) {
+  const wsFiles = fs.readdirSync(WORKSHOP_DIR).filter((f) => !f.startsWith('.') && !isDoc(f));
+  const wsSlugs = new Set();
+  for (const file of wsFiles) {
+    const ext = path.extname(file).slice(1).toLowerCase();
+    const slug = path.basename(file, path.extname(file));
+    if (!ALLOWED_EXT.includes(ext)) {
+      errors.push(`workshop/${file}: 不支持的格式 .${ext}`);
+      continue;
+    }
+    if (!fs.existsSync(path.join(MAPS_DIR, `${slug}.mdx`))) {
+      errors.push(`workshop/${file}: 找不到叫「${slug}」的地图，这张封面永远不会生效`);
+      continue;
+    }
+    const wsSlug = slug.toLowerCase();
+    if (wsSlugs.has(wsSlug)) errors.push(`workshop/${file}: 同一个 slug 出现了两次`);
+    wsSlugs.add(wsSlug);
+    if (bySlug.has(wsSlug)) {
+      warns.push(
+        `workshop/${file}: 这张图有人工封面（custom/），工坊图不会生效，可以删掉（--prune 会清）`
+      );
+    }
+  }
+  console.log(`工坊封面 ${wsFiles.length} 张（作者上传的预览图，555×312 为主）`);
+  console.log(`  → 封面构成：人工 ${bySlug.size} · 工坊 ${wsSlugs.size} · 其余用渲染图`);
+}
 
 if (warns.length) {
   console.log(`\n⚠️  提醒 ${warns.length} 条：`);

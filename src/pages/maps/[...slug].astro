@@ -68,8 +68,16 @@ const bodyHasVideo = /^##[^\n]*视频/m.test(entry.body ?? '');
 const VIDEOS_SHOWN = 2;
 const communityHistoryUrl = `https://github.com/hhjjdsj/ze-map-site/commits/main/data/community/${entry.id}.json`;
 
-/* 图片集（data/gallery/<slug>.json → Cloudflare R2 上的图）。没有就整块不渲染。 */
-const gallery = galleryFor(entry.id);
+/*
+ * 图片集（data/gallery/<slug>.json → Cloudflare R2 上的图）。没有就整块不渲染。
+ *
+ * ⚠️ 工坊预览图（kind: workshop）现在同时是**没有人工封面时的封面**（见
+ * scripts/entity-data/import-workshop-covers.mjs）。同一张图在页面上出现两次很傻：
+ * 顶上当氛围底图、底下图片集里再来一张。所以当封面就是它时，图片集里把它去掉。
+ */
+const galleryAll = galleryFor(entry.id);
+const coverIsWorkshop = String(entry.data.cover ?? '').includes('/images/covers/workshop/');
+const gallery = coverIsWorkshop ? galleryAll.filter((i) => i.kind !== 'workshop') : galleryAll;
 
 /*
  * 社区补过的「资料来源」由 mergeEntry 注入 entry.data.communitySources。

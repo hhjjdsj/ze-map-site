@@ -24,6 +24,7 @@
     "maps:generate": "node scripts/content/generate-map-entries.mjs",
     "content:dates": "node scripts/content/build-map-dates.mjs",
     "cover:set": "node scripts/content/set-cover.mjs",
+    "cover:workshop": "node scripts/entity-data/import-workshop-covers.mjs",
     "cover:verify": "node scripts/content/verify-covers.mjs",
     "content:verify": "node scripts/content/verify-research.mjs",
     "content:mdx": "node scripts/content/check-mdx-drift.mjs",

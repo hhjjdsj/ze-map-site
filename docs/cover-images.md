@@ -1,15 +1,36 @@
-# 给地图换封面（用自己找的图，取代 3D 渲染图）
+# 给地图换封面（用自己找的图，取代默认图）
 
-地图封面现在有两个来源，脚本会自动挑：
+地图封面现在有**三个来源**，生成器按顺序挑，找到哪个用哪个：
 
 | 优先级 | 文件 | 谁生成的 |
 | --- | --- | --- |
-| 1 | `public/images/covers/custom/<地图英文名>.webp` | **人工**（本文要说的事） |
-| 2 | `public/images/covers/<Steam 分片名>.webp` | `npm run data:covers` 从实体数据渲染的 16:9 缩略图 |
+| 1 | `public/images/covers/custom/<地图英文名>.<webp\|png\|jpg>` | **人工**（本文要说的事） |
+| 2 | `public/images/covers/workshop/<地图英文名>.<ext>` | `npm run cover:workshop` 导入的**作者工坊预览图**（2026-10-07 起） |
+| 3 | `public/images/covers/<Steam 分片名>.webp` | `npm run data:covers` 从实体数据渲染的 16:9 缩略图（兜底） |
 
 生成器在写 `src/content/maps/*.mdx` 的 `cover:` 时按这个顺序找，找到哪个用哪个。
+第 1 层删掉就自动回落到第 2 层，第 2 层也删掉才回落到渲染图 —— **不需要改任何配置**。
 
-## 怎么做
+## 第 2 层：作者工坊图（为什么有它、怎么更新）
+
+没有人工封面的地图，以前用的是渲染图 —— 那是本站算出来的密度雷达示意图，跟「地图长什么样」差得远。
+现在默认换成**作者自己在创意工坊上传的预览图**（真实截图，555×312，正好 16:9）：
+
+```bash
+npm run gallery:fetch -- --all      # 1) 抓工坊预览图到 bake/gallery/（已抓过的会跳过）
+npm run cover:workshop             # 2) 导成封面：public/images/covers/workshop/<地图英文名>.webp
+npm run maps:generate              # 3) 重新生成条目，cover: 就会指过去
+npm run cover:verify               # 4) 核对（会打印「人工 88 · 工坊 442 · 其余用渲染图」）
+```
+
+- `npm run cover:workshop -- --dry` 先看要导多少张；`--prune` 顺手删掉「已经有人工封面」的那些多余文件。
+- **图片是复制进仓库的**（不是直接引 R2 的 `terr.ze-map.cn/gallery/...`）：那个域名在国内部分网络下不通，
+  而封面是每个卡片都要加载的东西，必须跟其它封面一样走本站同源。
+- 尺寸够用：详情页顶上只把它当 **22% 透明度**的氛围底图（还有遮罩渐隐），卡片按 16:9 裁切，
+  而它本来就是 16:9，不会变形。
+- ⚠️ 图片集里的同一张工坊图不会再重复出现：地图页在地工坊图当封面时，会把图片集里那条 `kind: workshop` 过滤掉。
+
+## 怎么做（人工封面，优先级最高）
 
 ```bash
 npm run cover:set -- ze_obj_abyss_v2 "D:\图片\封面.png"
@@ -39,13 +60,18 @@ src/content/maps/<地图英文名>.mdx          ← cover: 指过去了
 
 脚本会先告诉你原图比例、以及会不会被裁掉多少，觉得不合适就换 `--position` 或 `--mode contain` 再跑一次（重复执行会直接覆盖上一张）。
 
-## 换回渲染图
+## 换回默认图
 
 ```bash
 npm run cover:set -- ze_obj_abyss_v2 --remove
 ```
 
-删掉人工封面，再跑一次构建，这张图就回到实体数据渲染的封面。**不需要改任何配置。**
+删掉人工封面，再跑一次构建：
+
+- 如果这张图有工坊预览图 → 回落到**工坊图**（第 2 层）；
+- 没有 → 回落到渲染图（第 3 层）。
+
+**不需要改任何配置。**
 
 ## 别人（贡献者）换封面
 

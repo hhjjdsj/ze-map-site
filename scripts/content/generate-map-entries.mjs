@@ -274,31 +274,39 @@ function itemNoteCell(row) {
  * cover 会写进 frontmatter 当 URL 用，必须与线上文件名逐字符一致。
  */
 const CUSTOM_COVER_DIR = path.join(ROOT, 'public/images/covers/custom');
+/** 工坊预览图当封面用的目录（scripts/entity-data/import-workshop-covers.mjs 的产物） */
+const WORKSHOP_COVER_DIR = path.join(ROOT, 'public/images/covers/workshop');
 /** 取图优先级：同一张图存在多种格式时取列表里靠前的 */
 const CUSTOM_COVER_EXTS = ['webp', 'png', 'jpg', 'jpeg'];
-const customCoverIndex = (() => {
-  const idx = new Map(); // `<slug 小写>.<ext 小写>` → 真实文件名
+
+/** 建目录索引：`<slug 小写>` → 真实文件名（大小写不敏感，且不依赖 readdir 顺序） */
+function buildCoverIndex(dir) {
+  const idx = new Map();
   let files = [];
-  try { files = fs.readdirSync(CUSTOM_COVER_DIR); } catch { return idx; }
+  try { files = fs.readdirSync(dir); } catch { return idx; }
   /* 先排序再建索引：万一存在仅大小写不同的重名文件，取哪个也是确定的，
      不依赖 readdir 的返回顺序（不同系统上顺序不同）。 */
   for (const f of files.slice().sort()) {
     if (f.startsWith('.')) continue;
     const ext = path.extname(f).slice(1).toLowerCase();
     if (!CUSTOM_COVER_EXTS.includes(ext)) continue;
-    const key = `${path.basename(f, path.extname(f)).toLowerCase()}.${ext}`;
+    const key = path.basename(f, path.extname(f)).toLowerCase();
     if (!idx.has(key)) idx.set(key, f);
   }
   return idx;
-})();
-const customCoverOf = (mapName) => {
+}
+
+const customCoverIndex = buildCoverIndex(CUSTOM_COVER_DIR);
+const workshopCoverIndex = buildCoverIndex(WORKSHOP_COVER_DIR);
+
+const coverIn = (index, dir, mapName) => {
   const slug = String(mapName || '').toLowerCase();
-  for (const ext of CUSTOM_COVER_EXTS) {
-    const f = customCoverIndex.get(`${slug}.${ext}`);
-    if (f) return `/images/covers/custom/${f}`;
-  }
-  return null;
+  const f = index.get(slug);
+  return f ? `${dir}/${f}` : null;
 };
+
+const customCoverOf = (mapName) => coverIn(customCoverIndex, '/images/covers/custom', mapName);
+const workshopCoverOf = (mapName) => coverIn(workshopCoverIndex, '/images/covers/workshop', mapName);
 
 /* ---------------- 生成一个条目的 MDX ---------------- */
 function renderEntry(rec, research, wsRec, gfl) {
@@ -337,19 +345,28 @@ function renderEntry(rec, research, wsRec, gfl) {
    * 封面优先级：
    *   1. 人工上传的 public/images/covers/custom/<地图内部名>.<ext>
    *      （自己用 `npm run cover:set` 生成，或者贡献者直接往这个目录传图）
-   *   2. 实体数据渲染的 /images/covers/<分片名>.webp（render-covers.mjs 的产物）
+   *   2. 作者上传的工坊预览图 public/images/covers/workshop/<地图内部名>.<ext>
+   *      （`npm run cover:workshop` 从 bake/gallery 导进来的，2026-10-07 起）
+   *   3. 实体数据渲染的 /images/covers/<分片名>.webp（render-covers.mjs 的产物）
    * 人工封面特意放在 custom/ 子目录：渲染目录（render-covers.mjs）默认会跳过已存在的文件，
    * 直接换掉渲染图平时也能用，但 `--force` 重渲染会冲掉它，事后也分不清哪张是人换的。
    * 放 custom/ 两者互不干扰，删掉那里的文件即可换回渲染图。
    *
+   * 第 2 层为什么存在：渲染图是本站算出来的密度雷达示意图，跟「地图长什么样」差得远；
+   * 工坊预览图是作者自己的真实截图（555×312，正好 16:9），
+   * 详情页 hero 只把它当 22% 透明度的氛围底图，卡片按 16:9 裁切，这个尺寸够用。
+   * 它**复制进仓库**而不是直接引 R2：terr.ze-map.cn 在国内部分网络下不通，
+   * 而封面是每个卡片都要加载的东西，必须跟其它封面一样走本站同源。
+   *
    * 为什么认多种扩展名而不是只认 webp：贡献者大多不会转 webp（要装工具），
    * 但人人都会从截图工具里存出 png / jpg。只认 webp 等于把「提 PR 换封面」这条路堵死。
-   * 顺序 = 优先级：同一张图同时存在多种格式时，取列表里靠前的那个。
-   * 查找走 customCoverOf()：**大小写不敏感**，且返回磁盘上的真实文件名（见上方索引注释）。
+   * 查找走 customCoverOf() / workshopCoverOf()：**大小写不敏感**，
+   * 且返回磁盘上的真实文件名（见上方索引注释）。
    */
   const customCoverRel = customCoverOf(rec.m);
+  const workshopCoverRel = workshopCoverOf(rec.m);
   const renderCoverRel = `/images/covers/${rec.s}.webp`;
-  const coverRel = customCoverRel ?? renderCoverRel;
+  const coverRel = customCoverRel ?? workshopCoverRel ?? renderCoverRel;
   const hasCover = fs.existsSync(path.join(ROOT, 'public', coverRel));
   // 上传者昵称：仅在正文说明里用，不冒充「作者」（很多是 CS2 移植上传者）
   const uploader = wsRec?.result === 1 ? uploaderOf(wsRec.creator) : '';
@@ -676,6 +693,10 @@ for (const slug of Object.keys(LINKS).filter((s) => !s.startsWith('_'))) {
 console.log(`ZE 地图 ${zeMaps.length} 张`);
 console.log(`  ${DRY ? '将生成' : '新建'} ${created} · ${DRY ? '将更新' : '更新'} ${updated}`);
 console.log(`  其中带线上检索资料：${enriched} 张`);
+/* 封面层级一眼可见：人工 > 工坊预览图 > 渲染兜底（本地跑会打印，CI 日志里同样能看到） */
+console.log(
+  `  封面：人工 ${customCoverIndex.size} · 工坊预览图 ${workshopCoverIndex.size} · 其余用渲染图`
+);
 if (stageFix.length) {
   console.log(`  关卡数按实体命名修正 ${stageFix.length} 张：`);
   for (const s of stageFix.slice(0, 25)) console.log(`    ${s}`);
