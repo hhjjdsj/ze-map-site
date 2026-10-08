@@ -35,7 +35,8 @@
     "content:rename-difficulty": "node scripts/content/rename-difficulty.mjs",
     "gfl:parse": "node scripts/content/parse-gfl-configs.mjs",
     "gfl:link": "node scripts/content/link-gfl-configs.mjs",
-    "content:links": "node scripts/content/check-links.mjs"
+    "content:links": "node scripts/content/check-links.mjs",
+    "deploy:check": "node scripts/ops/check-deploy.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "^0.4.1",
