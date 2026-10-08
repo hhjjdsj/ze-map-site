@@ -1918,6 +1918,22 @@ img { max-width: 100%; display: block; }
 /* 投稿人署名：压在说明后面，弱一档（玩家投稿才有） */
 .gallery-by { font-style: normal; opacity: 0.75; }
 
+/* 「当前封面」角标：那张工坊图同时也是页面顶部的封面，标出来免得看着像重复贴了两遍 */
+.gallery-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(4, 5, 10, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #e6e9f0;
+  font-style: normal;
+  font-size: 11px;
+  line-height: 1.6;
+  pointer-events: none;
+}
+
 /* 灯箱：原生 <dialog>，不引依赖 */
 .gallery-lightbox {
   border: 0;
@@ -1943,8 +1959,15 @@ img { max-width: 100%; display: block; }
 
 .gallery-lightbox img {
   display: block;
-  max-width: min(92vw, 1600px);
-  max-height: 78vh;
+  /*
+   * ⚠️ 这里必须写 width，不能只写 max-width：
+   * 只给上限的话，图片按**原始尺寸**渲染 —— 工坊预览图是 555×312，在 1440 宽的屏上
+   * 就只占一小块（2026-10-08 站长反馈「点开只占屏幕一小点」就是这个原因）。
+   * 给了 width 之后小图会被放大填满；替换元素的宽高比在 max-height 裁到时仍会保持。
+   */
+  width: min(92vw, 1600px);
+  height: auto;
+  max-height: 82vh;
   border-radius: 10px;
   background: #04050a;
 }

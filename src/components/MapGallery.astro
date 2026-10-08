@@ -27,16 +27,22 @@ interface Props {
   cover?: string;
 }
 
-/** 标记里带了 slug（生成器写的）；万一没带就从 URL 兜底（/maps/<slug>/） */
+/**
+ * 标记里带了 slug（生成器写的）；万一没带就从 URL 兜底（/maps/<slug>/）
+ */
 const slug = String(Astro.props.slug ?? '').trim() || (Astro.url.pathname.match(/^\/maps\/([^/]+)\//)?.[1] ?? '');
 const cover = String(Astro.props.cover ?? '');
 
 /*
- * 封面就是工坊图时，把图片集里的工坊图去掉：同一张图在页面顶部当完封面，
- * 再在图片集里出现一次很傻（见 docs/cover-images.md）。
+ * 封面就是工坊预览图时，图片集里**照样列出那张**，只在角上标一句「当前封面」。
+ *
+ * 2026-10-06 的做法是把它整条过滤掉（怕同一张图出现两次），结果 2026-10-08 站长发现
+ * 「魔晄炉没有图片集」—— 那张图的图片集里只有这一张工坊图，过滤掉就整块消失了。
+ * 现在改成标注而不是隐藏：图还在，重复也解释清楚了（顶部那张只是 22% 透明度的氛围底图）。
  */
 const coverIsWorkshop = cover.includes('/images/covers/workshop/');
-const images = galleryFor(slug).filter((i) => !(coverIsWorkshop && i.kind === 'workshop'));
+const images = galleryFor(slug);
+const isCoverImage = (img: { kind: string }) => coverIsWorkshop && img.kind === 'workshop';
 ---
 
 {
@@ -59,6 +65,7 @@ const images = galleryFor(slug).filter((i) => !(coverIsWorkshop && i.kind === 'w
             title={img.caption}
           >
             <img src={img.src} alt={`${slug} · ${img.caption}`} loading="lazy" decoding="async" />
+            {isCoverImage(img) ? <em class="gallery-badge">当前封面</em> : null}
             <span class="gallery-cap">
               {img.caption}
               {img.by ? <em class="gallery-by">{` · ${img.by}`}</em> : null}
