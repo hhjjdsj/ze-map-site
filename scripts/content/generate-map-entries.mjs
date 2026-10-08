@@ -42,13 +42,15 @@ const PRIORITY = argv.includes('--priority') ? Number(argv[argv.indexOf('--prior
 const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/entity/catalog.json'), 'utf8'));
 const zeMaps = catalog.maps.filter((m) => m.a === '2001');
 
-/* 富内容条目对应的地图版本：版本页面由 JSON 文档生成，避免重复条目。 */
-const LINKS = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/content/curated-links.json'), 'utf8'));
-const curatedMaps = new Set();
-for (const [slug, info] of Object.entries(LINKS)) {
-  if (slug.startsWith('_')) continue;
-  for (const v of info.versions || []) curatedMaps.add(v);
-}
+/*
+ * 「页面 slug 和实体名不一样」的地图：在它自己的 data/research/<slug>.json 里用
+ * `maps: ["<主实体>", "<其它版本实体>"]` 声明（2026-10-08 之前是另一份 curated-links.json）。
+ * 主实体（maps[0]）给这一页提供数据，列出的实体都不再单独出页 —— 否则会多出一堆
+ * ze_xxx_v5_3 / ze_xxx_cs2 的重复条目。
+ * 普通图不写这个字段：页面 slug 就是实体名。
+ */
+const entityAlias = new Map(); // 实体名 → 页面 slug
+const claimedEntities = new Set(); // 已被某页接管的实体（不再单独出页）
 
 const n = (v) => v.toLocaleString('en-US');
 
@@ -57,7 +59,7 @@ if (PRIORITY) {
   const curated = new Set(fs.readdirSync(MAPS_DIR).map((f) => f.replace(/\.mdx$/, '')));
   const list = [...zeMaps]
     .sort((a, b) => b.n - a.n)
-    .filter((m) => !curated.has(m.m) && !curatedMaps.has(m.m))
+    .filter((m) => !curated.has(m.m) && !claimedEntities.has(m.m))
     .slice(0, PRIORITY)
     .map((m, i) => ({
       rank: i + 1,
@@ -327,95 +329,53 @@ const resolveCover = (rec, pageSlug = rec.m) => {
   return fs.existsSync(path.join(ROOT, 'public', rel)) ? rel : null;
 };
 
-/**
- * 手写正文条目的封面：**只动 frontmatter 里的 cover 行**，正文一个字不碰。
- * 没有 cover 行就补在 frontmatter 末尾；frontmatter 结构不认识就原样返回，绝不瞎猜。
- */
-const withResolvedCover = (text, coverRel) => {
-  if (!coverRel || !text.startsWith('---\n')) return text;
-  const end = text.indexOf('\n---', 3);
-  if (end < 0) return text;
-  const head = text.slice(0, end + 1);
-  const rest = text.slice(end + 1);
-  const line = `cover: ${JSON.stringify(coverRel)}`;
-  const next = /^cover:.*$/m.test(head) ? head.replace(/^cover:.*$/m, line) : `${head}${line}\n`;
-  return next + rest;
-};
-
 /* ---------------- 图片集在正文里的位置 ----------------
 
    站长要求（2026-10-08）：图片集**排在正文靠上** —— 紧跟「背景故事」小节，
    正文里没有这一节的就紧跟正文开头；总之别压在最后那堆自动生成的资料段后面。
 
-   实现方式：正文里放一行 `<MapGallery slug="…" cover="…" />` 标记，详情页用
-   `<Content components={{ MapGallery }} />` 让 MDX 认得它（见 components/MapGallery.astro）。
-   标记由生成器负责：数据条目的正文每轮都重写，位置天然固定；
-   手写正文的条目（魔晄炉 / 米纳斯 / 黑珍珠号）正文照抄不动，但**这一行由 ensureGalleryMarker 维护** ——
-   找不到就补、位置不对就搬、slug/cover 变了就更新。所以：
-     · 贡献者提 PR 只改正文，标记不会丢（下一轮构建会补回来）；
-     · 社区投稿写回仓库后重新生成，标记照旧落在正确位置。
+   实现方式：正文里放一行 `<MapGallery slug="…" cover="…" />` 标记，
+   详情页用 `<Content components={{ MapGallery }} />` 让 MDX 认得它
+   （见 components/MapGallery.astro）。标记由生成器写，所以每轮构建都在同一位置，
+   贡献者不需要（也没法）手动维护它。
 */
 
 /** 正文里的图片集标记（属性顺序固定，方便 diff 稳定） */
 const galleryMarker = (slug, coverRel) =>
   `<MapGallery slug=${JSON.stringify(slug)}${coverRel ? ` cover=${JSON.stringify(coverRel)}` : ''} />`;
 
-/** frontmatter 与正文的分界（返回正文起始下标） */
-const bodyStartOf = (text) => {
-  if (!text.startsWith('---\n')) return 0;
-  const end = text.indexOf('\n---', 3);
-  return end < 0 ? 0 : end + 1;
-};
-
 /**
- * 手写正文条目：保证标记存在且位置正确。
- * 位置：`## 背景故事` 那一节之后 → 没有就正文第一个 `##` 小节之后 → 再没有就放正文末尾。
- * 返回 { text, where, moved }：where 是落点说明（日志里打出来），moved 表示这次动过。
+ * 手写小节（research.sections）→ 正文。
+ *
+ * 这三张图（魔晄炉 / 米纳斯 / 黑珍珠号）的正文是人工整理的，2026-10-08 之前整篇塞在
+ * `document` 字段里照抄；现在改成和普通图同一套流程：小节放在 `sections` 数组里，
+ * 由这里渲染。内容一字不改，只是位置从「一整篇 MDX」变成「结构化的小节」。
+ *
+ * 图片集标记插在「背景故事」小节之后（没有这一节就插在第一个小节之后）——
+ * 这是站长定的位置，改这里之前先想清楚。
  */
-const ensureGalleryMarker = (text, slug, coverRel) => {
+function sectionsToBody(sections, slug, coverRel) {
   const marker = galleryMarker(slug, coverRel);
-  const start = bodyStartOf(text);
-  const fm = text.slice(0, start);
-  /* 先把已有的标记行摘掉（可能在别处、可能是旧的 slug/cover），下面统一重新插 */
-  const had = /^<MapGallery\b[^\n]*\/>\s*$/m.test(text);
-  let body = text
-    .slice(start)
-    .replace(/^[ \t]*<MapGallery\b[^\n]*\/>[ \t]*\r?\n?/gm, '')
-    .replace(/\n{3,}/g, '\n\n');
-
-  const lines = body.split('\n');
-  const h2 = [];
-  lines.forEach((l, i) => {
-    if (/^##\s+\S/.test(l)) h2.push(i);
+  const out = [];
+  const storyAt = sections.findIndex((s) => /^背景故事/.test(s.title.trim()));
+  const after = storyAt >= 0 ? storyAt : 0;
+  sections.forEach((s, i) => {
+    if (out.length) out.push('');
+    out.push(`## ${s.title.trim()}`, '', s.body.replace(/\s+$/, ''), '');
+    if (i === after) out.push(marker, '');
   });
+  return out;
+}
 
-  const storyAt = h2.find((i) => /^##\s*背景故事/.test(lines[i]));
-  let at;
-  let where;
-  if (storyAt !== undefined) {
-    const next = h2.find((i) => i > storyAt);
-    at = next === undefined ? lines.length : next;
-    where = '背景故事小节之后';
-  } else if (h2.length) {
-    const next = h2.find((i) => i > h2[0]);
-    at = next === undefined ? lines.length : next;
-    where = '正文第一个小节之后';
-  } else {
-    at = lines.length;
-    where = '正文末尾';
-  }
-  /* 插到 at 之前，并保证标记前后各有一个空行 ——
-     MDX 里紧贴段落的 JSX 会被当成**行内**元素解析，`<section>` 就塞进 `<p>` 里了（结构坏掉） */
-  while (at > 0 && lines[at - 1].trim() === '') at--;
-  lines.splice(at, 0, ...(at > 0 ? ['', marker, ''] : [marker, '']));
-  body = lines.join('\n').replace(/\n{3,}/g, '\n\n');
-  if (!body.endsWith('\n')) body += '\n';
-  return { text: fm + body, where, moved: !had || text !== fm + body };
-};
 
 /* ---------------- 生成一个条目的 MDX ---------------- */
 function renderEntry(rec, research, wsRec, gfl) {
-  const slug = rec.m;
+  /*
+   * pageSlug = 页面文件名（= data/research / data/gallery / data/community 的键、投稿链接里的 map 参数）。
+   * 多数图和实体名一样；魔晄炉的页面是 ze_ffvii_mako_reactor，实体叫 ze_ffvii_mako_reactor_v6_p
+   * —— 这种差异由 research 的 `maps` 字段声明（见文件开头 entityAlias）。
+   */
+  const pageSlug = rec.pageSlug || rec.m;
   const wsUrl = `https://steamcommunity.com/sharedfiles/filedetails/?id=${rec.f}`;
   const groups = Object.fromEntries((catalog.groups || []).map((g) => [g.id, g]));
   const baked = rec.source === BAKED_SOURCE;
@@ -445,7 +405,12 @@ function renderEntry(rec, research, wsRec, gfl) {
   const released = wsRec?.timeCreated || rec.d;
   const updated = wsRec?.timeUpdated || rec.d || (baked ? null : catalog.meta.legacyBuilt.slice(0, 10));
   const desc = wsRec?.result === 1 ? (wsRec.description || '').trim() : '';
-  const hasEditorial = Boolean(research?.summary);
+  /*
+   * 有「人写的内容」就不算数据条目：summary 是普通图的写法，sections 是手写小节图的写法
+   * （魔晄炉 / 米纳斯 / 黑珍珠号）。只看 summary 的话那三页会被标成 stub，
+   * 页面顶部就会挂出「本条目为数据条目，资料待补充」—— 而它们恰恰是全站内容最全的三页。
+   */
+  const hasEditorial = Boolean(research?.summary || research?.sections?.length);
   /*
    * 封面优先级：
    *   1. 人工上传的 public/images/covers/custom/<地图内部名>.<ext>
@@ -468,7 +433,7 @@ function renderEntry(rec, research, wsRec, gfl) {
    * 查找走 customCoverOf() / workshopCoverOf()：**大小写不敏感**，
    * 且返回磁盘上的真实文件名（见上方索引注释）。
    */
-  const coverRel = resolveCover(rec);
+  const coverRel = resolveCover(rec, pageSlug);
   const hasCover = Boolean(coverRel);
   // 上传者昵称：仅在正文说明里用，不冒充「作者」（很多是 CS2 移植上传者）
   const uploader = wsRec?.result === 1 ? uploaderOf(wsRec.creator) : '';
@@ -480,14 +445,18 @@ function renderEntry(rec, research, wsRec, gfl) {
   const fm = [
     '---',
     `title: ${JSON.stringify((research?.title || rec.cn || rec.m).trim())}`,
-    `titleEn: ${JSON.stringify(rec.m)}`,
-    `game: CS2`,
+    `titleEn: ${JSON.stringify(pageSlug)}`,
+    /* 游戏：默认 CS2；移植前的老图在 research 里写 game（CS:S / CS:GO） */
+    `game: ${research?.game || 'CS2'}`,
     research?.author ? `author: ${JSON.stringify(authorShort)}` : null,
     authorNote ? `authorNote: ${JSON.stringify(authorNote)}` : null,
+    research?.version ? `version: ${JSON.stringify(research.version)}` : null,
     `difficulty: ${diff}`,
     research?.players ? `players: ${JSON.stringify(research.players)}` : null,
     research?.duration ? `duration: ${JSON.stringify(research.duration)}` : null,
     `stages: ${rec.st || 0}`,
+    /* featured：首页「精选」那一排卡片就是按这个字段筛的（见 pages/index.astro） */
+    research?.featured ? `featured: true` : null,
     `tags: [${tags.map((x) => JSON.stringify(x)).join(', ')}]`,
     hasCover ? `cover: ${JSON.stringify(coverRel)}` : null,
     `workshopUrl: ${wsUrl}`,
@@ -518,12 +487,18 @@ function renderEntry(rec, research, wsRec, gfl) {
    * 以前是一股脑按「工坊自述 → 数据概况 → 实体构成 → 关卡 → 神器…」推，
    * 结果玩家要翻过三节后台性质的内容才看到神器表（2026-09-30 反馈：页杂而不精）。
    * 只调整**段落顺序**，每一段的内容与来源说明一个字都没改 —— 改资料仍然只改 data/research/*.json。
+   *
+   * 另一条分支：research 写了 `sections`（魔晄炉 / 米纳斯 / 黑珍珠号这三张人工整理的图）
+   * 就**只渲染这些小节**，不再叠加自动生成的 gameplay/meta —— 那三页自己就带着
+   * 版本历史 / 关卡流程 / 神器表 / 策略 / 常见问题，再叠一份只会重复。
+   * 2026-10-08 之前这三页走的是「document 整篇照抄」的特殊路径，现在和普通图同一条流程。
    */
   const intro = [];
   const gameplay = [];
   const meta = [];
 
-  if (hasEditorial) {
+  /* 摘要只有普通图才有；手写小节的图（sections）开头直接就是「背景故事」那一节 */
+  if (research?.summary) {
     intro.push(mdSafe(research.summary.trim()), '');
   }
   // 数据条目的「资料待补充」提示由详情页统一渲染（stub 字段），正文里不再重复
@@ -590,8 +565,9 @@ function renderEntry(rec, research, wsRec, gfl) {
 
   /* 神器 / 道具：服务器配置打底，社区投稿逐行盖上（原值留在备注里）。
      生成器**读社区文档**是有意的：表格在正文里，读时合并得让 MDX 里带组件，
-     而 MDX 一律由脚本生成 —— 两边都真实、且输出仍然确定（社区文件是入库的）。 */
-  const communityRows = communityItemsOf(rec.m);
+     而 MDX 一律由脚本生成 —— 两边都真实、且输出仍然确定（社区文件是入库的）。
+     键用 pageSlug：社区投稿文件是按**页面名**存的（ze_ffvii_mako_reactor.json）。 */
+  const communityRows = communityItemsOf(pageSlug);
   const merged = mergeItems(gfl?.items ?? [], communityRows);
   const communityCount = merged.rows.filter((r) => r.kind !== 'server').length;
 
@@ -656,7 +632,33 @@ function renderEntry(rec, research, wsRec, gfl) {
     ''
   );
 
-  const body = [...intro, galleryMarker(rec.m, coverRel), '', ...gameplay, ...meta];
+  /*
+   * 手写小节的图（research.sections）：正文 = 开头摘要 + 人工小节（图片集标记插在
+   * 「背景故事」之后），社区投稿的神器更正追加在最后单独一节 —— 它们没有自动生成的
+   * 神器表，所以投稿只能这样显式补出来，不能让投稿石沉大海。
+   */
+  const hasSections = Array.isArray(research?.sections) && research.sections.length > 0;
+  const body = hasSections
+    ? [
+        ...intro,
+        ...sectionsToBody(research.sections, pageSlug, coverRel),
+        ...(() => {
+          const docRows = docItemRows(research.sections.map((s) => `## ${s.title}\n\n${s.body}`).join('\n\n'));
+          const mergedDoc = mergeItems(docRows.map((r) => ({ name: r.name, cd: r.cd, maxuses: null })), communityItemsOf(pageSlug));
+          const changed = mergedDoc.rows.filter((r) => r.kind !== 'server');
+          return changed.length
+            ? [
+                '',
+                ...itemsBlock(changed, {
+                  title: '神器 / 道具更正（社区投稿）',
+                  lead: `上面的神器表由本站人工整理；以下是[社区投稿](/contribute/)的更正与补充（${changed.length} 件），未列出的行仍以原表为准：`,
+                  showNote: true,
+                }),
+              ]
+            : [];
+        })(),
+      ]
+    : [...intro, galleryMarker(pageSlug, coverRel), '', ...gameplay, ...meta];
   /*
    * 标记前后各留一个空行：MDX 里紧贴段落的 JSX 会被当成**行内**元素解析，
    * `<section>` 会被塞进 `<p>` 里 —— HTML 结构坏掉，浏览器自己"修"出来的树会很怪。
@@ -664,8 +666,10 @@ function renderEntry(rec, research, wsRec, gfl) {
    * 只对 body 做替换是碰不到它的（2026-10-08 踩过）。
    */
   return (fm.join('\n') + '\n' + body.filter((x) => x !== null).join('\n'))
+    .replace(/([^\n])\n\n(<MapGallery\b[^\n]*\/>)/, '$1\n\n$2')
     .replace(/([^\n])\n(<MapGallery\b[^\n]*\/>)/, '$1\n\n$2')
-    .replace(/(<MapGallery\b[^\n]*\/>)\n(?=[^\n])/, '$1\n\n');
+    .replace(/(<MapGallery\b[^\n]*\/>)\n(?=[^\n])/, '$1\n\n')
+    .replace(/\n{3,}/g, '\n\n');
 }
 
 /* ---------------- 主流程 ---------------- */
@@ -702,23 +706,40 @@ if (brokenResearch.length) {
   process.exit(1);
 }
 for (const [slug, research] of researchFiles) {
-  if (research.document && !(slug in LINKS)) {
-    throw new Error(`data/research/${slug}.json 的 document 没有在 curated-links.json 中配置页面映射`);
+  /* maps：页面 slug 与实体名不同的地图在这里声明（见文件开头 entityAlias 的说明） */
+  if (research.maps === undefined) continue;
+  if (!Array.isArray(research.maps) || !research.maps.length || research.maps.some((x) => typeof x !== 'string')) {
+    throw new Error(`data/research/${slug}.json 的 maps 必须是「实体名」组成的非空数组`);
+  }
+  research.maps.forEach((entity, i) => {
+    if (i === 0) {
+      entityAlias.set(entity, slug);
+      return;
+    }
+    claimedEntities.add(entity);
+  });
+}
+for (const [slug, research] of researchFiles) {
+  if (research.document !== undefined) {
+    throw new Error(
+      `data/research/${slug}.json 还有 document 字段 —— 2026-10-08 起手写正文改用 sections 数组，` +
+        `生成器对所有地图走同一套流程（见 scripts/content/generate-map-entries.mjs 里的说明）`
+    );
+  }
+  if (research.sections === undefined) continue;
+  if (!Array.isArray(research.sections) || !research.sections.length) {
+    throw new Error(`data/research/${slug}.json 的 sections 必须是非空数组`);
+  }
+  for (const [i, s] of research.sections.entries()) {
+    if (!s || typeof s.title !== 'string' || !s.title.trim() || typeof s.body !== 'string') {
+      throw new Error(`data/research/${slug}.json 的 sections[${i}] 需要 { title, body } 两个字符串字段`);
+    }
   }
 }
 
 const existing = new Map(fs.readdirSync(MAPS_DIR).filter((f) => f.endsWith('.mdx')).map((f) => [f.replace(/\.mdx$/, ''), fs.readFileSync(path.join(MAPS_DIR, f), 'utf8')]));
-/** 手写正文条目的封面被层级改写过的（正常情况下只该在补了新封面时出现） */
-const curatedCoverFixes = [];
-/** 手写正文条目的图片集标记被补/被搬过的（第一轮迁移时每张都会出现一次） */
-const curatedGalleryFixes = [];
 
-/* 收集标签写法：富内容 JSON 文档中的标签优先当作规范写法 */
-const parseFmTags = (text) => {
-  const m = text.match(/^tags:\s*\[(.*?)\]/m);
-  if (!m) return [];
-  return m[1].split(',').map((x) => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
-};
+/* 收集标签写法：资料文件里的标签就是规范写法的候选 */
 async function writeEntry(file, text) {
   for (let attempt = 0; attempt < 5; attempt++) {
     try { await fs.promises.writeFile(file, text); return; }
@@ -728,7 +749,6 @@ async function writeEntry(file, text) {
     }
   }
 }
-for (const [, j] of researchFiles) if (j.document) for (const t of parseFmTags(j.document)) noteTag(t, true);
 for (const [, j] of researchFiles) for (const t of j.tags || []) noteTag(t, false);
 const variantReport = [...tagVariants.entries()].filter(([, v]) => v.size > 1);
 if (variantReport.length) {
@@ -749,17 +769,23 @@ const usedSlugs = new Set(existing.keys());
 const stageFix = [];
 
 for (const rec of zeMaps) {
-  if (curatedMaps.has(rec.m)) continue;
-  let slug = rec.m;
+  /* 被别人的 maps 声明的实体版本：不单独出页（例如 mako 的 v5_3 并进 ze_ffvii_mako_reactor） */
+  if (claimedEntities.has(rec.m)) continue;
+  let slug = entityAlias.get(rec.m) ?? rec.m;
   const prev = existing.get(slug);
   if (!prev && usedSlugs.has(slug)) slug = `${rec.m}-${rec.f}`; // 同名不同版本，用工坊 ID 区分
 
-  const research = researchFiles.get(rec.m) || researchFiles.get(rec.s) || null;
+  const research = researchFiles.get(slug) || researchFiles.get(rec.m) || researchFiles.get(rec.s) || null;
   const stageInfo = stageCountFromEntities(rec.s, rec.st || 0);
-  if (stageInfo.from) {
+  /*
+   * 关卡数：资料里写了就以资料为准（手写图实际有几关，人工最清楚），
+   * 没写才用「按实体命名推断」的修正值 —— 推断值对米纳斯是 8，人工写的是 4。
+   */
+  const stages = Number.isFinite(research?.stages) ? research.stages : stageInfo.stages;
+  if (stageInfo.from && stages === stageInfo.stages) {
     stageFix.push(`${rec.m}: ${rec.st || 0} → ${stageInfo.stages}（${stageInfo.from}）`);
   }
-  const mdx = renderEntry({ ...rec, m: rec.m, st: stageInfo.stages }, research, loadWorkshop(rec.f), loadGfl(rec.m));
+  const mdx = renderEntry({ ...rec, pageSlug: slug, st: stages }, research, loadWorkshop(rec.f), loadGfl(rec.m));
   if (research?.summary) enriched++;
 
   if (prev?.replace(/\r\n/g, '\n') === mdx) continue;
@@ -770,53 +796,6 @@ for (const rec of zeMaps) {
   usedSlugs.add(slug);
 }
 
-for (const slug of Object.keys(LINKS).filter((s) => !s.startsWith('_'))) {
-  const document = researchFiles.get(slug)?.document;
-  if (typeof document !== 'string' || !document.startsWith('---\n') || !document.includes(MARK)) {
-    throw new Error(`data/research/${slug}.json 缺少可生成的 document`);
-  }
-
-  /*
-   * 手写正文的条目（魔晄炉 / 米纳斯 / 黑珍珠号）**正文一个字都不改**，社区投稿的神器更正
-   * 追加在正文末尾单独一节 —— 正文里的表是人工整理的（还带 HTML 表格），
-   * 生成器不该去改它；但不能因此让投稿石沉大海（这三张图的神器表在页面上是看得见的，
-   * 玩家照着它纠错），所以要显式补出来。
-   */
-  const communityRows = communityItemsOf(slug);
-  const docRows = docItemRows(document);
-  const merged = mergeItems(
-    docRows.map((r) => ({ name: r.name, cd: r.cd, maxuses: null })),
-    communityRows
-  );
-  const changed = merged.rows.filter((r) => r.kind !== 'server');
-  /* 正文一字不改，但 frontmatter 的 cover 和正文里的图片集标记得跟其它 545 张一样由生成器维护 ——
-     这几页的 frontmatter 是写正文那天冻结的（后来补的人工封面 / 工坊预览图永远进不来），
-     图片集标记同理：贡献者改正文时删了它，下一轮构建会补回正确位置 */
-  const rec = zeMaps.find((m) => m.m === (LINKS[slug].primary || slug)) ?? zeMaps.find((m) => m.m === slug);
-  const coverRel = rec ? resolveCover(rec, slug) : null;
-  /* ⚠️ 标记要在追加社区神器表**之前**插：追加的那一节是正文最后一段，
-     先追加再插标记的话，没有「背景故事」的正文会把图片集插到社区更正后面 */
-  const marked = ensureGalleryMarker(document, slug, coverRel);
-  if (marked.moved) curatedGalleryFixes.push(`${slug}（${marked.where}）`);
-  const withItems = changed.length
-    ? `${marked.text}\n${itemsBlock(changed, {
-        title: '神器 / 道具更正（社区投稿）',
-        lead: `上面的神器表由本站人工整理；以下是[社区投稿](/contribute/)的更正与补充（${changed.length} 件），未列出的行仍以原表为准：`,
-        showNote: true,
-      }).join('\n')}`
-    : marked.text;
-  const mdx = withResolvedCover(withItems, coverRel);
-
-  const prev = existing.get(slug);
-  /* 封面被层级改写过就说一声：这三页的封面历史上冻结过，静默改动容易让人以为图挂了 */
-  const oldCover = (prev?.match(/^cover:.*$/m) || [])[0];
-  const newCover = (mdx.match(/^cover:.*$/m) || [])[0];
-  if (oldCover !== newCover) curatedCoverFixes.push(`${slug}  ${oldCover || '（无）'} → ${newCover || '（无）'}`);
-  if (prev?.replace(/\r\n/g, '\n') === mdx) continue;
-  if (DRY) { if (prev) updated++; else created++; continue; }
-  if (prev) updated++; else created++;
-  await writeEntry(path.join(MAPS_DIR, `${slug}.mdx`), mdx);
-}
 
 console.log(`ZE 地图 ${zeMaps.length} 张`);
 console.log(`  ${DRY ? '将生成' : '新建'} ${created} · ${DRY ? '将更新' : '更新'} ${updated}`);
@@ -825,14 +804,6 @@ console.log(`  其中带线上检索资料：${enriched} 张`);
 console.log(
   `  封面：人工 ${customCoverIndex.size} · 工坊预览图 ${workshopCoverIndex.size} · 其余用渲染图`
 );
-if (curatedCoverFixes.length) {
-  console.log(`  手写正文条目按层级改写封面 ${curatedCoverFixes.length} 张：`);
-  for (const f of curatedCoverFixes.slice(0, 10)) console.log(`    ${f}`);
-}
-if (curatedGalleryFixes.length) {
-  console.log(`  手写正文条目的图片集标记已归位 ${curatedGalleryFixes.length} 张：`);
-  for (const f of curatedGalleryFixes.slice(0, 10)) console.log(`    ${f}`);
-}
 if (stageFix.length) {
   console.log(`  关卡数按实体命名修正 ${stageFix.length} 张：`);
   for (const s of stageFix.slice(0, 25)) console.log(`    ${s}`);

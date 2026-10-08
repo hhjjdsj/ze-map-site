@@ -11,15 +11,14 @@
 生成器在写 `src/content/maps/*.mdx` 的 `cover:` 时按这个顺序找，找到哪个用哪个。
 第 1 层删掉就自动回落到第 2 层，第 2 层也删掉才回落到渲染图 —— **不需要改任何配置**。
 
-> **手写正文的三张图**（魔晄炉 `ze_ffvii_mako_reactor` / 米纳斯 `ze_lotr_minas_tirith` /
-> 黑珍珠号 `ze_pirates_port_royal`）走的是另一条生成路径：正文从 `data/research/<slug>.json`
-> 的 `document` 原样搬过来，**但 `cover:` 这一行照样按上表重算** —— 生成器只替换 frontmatter
-> 里的那一行，正文一个字不动。
-> 2026-10-08 之前不是这样，于是这三页的封面永远停在「写正文那天」：魔晄炉后来补了作者工坊图、
-> 米纳斯和黑珍珠号补了人工封面，页面上却一直挂着黑底密度点图 —— 看起来就是「这张图没有封面」，
-> 而构建、CI、`cover:verify` 全是绿的。
-> 给这三张换封面同样走 `cover:set` / `custom/`；**不要去改 `document` 里那行 `cover:`**，
-> 改了下一轮构建也会被层级重算掉（`npm run maps:generate` 会打印它改写了哪几页）。
+> **手写小节的三张图**（魔晄炉 `ze_ffvii_mako_reactor` / 米纳斯 `ze_lotr_minas_tirith` /
+> 黑珍珠号 `ze_pirates_port_royal`）和别的图**走同一条流程**：页面 slug、frontmatter、`cover:`
+> 全由生成器按上表算出来（它们的正文以 `sections` 字段放在 `data/research/<slug>.json` 里，
+> 详见 `docs/community-editing-plan.md` 的「手写小节」一节）。
+> 2026-10-08 之前不是这样 —— 那时这三页的 frontmatter 是「写正文那天」冻结的，于是封面永远停在
+> 旧图：魔晄炉后来补了作者工坊图、米纳斯和黑珍珠号补了人工封面，页面上却一直挂着黑底密度点图，
+> 看起来就是「这张图没有封面」，而构建、CI、`cover:verify` 全是绿的。现在这条特殊路径已经删掉了。
+> 换封面照旧走 `cover:set` / `custom/`，不需要动任何文字。
 
 ## 第 2 层：作者工坊图（为什么有它、怎么更新）
 

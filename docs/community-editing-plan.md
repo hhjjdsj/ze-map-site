@@ -464,3 +464,43 @@ P1、P2 都已实现并通过测试。与上面设计稿有**三处偏离**，�
 - 清单有两个来源，**改脚本时注意别互相冲掉**：`scripts/gallery/upload-gallery.mjs`
   重写清单时会保留非本地生成的条目（也就是玩家投稿）；`worker/gallery.ts` 的 `withImages()`
   按 src 去重追加。
+
+### 手写小节：三张「内容最全」的图并回普通流程（2026-10-08）
+
+魔晄炉 / 米纳斯 / 黑珍珠号这三页的正文是人工整理的（背景故事、版本历史、关卡流程、
+人类与僵尸策略、常见问题、更新日志…13–14 个小节，还带 HTML 表格和
+`<StageAccordion>` / `<RouteMap>` / `<VideoEmbed>` 三个组件）。
+
+以前它们走的是**另一条代码路径**：整篇 MDX 塞在 `data/research/<slug>.json` 的 `document`
+字段里，生成器只照抄；页面 slug 与实体名的对应关系另写在 `scripts/content/curated-links.json`。
+结果是「改站-wide 的东西都得单独照顾它们」，站长 2026-10-08 要求统一。
+
+现在：**和普通图同一条流程**，只是正文用 `sections` 字段（数组，每节 `{ title, body }`）：
+
+```json
+{
+  "slug": "ze_ffvii_mako_reactor",
+  "maps": ["ze_ffvii_mako_reactor_v6_p", "ze_ffvii_mako_reactor_v5_3"],
+  "title": "最终幻想7：魔晄炉",
+  "game": "CS2",
+  "version": "v5_3 / v5_4 / v6_p",
+  "stages": 6,
+  "featured": true,
+  "sections": [{ "title": "背景故事", "body": "…" }],
+  "sources": ["…"]
+}
+```
+
+- **`maps`**（可选）：页面 slug 与实体名不同时写；`maps[0]` 是给这一页供数据的实体，
+  其余实体不再单独出页（以前就是 `curated-links.json` 的 `primary` / `versions`）。
+- **正文渲染规则**：写了 `sections` 就**只渲染这些小节** + 社区投稿的神器更正（追加在末尾），
+  不再叠加自动生成的「关卡 / 神器 / 数据概况 / 数据说明」——那三页自己就带着这些内容。
+  图片集标记插在「背景故事」小节之后。
+- **新增的通用字段**（任何图都能用）：`sections`、`maps`、`version`（侧栏「版本」）、
+  `game`（默认 CS2，老图写 CS:S / CS:GO）、`featured`（首页「精选」那一排）、
+  `stages`（手动关卡数，优先于「按实体命名推断」——米纳斯推断是 8，实际 4）。
+- **组件来源变了**：以前正文顶部写着 `import VideoEmbed from …`，现在由详情页统一传
+  `<Content components={{ MapGallery, VideoEmbed, StageAccordion, RouteMap }} />`，
+  正文里只留标签，不再有 import。
+- 迁移前后对比已验证：小节顺序完全一致、内嵌元素数量一致（details 3/4/4、route map 1、视频 1）、
+  正文纯文本 3321 字符 vs 旧文件 3400（差的是被去掉的注释与 import 行）。

@@ -6,6 +6,8 @@ import MapCard from '../../components/MapCard.astro';
 import MapGallery from '../../components/MapGallery.astro';
 import DifficultyVote from '../../components/DifficultyVote.astro';
 import VideoEmbed from '../../components/VideoEmbed.astro';
+import RouteMap from '../../components/RouteMap.astro';
+import StageAccordion from '../../components/StageAccordion.astro';
 import { DIFFICULTY_CLASS } from '../../../shared/difficulty.mjs';
 import catalog from '../../../public/entity/catalog.json';
 
@@ -187,10 +189,12 @@ const related = all
       )}
 
       {/*
-        正文里的 `<MapGallery />` 标记由这里解析：MDX 认得 components 映射里的名字，
-        所以正文不需要 import（标记由生成器写，见 components/MapGallery.astro 的说明）。
+        正文里的 `<MapGallery />` / `<VideoEmbed />` / `<StageAccordion>` / `<RouteMap>` 标记
+        由这里解析：MDX 认得 components 映射里的名字，所以正文不需要写 import。
+        MapGallery 由生成器插（见 components/MapGallery.astro），另外三个出现在
+        人工整理的 sections 里（魔晄炉 / 米纳斯 / 黑珍珠号：视频攻略、关卡流程、路线图）。
       */}
-      <Content components={{ MapGallery }} />
+      <Content components={{ MapGallery, VideoEmbed, StageAccordion, RouteMap }} />
 
       {/*
         社区内容是**按投稿时选的字段分块显示**的：
