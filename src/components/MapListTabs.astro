@@ -2,6 +2,11 @@
 /**
  * 「新增地图 / 最新更新 / 工坊热门」三个页面共用的标签栏。
  * 三个页面各自是独立 URL（可以单独分享、被搜索收录），但看起来是一组标签。
+ *
+ * 三个链接写 target="_self"：全站默认 `<base target="_blank">`（站内跳转一律新开标签页），
+ * 但**标签栏**要是也新开标签就荒谬了 —— 点一下多一个标签、旧的还停在那儿，
+ * 完全不像「切换」。2026-10-08 站长要求改成同标签页丝滑切换，
+ * 页面之间的转场由 global.css 的跨文档 View Transitions 负责（那一段有注释）。
  */
 interface Props {
   active: 'new' | 'updates' | 'hot';
@@ -22,6 +27,7 @@ const tabs = [
       <a
         class={`list-tab${active === t.key ? ' is-active' : ''}`}
         href={t.href}
+        target="_self"
         title={t.hint}
         aria-current={active === t.key ? 'page' : undefined}
       >

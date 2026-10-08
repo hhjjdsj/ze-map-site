@@ -2167,3 +2167,43 @@ img { max-width: 100%; display: block; }
   .doc-table th,
   .doc-table td { padding: 7px 8px; }
 }
+/* ===== 站内同标签页跳转的转场（跨文档 View Transitions）=====
+
+   背景：全站 `<base target="_blank">`（见 layouts/BaseLayout.astro），站内链接默认新开标签页。
+   但有两处是**同标签页**跳转：页头 logo（点站标回主页）和三个列表标签栏
+   （新增地图 / 最新更新 / 工坊热门，见 components/MapListTabs.astro）——
+   点标签还新开一个标签就不叫「切换」了。2026-10-08 站长要求改掉。
+
+   同标签页跳转本来是「白屏 → 重新加载 → 闪一下」，观感还不如开新标签，
+   所以这里启用**纯 CSS 的跨文档转场**（Chrome / Edge 126+ 支持；
+   其它浏览器直接忽略这段，功能完全不受影响，也不需要 JS）：
+
+     · 页面之间 180ms 交叉淡入淡出，不再是硬闪；
+     · 页头与标签栏各自给了 view-transition-name → 切换时它们**留在原位不跟着淡出**，
+       看着就像只有内容区在换 —— 这才是标签栏该有的手感。
+
+   ⚠️ 两个坑：
+     1. `view-transition-name` 在**同一个页面里必须唯一**，重名不报错，
+        但会让整段转场静默失效（所以别随手给别的元素加）。
+     2. 只有两页都存在同名元素时才是「变形过渡」，只在一侧存在就是淡入/淡出 ——
+        标签栏只在 /new/ /updates/ /hot/ 三页有，进出主页时是淡出淡入，符合预期。
+*/
+@view-transition {
+  navigation: auto;
+}
+
+.site-header { view-transition-name: site-header; }
+.list-tabs { view-transition-name: list-tabs; }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

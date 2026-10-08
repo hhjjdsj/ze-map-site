@@ -70,7 +70,12 @@ const ogImage = image ? new URL(image, site).href : new URL('/images/hero-bg.jpg
 
     <header class="site-header" data-pagefind-ignore>
       <div class="container header-inner">
-        <a href="/" class="logo">
+        {/*
+          logo 是唯一的例外之一：它**同标签页**回主页（2026-10-08 站长的要求）——
+          「点站标 = 回首页/刷新」，开新标签反而会攒出一堆首页。
+          例外之二是三个列表标签栏（见 components/MapListTabs.astro）。
+        */}
+        <a href="/" class="logo" target="_self">
           <span class="logo-mark">ZE</span>
           <span class="logo-text">地图资料站</span>
         </a>
