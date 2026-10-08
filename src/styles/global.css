@@ -2280,3 +2280,224 @@ img { max-width: 100%; display: block; }
     animation: none !important;
   }
 }
+/* ===== 投稿页（/submit/）=====
+   2026-10-08 站长反馈「原来的有点简陋」。原来整页就是几张 .form-card 叠着、
+   控件全是浏览器默认长相。这里不改任何提交逻辑（页面脚本靠 id / data-* 取元素，
+   结构随便排），只做观感与信息层级：
+     · 顶部标题卡 + 四步进度条，一眼知道这事要几步；
+     · 主栏（表单）+ 右栏（提交之后 / 什么最有用 / 几点说明）；
+     · 「要提交哪一项」变成按钮（数据仍写回原来的 select）；
+     · 上传区做成虚线拖放框，支持拖文件进来；
+     · 输入控件统一加大、聚焦有描边；错误与成功状态各有一套样式。
+   所有规则都限制在 .submit-page 里，不影响 /admin 等其它用 .form-card 的页面。 */
+
+.submit-page { padding-bottom: 40px; }
+
+/* ---- 顶部标题卡 ---- */
+.submit-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+  align-items: stretch;
+  margin: 26px 0 22px;
+  padding: 24px 26px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 150% at 0% 0%, rgba(255, 77, 77, 0.13), transparent 55%),
+    radial-gradient(120% 150% at 100% 0%, rgba(34, 211, 238, 0.1), transparent 55%),
+    var(--panel);
+}
+.sh-badge {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 4px 11px;
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.08);
+  color: var(--accent-2);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+}
+.submit-hero h1 { margin: 0 0 10px; font-size: clamp(26px, 4vw, 38px); font-weight: 900; letter-spacing: -0.01em; }
+.sh-sub { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; line-height: 1.8; max-width: 46em; }
+.sh-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sh-steps li {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 12px 6px 7px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 12.5px;
+}
+.sh-steps li b {
+  display: grid; place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #ff8a3d);
+  color: #fff; font-size: 11px;
+}
+.sh-steps li + li::before { content: ""; }
+.sh-guide {
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  padding: 16px 18px;
+  border: 1px dashed var(--border-2);
+  border-radius: 14px;
+  background: var(--panel-2);
+  transition: border-color 0.2s, transform 0.2s;
+}
+.sh-guide:hover { border-color: var(--accent-2); transform: translateY(-2px); }
+.sh-guide-t { font-weight: 700; font-size: 14px; }
+.sh-guide-d { color: var(--muted); font-size: 12.5px; line-height: 1.7; }
+.sh-guide-go { color: var(--accent-2); font-size: 12.5px; letter-spacing: 0.04em; }
+
+/* ---- 两栏布局 ---- */
+.submit-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 22px; align-items: start; }
+.submit-main { min-width: 0; }
+.submit-aside { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 86px; }
+.s-aside-card { padding: 16px 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
+.s-aside-card h3 { margin: 0 0 10px; color: var(--muted); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; }
+.s-timeline, .s-list { margin: 0; padding-left: 18px; color: var(--text); font-size: 13px; line-height: 1.95; }
+.s-timeline { counter-reset: tl; list-style: none; padding-left: 0; }
+.s-timeline li { position: relative; padding-left: 24px; margin-bottom: 6px; }
+.s-timeline li::before {
+  counter-increment: tl; content: counter(tl);
+  position: absolute; left: 0; top: 3px;
+  display: grid; place-items: center;
+  width: 17px; height: 17px; border-radius: 50%;
+  border: 1px solid var(--border-2); background: var(--panel-2);
+  color: var(--accent-2); font-size: 10.5px;
+}
+
+/* ---- 卡片与分区 ---- */
+.s-card { margin: 0 0 18px; border-radius: 16px; }
+.s-title { margin: 0 0 10px; font-size: 19px; font-weight: 800; }
+.s-step + .s-step { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--border); }
+.s-step-title { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font-size: 16px; font-weight: 800; }
+.s-num {
+  display: grid; place-items: center;
+  width: 24px; height: 24px; border-radius: 8px;
+  background: rgba(255, 77, 77, 0.14);
+  border: 1px solid rgba(255, 77, 77, 0.45);
+  color: var(--accent); font-size: 12.5px;
+}
+.s-ctx {
+  margin: 0 0 16px; padding: 10px 14px;
+  border: 1px solid var(--border); border-left: 3px solid var(--accent-2);
+  border-radius: 10px; background: var(--panel-2);
+  color: var(--muted); font-size: 13px;
+}
+.s-steps { margin: 0 0 14px; padding-left: 20px; color: var(--muted); font-size: 13.5px; line-height: 2; }
+
+/* ---- 选图那一行 ---- */
+.s-pick-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.s-pick-row input { flex: 1 1 260px; margin: 0; }
+.s-status { margin: 12px 0 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
+
+/* ---- 控件：比全局默认大一圈、聚焦有描边 ---- */
+.submit-page input[type="text"],
+.submit-page input[type="number"],
+.submit-page input[readonly],
+.submit-page select,
+.submit-page textarea {
+  padding: 11px 13px;
+  border-radius: 11px;
+  font-size: 14.5px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.submit-page input:hover:not([readonly]),
+.submit-page select:hover,
+.submit-page textarea:hover { border-color: var(--border-2); }
+.submit-page input[readonly] { color: var(--muted); background: var(--panel-2); }
+.submit-page textarea { line-height: 1.8; }
+.submit-page .form-row > label { font-size: 13px; letter-spacing: 0.02em; }
+.s-field { margin-bottom: 4px; }
+.s-cur { margin-top: 8px; }
+.cur-val { color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+
+/* ---- 字段快捷按钮 ---- */
+.form-row.has-chips > select { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.field-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.field-chips button {
+  padding: 8px 14px;
+  border: 1px solid var(--border-2); border-radius: 999px;
+  background: var(--panel-2); color: var(--muted);
+  font: inherit; font-size: 13.5px; cursor: pointer;
+  transition: border-color 0.16s, color 0.16s, background 0.16s, transform 0.16s;
+}
+.field-chips button:hover { color: var(--text); border-color: var(--accent-2); transform: translateY(-1px); }
+.field-chips button.on {
+  background: linear-gradient(135deg, var(--accent), #ff8a3d);
+  border-color: transparent; color: #fff; font-weight: 700;
+  box-shadow: 0 6px 18px rgba(255, 77, 77, 0.3);
+}
+
+/* ---- 上传区 ---- */
+.drop-zone {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 26px 18px;
+  border: 1.5px dashed var(--border-2); border-radius: 14px;
+  background: var(--panel-2);
+  text-align: center; cursor: pointer;
+  transition: border-color 0.18s, background 0.18s, transform 0.18s;
+}
+.drop-zone:hover, .drop-zone.is-over { border-color: var(--accent-2); background: rgba(34, 211, 238, 0.06); }
+.drop-zone.is-over { transform: scale(1.01); }
+.drop-zone.has-file { border-style: solid; border-color: rgba(74, 222, 128, 0.5); }
+.dz-icon { font-size: 26px; line-height: 1; }
+.dz-title { font-size: 14px; font-weight: 700; }
+.dz-sub { color: var(--muted); font-size: 12.5px; }
+.dz-files { color: var(--accent-2); font-size: 12px; word-break: break-all; }
+.dz-files:empty { display: none; }
+.dz-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+.cover-pair { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; }
+.cover-fig { margin: 0; max-width: 220px; }
+.cover-fig img { display: block; width: 100%; border: 1px solid var(--border); border-radius: 10px; background: #04050a; }
+.cover-fig figcaption { margin-top: 6px; color: var(--muted); font-size: 12px; text-align: center; }
+.cover-fig.is-new img { border-color: var(--accent-2); box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.16); }
+
+.gallery-upload-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 12px; }
+.gal-card { margin: 0; padding: 9px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-2); }
+.gal-thumb { display: block; width: 100%; border-radius: 8px; }
+.gal-cap { width: 100%; margin-top: 8px; box-sizing: border-box; }
+.gal-meta { margin: 5px 0 0; font-size: 12px; }
+.gal-del { margin-top: 8px; padding: 3px 10px; font-size: 12px; }
+
+/* ---- 神器 / 道具行 ---- */
+.items-rows { display: flex; flex-direction: column; gap: 12px; }
+.item-row { padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-2); }
+.ir-grid { display: grid; grid-template-columns: minmax(0, 1fr) 96px 96px auto; gap: 8px; }
+/* 删除按钮的点击区：默认 .btn 只有一个 ✕ 字，实测被挤成 13px 宽，根本点不准 */
+.item-row .btn { min-width: 42px; padding: 8px 11px; font-size: 14px; }
+.ir-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.ir-note { flex: 1 1 260px; }
+.ir-missing { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 13px; }
+.ir-status { margin: 6px 0 0; }
+.s-add-row { margin-top: 12px; }
+
+/* ---- 提交区 ---- */
+.s-actions {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+  margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);
+}
+.btn-lg { padding: 13px 34px; font-size: 15.5px; font-weight: 700; border-radius: 12px; }
+.s-actions-note { color: var(--muted); font-size: 12.5px; flex: 1 1 240px; }
+.s-result { border-color: rgba(74, 222, 128, 0.4); background: rgba(74, 222, 128, 0.06); }
+.s-result h2 { margin-top: 0; }
+
+@media (max-width: 1000px) {
+  .submit-hero, .submit-layout { grid-template-columns: 1fr; }
+  .submit-aside { position: static; }
+  /* 窄屏下指南卡改成两行：标题 + 入口一行，说明整行 —— 否则说明被挤成窄窄一条 */
+  .sh-guide { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+  .sh-guide-d { flex: 1 1 100%; }
+}
+@media (max-width: 560px) {
+  .submit-hero { padding: 18px; }
+  .s-card { padding: 16px; }
+  .ir-grid { grid-template-columns: minmax(0, 1fr) 84px 84px auto; }
+  .s-actions { position: sticky; bottom: 0; margin: 20px -16px -16px; padding: 12px 16px; background: var(--panel); border-top: 1px solid var(--border-2); }
+  .btn-lg { flex: 1 1 100%; }
+}

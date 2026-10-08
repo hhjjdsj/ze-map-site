@@ -24,206 +24,266 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
   title="补充 / 纠错 | ZE 地图资料站"
   description="不用会 git：发现地图资料有错漏，填个表单提交即可，人工审核通过后会更新到条目里。"
 >
-  <div class="container">
-    <div class="form-card">
-      <h1>补充 / 纠错</h1>
-      <p class="form-hint">
-        任何人都可以提交，<strong>不需要 GitHub 账号</strong>。提交后进入人工审核队列，
-        通过后会更新到对应地图的条目里，并署上你的昵称。
-      </p>
+  <div class="container submit-page">
+    {/*
+      页面头部（2026-10-08 重做视觉）：以前就是一张朴素的 form-card + 两段提示，
+      投稿者第一眼看不出「这事要几步、值不值得做」。改成标题卡 + 步骤条，
+      右边挂一张「投稿指南」的入口。
+    */}
+    <header class="submit-hero">
+      <div class="sh-main">
+        <span class="sh-badge">Community · 不需要 GitHub 账号</span>
+        <h1>补充 / 纠错</h1>
+        <p class="sh-sub">
+          发现某张图的资料有错漏？填个表单提交就行 —— 人工审核通过后会写进条目里，并署上你的昵称。
+        </p>
+        <ol class="sh-steps">
+          <li><b>1</b>选地图</li>
+          <li><b>2</b>填内容</li>
+          <li><b>3</b>提交待审</li>
+          <li><b>4</b>审核上线</li>
+        </ol>
+      </div>
+      <a class="sh-guide" href="/contribute/">
+        <span class="sh-guide-t">第一次来？看投稿指南</span>
+        <span class="sh-guide-d">每条路适合什么、字段怎么填、提交之后会发生什么</span>
+        <span class="sh-guide-go">打开指南 ↗</span>
+      </a>
+    </header>
 
-      <p class="form-hint">
-        第一次来？先看一眼 <a href="/contribute/">投稿指南</a> ——
-        里面写了这几条路各自适合什么、每个字段怎么填、提交之后会发生什么。要换地图封面也是从那里进。
-      </p>
-
-      <p class="form-hint" id="ctx">正在读取地图信息…</p>
-    </div>
+    <div class="submit-layout">
+      <div class="submit-main">
+        <p class="s-ctx" id="ctx">正在读取地图信息…</p>
 
     {/*
       没带 ?map= 直接打开本页时的选图入口。
       以前这种情况只显示「找不到地图「」，请从地图详情页重新进入」—— 对不用 GitHub 的投稿者
       来说这其实是最好走的一条路，却在第一步就撞进死胡同，而且不知道该怎么办。
     */}
-    <div class="form-card" id="pick" hidden>
-      <h2>先选一张地图</h2>
+    <div class="form-card s-card s-pick" id="pick" hidden>
+      <h2 class="s-title">先选一张地图</h2>
       <p class="form-hint">这个表单是给<strong>某一张图</strong>补充资料的，所以得先知道是哪张图。</p>
-      <ol>
+      <ol class="s-steps">
         <li>
           打开 <a href="/maps/">地图库</a> → 点进那张图 → 右侧栏点 <b>✏️ 补充这张图的资料</b>
         </li>
         <li>或者直接在下面输名字（中文名、英文名都行）：</li>
       </ol>
-      <div class="form-grid">
-        <div class="form-row">
-          <label for="pick-slug">地图名</label>
-          <input id="pick-slug" placeholder="ze_ffvii_mako_reactor 或 魔晄炉" autocomplete="off" />
-        </div>
-        <div class="form-row">
-          <label>&nbsp;</label>
-          <button class="btn btn-primary" type="button" id="pick-go">打开投稿表单</button>
-        </div>
+      <div class="s-pick-row">
+        <input id="pick-slug" placeholder="ze_ffvii_mako_reactor 或 魔晄炉" autocomplete="off" />
+        <button class="btn btn-primary" type="button" id="pick-go">打开投稿表单</button>
       </div>
       <p class="form-hint" id="pick-out"></p>
     </div>
 
-    <form class="form-card" id="sub-form" hidden>
+    <form class="form-card s-card s-form" id="sub-form" hidden>
 
-      <div class="form-row">
-        <label for="f-map">地图</label>
-        <input id="f-map" readonly />
-      </div>
-
-      <div class="form-row">
-        <label for="f-field">要提交哪一项</label>
-        <select id="f-field">
-          {fields.map((f) => <option value={f.key}>{f.label}</option>)}
-        </select>
-        <p class="form-hint" id="f-hint"></p>
-      </div>
-
-      {
-        fields.map((f) => (
-          <div class="form-row" data-block={f.key} hidden>
-            <label for={`f-in-${f.key}`}>{f.label}</label>
-            {f.kind === 'enum' ? (
-              <select id={`f-in-${f.key}`} data-input={f.key}>
-                {f.values.map((v) => (
-                  <option value={v}>{v}</option>
-                ))}
-              </select>
-            ) : f.kind === 'image' ? (
-              /*
-                封面：选图后**在浏览器里**裁成 16:9、转 webp、压到 ~100 KB 再上传。
-                这样手机截图（2~5 MB）不会卡在上传上，服务端也不必做图像处理。
-                真正的权威校验（种类 / 体积 / 尺寸）在 worker/covers.ts。
-              */
-              <div>
-                <input
-                  id={`f-in-${f.key}`}
-                  data-input={f.key}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                />
-                <p class="form-hint" id="cover-status">
-                  还没选图。选一张横向图，会自动裁成 16:9、压成 webp 再上传，不用自己处理。
-                </p>
-                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
-                  <figure id="cover-cur-wrap" hidden style="margin:0;max-width:200px">
-                    <img
-                      id="cover-current"
-                      alt="当前封面"
-                      style="width:100%;border-radius:8px;border:1px solid var(--border);display:block"
-                    />
-                    <figcaption class="form-hint" style="text-align:center">当前封面</figcaption>
-                  </figure>
-                  <figure id="cover-new-wrap" hidden style="margin:0;max-width:200px">
-                    <img
-                      id="cover-preview"
-                      alt="新封面预览"
-                      style="width:100%;border-radius:8px;border:1px solid var(--border);display:block"
-                    />
-                    <figcaption class="form-hint" style="text-align:center">上传后</figcaption>
-                  </figure>
-                </div>
-              </div>
-            ) : f.kind === 'gallery' ? (
-              /*
-                图片集：可一次选多张，每张单独一条投稿、单独写一句说明。
-                浏览器里压成最长边 1600 的 webp（**不裁剪** —— 截图该保持原样），
-                权威校验与落盘在 worker/gallery.ts。
-              */
-              <div>
-                <input
-                  id={`f-in-${f.key}`}
-                  data-input={f.key}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  multiple
-                />
-                <p class="form-hint" id="gallery-status">
-                  还没选图。可一次选多张：会自动压成 webp 再上传，每张上传后可以单独写说明。
-                </p>
-                <div id="gallery-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:8px"></div>
-              </div>
-            ) : f.kind === 'itemlist' ? (
-              /*
-                神器 / 道具：逐行更正，不做整表替换（表格在条目正文里，
-                合并逻辑在 shared/items.mjs 的 mergeItems）。行编辑器由脚本生成，
-                名称用 datalist 联想本站现有的写法 —— 名字对不上就会被当成「新增一件」。
-              */
-              <div>
-                <datalist id="items-known" />
-                <div id="items-rows" style="display:flex;flex-direction:column;gap:10px" />
-                <button class="btn" type="button" id="items-add" style="margin-top:10px">
-                  + 再加一件
-                </button>
-                <p class="form-hint" style="margin-top:10px">
-                  本站这张图现在的表：<span id="items-current">—</span>
-                </p>
-              </div>
-            ) : f.kind === 'longtext' ? (
-              <textarea id={`f-in-${f.key}`} data-input={f.key} rows="8" />
-            ) : f.kind === 'tags' || f.kind === 'urlList' ? (
-              <textarea
-                id={`f-in-${f.key}`}
-                data-input={f.key}
-                rows="3"
-                placeholder={f.kind === 'tags' ? '每行一个标签' : '每行一个链接（https:// 开头）'}
-              />
-            ) : (
-              <input
-                id={`f-in-${f.key}`}
-                data-input={f.key}
-                type={f.kind === 'int' ? 'number' : 'text'}
-              />
-            )}
-            {f.kind === 'itemlist' || f.kind === 'gallery' ? null : (
-              <p class="form-hint">
-                条目现在的值：<span data-current={f.key}>—</span>
-              </p>
-            )}
+      <section class="s-step">
+        <h2 class="s-step-title"><span class="s-num">1</span>选地图与要补充的项目</h2>
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="f-map">地图</label>
+            <input id="f-map" readonly />
           </div>
-        ))
-      }
-
-      <div class="form-row">
-        <label for="f-note">理由 / 来源（选填，但很有帮助）</label>
-        <textarea id="f-note" rows="2" maxlength="500"
-          placeholder="例如：工坊页面描述里写的是普通难度；或者给出参考链接"></textarea>
-      </div>
-
-      <div class="form-grid">
-        <div class="form-row">
-          <label for="f-submitter">你的昵称（选填，会署在条目里）</label>
-          <input id="f-submitter" maxlength="32" />
+          <div class="form-row">
+            <label for="f-field">要提交哪一项</label>
+            <select id="f-field">
+              {fields.map((f) => <option value={f.key}>{f.label}</option>)}
+            </select>
+            {/* 选项按钮由脚本按 select 生成（见页面底部的「字段快捷按钮」） */}
+            <div class="field-chips" id="field-chips" role="group" aria-label="要提交哪一项"></div>
+          </div>
         </div>
-        <div class="form-row">
-          <label for="f-contact">联系方式（选填，便于追问）</label>
-          <input id="f-contact" maxlength="80" placeholder="QQ / 邮箱" />
-        </div>
-      </div>
+        <p class="form-hint" id="f-hint"></p>
+      </section>
 
-      <button class="btn btn-primary" type="submit" id="f-submit">提交</button>
+      <section class="s-step">
+        <h2 class="s-step-title"><span class="s-num">2</span>填内容</h2>
+        {
+          fields.map((f) => (
+            <div class="form-row s-field" data-block={f.key} hidden>
+              <label for={`f-in-${f.key}`}>{f.label}</label>
+              {f.kind === 'enum' ? (
+                <select id={`f-in-${f.key}`} data-input={f.key}>
+                  {f.values.map((v) => (
+                    <option value={v}>{v}</option>
+                  ))}
+                </select>
+              ) : f.kind === 'image' ? (
+                /*
+                  封面：选图后**在浏览器里**裁成 16:9、转 webp、压到 ~100 KB 再上传。
+                  这样手机截图（2~5 MB）不会卡在上传上，服务端也不必做图像处理。
+                  真正的权威校验（种类 / 体积 / 尺寸）在 worker/covers.ts。
+                */
+                <div>
+                  <label class="drop-zone" for={`f-in-${f.key}`}>
+                    <span class="dz-icon" aria-hidden="true">🖼️</span>
+                    <span class="dz-title">点击选择图片，或把文件拖到这里</span>
+                    <span class="dz-sub">横向图效果最好；会自动裁成 16:9、压成 webp</span>
+                    <span class="dz-files" />
+                    <input
+                      id={`f-in-${f.key}`}
+                      data-input={f.key}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      class="dz-input"
+                    />
+                  </label>
+                  <p class="form-hint" id="cover-status">
+                    还没选图。选一张横向图，会自动裁成 16:9、压成 webp 再上传，不用自己处理。
+                  </p>
+                  <div class="cover-pair">
+                    <figure class="cover-fig" id="cover-cur-wrap" hidden>
+                      <img id="cover-current" alt="当前封面" />
+                      <figcaption>当前封面</figcaption>
+                    </figure>
+                    <figure class="cover-fig is-new" id="cover-new-wrap" hidden>
+                      <img id="cover-preview" alt="新封面预览" />
+                      <figcaption>上传后</figcaption>
+                    </figure>
+                  </div>
+                </div>
+              ) : f.kind === 'gallery' ? (
+                /*
+                  图片集：可一次选多张，每张单独一条投稿、单独写一句说明。
+                  浏览器里压成最长边 1600 的 webp（**不裁剪** —— 截图该保持原样），
+                  权威校验与落盘在 worker/gallery.ts。
+                */
+                <div>
+                  <label class="drop-zone" for={`f-in-${f.key}`}>
+                    <span class="dz-icon" aria-hidden="true">📷</span>
+                    <span class="dz-title">点击选择图片（可多选），或拖到这里</span>
+                    <span class="dz-sub">不裁剪，只压成 webp；每张上传后可以单独写一句说明</span>
+                    <span class="dz-files" />
+                    <input
+                      id={`f-in-${f.key}`}
+                      data-input={f.key}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      multiple
+                      class="dz-input"
+                    />
+                  </label>
+                  <p class="form-hint" id="gallery-status">
+                    还没选图。可一次选多张：会自动压成 webp 再上传，每张上传后可以单独写说明。
+                  </p>
+                  <div id="gallery-list" class="gallery-upload-list"></div>
+                </div>
+              ) : f.kind === 'itemlist' ? (
+                /*
+                  神器 / 道具：逐行更正，不做整表替换（表格在条目正文里，
+                  合并逻辑在 shared/items.mjs 的 mergeItems）。行编辑器由脚本生成，
+                  名称用 datalist 联想本站现有的写法 —— 名字对不上就会被当成「新增一件」。
+                */
+                <div>
+                  <datalist id="items-known" />
+                  <div id="items-rows" class="items-rows" />
+                  <button class="btn s-add-row" type="button" id="items-add">
+                    ＋ 再加一件
+                  </button>
+                  <p class="form-hint s-cur">
+                    本站这张图现在的表：<span id="items-current">—</span>
+                  </p>
+                </div>
+              ) : f.kind === 'longtext' ? (
+                <textarea id={`f-in-${f.key}`} data-input={f.key} rows="8" />
+              ) : f.kind === 'tags' || f.kind === 'urlList' ? (
+                <textarea
+                  id={`f-in-${f.key}`}
+                  data-input={f.key}
+                  rows="3"
+                  placeholder={f.kind === 'tags' ? '每行一个标签' : '每行一个链接（https:// 开头）'}
+                />
+              ) : (
+                <input
+                  id={`f-in-${f.key}`}
+                  data-input={f.key}
+                  type={f.kind === 'int' ? 'number' : 'text'}
+                />
+              )}
+              {f.kind === 'itemlist' || f.kind === 'gallery' ? null : (
+                <p class="form-hint s-cur">
+                  条目现在的值：<span class="cur-val" data-current={f.key}>—</span>
+                </p>
+              )}
+            </div>
+          ))
+        }
+      </section>
+
+      <section class="s-step">
+        <h2 class="s-step-title"><span class="s-num">3</span>署名与说明</h2>
+        <div class="form-row">
+          <label for="f-note">理由 / 来源（选填，但很有帮助）</label>
+          <textarea id="f-note" rows="2" maxlength="500"
+            placeholder="例如：工坊页面描述里写的是普通难度；或者给出参考链接"></textarea>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="f-submitter">你的昵称（选填，会署在条目里）</label>
+            <input id="f-submitter" maxlength="32" />
+          </div>
+          <div class="form-row">
+            <label for="f-contact">联系方式（选填，便于追问）</label>
+            <input id="f-contact" maxlength="80" placeholder="QQ / 邮箱" />
+          </div>
+        </div>
+      </section>
+
+      <div class="s-actions">
+        <button class="btn btn-primary btn-lg" type="submit" id="f-submit">提交审核</button>
+        <span class="s-actions-note">提交后进入人工审核队列 —— 通过才会写进条目，不通过会告诉你原因。</span>
+      </div>
       <p class="form-error" id="f-error" hidden></p>
     </form>
 
-    <div class="form-card" id="result" hidden></div>
+    <div class="form-card s-card s-result" id="result" hidden></div>
 
-    <div class="form-card">
-      <h2>查审核状态</h2>
+    <div class="form-card s-card" id="status-card">
+      <h2 class="s-title">查审核状态</h2>
       <p class="form-hint">提交成功后会给你一个编号，凭它就能查。</p>
-      <div class="form-grid">
-        <div class="form-row">
-          <label for="q-id">投稿编号</label>
-          <input id="q-id" type="number" min="1" placeholder="例如 12" />
-        </div>
-        <div class="form-row">
-          <label>&nbsp;</label>
-          <button class="btn" type="button" id="q-go">查询</button>
-        </div>
+      <div class="s-pick-row">
+        <input id="q-id" type="number" min="1" placeholder="投稿编号，例如 12" />
+        <button class="btn" type="button" id="q-go">查询</button>
       </div>
-      <p class="form-hint" id="q-out"></p>
+      <p class="s-status" id="q-out"></p>
+    </div>
+      </div>
+
+      {/*
+        右侧说明栏：这几条都是投稿者最常问的（以前散在正文提示里，读起来累）。
+        内容纯静态，不参与提交逻辑。
+      */}
+      <aside class="submit-aside">
+        <div class="s-aside-card">
+          <h3>提交之后</h3>
+          <ol class="s-timeline">
+            <li>进入待审队列</li>
+            <li>站长人工审核</li>
+            <li>写回仓库</li>
+            <li>自动重建，几分钟后上线</li>
+          </ol>
+        </div>
+        <div class="s-aside-card">
+          <h3>这些最有用</h3>
+          <ul class="s-list">
+            <li>难度定错了、标签不准</li>
+            <li>神器表缺件、冷却写错</li>
+            <li>通关流程、卡关点、常见问题</li>
+            <li>真实截图（封面与图片集）</li>
+          </ul>
+        </div>
+        <div class="s-aside-card">
+          <h3>几点说明</h3>
+          <ul class="s-list">
+            <li>不需要 GitHub 账号</li>
+            <li>署名可以留空</li>
+            <li>会人工核对，不保证全采纳</li>
+            <li>可以随时回来查编号</li>
+          </ul>
+        </div>
+      </aside>
     </div>
   </div>
 </BaseLayout>
@@ -334,7 +394,7 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     wrap.className = 'item-row';
 
     const line1 = document.createElement('div');
-    line1.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr) 92px 92px auto;gap:6px';
+    line1.className = 'ir-grid';
 
     const name = document.createElement('input');
     name.dataset.k = 'name';
@@ -367,15 +427,15 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     line1.append(name, cd, uses, del);
 
     const line2 = document.createElement('div');
-    line2.style.cssText = 'margin-top:6px;display:flex;gap:10px;align-items:center;flex-wrap:wrap';
+    line2.className = 'ir-meta';
 
     const note = document.createElement('input');
     note.dataset.k = 'note';
     note.placeholder = '说明（选填）：例如「只在第四关出现」';
-    note.style.flex = '1 1 260px';
+    note.className = 'ir-note';
 
     const missingWrap = document.createElement('label');
-    missingWrap.style.cssText = 'display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)';
+    missingWrap.className = 'ir-missing';
     const missing = document.createElement('input');
     missing.type = 'checkbox';
     missing.dataset.k = 'missing';
@@ -384,9 +444,8 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     line2.append(note, missingWrap);
 
     const status = document.createElement('p');
-    status.className = 'form-hint';
+    status.className = 'form-hint ir-status';
     status.dataset.k = 'status';
-    status.style.margin = '4px 0 0';
 
     const refresh = () => {
       const hit = knownItemRow(name.value);
@@ -761,33 +820,30 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     galleryList.textContent = '';
     galleryItems.forEach((item, idx) => {
       const card = document.createElement('figure');
-      card.style.cssText =
-        'margin:0;border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--panel-2)';
+      card.className = 'gal-card';
 
       const img = document.createElement('img');
       img.src = item.url;
       img.alt = `第 ${idx + 1} 张`;
-      img.style.cssText = 'width:100%;border-radius:6px;display:block';
+      img.className = 'gal-thumb';
 
       const cap = document.createElement('input');
       cap.value = item.caption;
       cap.maxLength = GALLERY_CAPTION_MAX;
       cap.placeholder = '这张图是什么？（选填）';
-      cap.style.cssText = 'width:100%;margin-top:6px;box-sizing:border-box';
+      cap.className = 'gal-cap';
       cap.addEventListener('input', () => {
         item.caption = cap.value;
       });
 
       const meta = document.createElement('figcaption');
-      meta.className = 'form-hint';
-      meta.style.cssText = 'margin:4px 0 0;font-size:12px';
+      meta.className = 'form-hint gal-meta';
       meta.textContent = `${item.w}×${item.h} · ${Math.round(item.blob.size / 1024)} KB`;
 
       const del = document.createElement('button');
       del.type = 'button';
-      del.className = 'btn';
+      del.className = 'btn gal-del';
       del.textContent = '移除这张';
-      del.style.cssText = 'margin-top:6px;font-size:12px;padding:2px 8px';
       del.addEventListener('click', () => {
         URL.revokeObjectURL(item.url);
         galleryItems.splice(idx, 1);
@@ -972,11 +1028,79 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
         rejected: '未通过',
         approved: '已通过，等待发布',
       };
-      qOut.textContent =
-        `编号 ${id}：${label[data.status ?? ''] ?? data.status}` +
+      qOut.textContent = `编号 ${id}：${label[data.status ?? ''] ?? data.status}` +
         (data.reject_note ? `　理由：${data.reject_note}` : '');
     } catch (err) {
       qOut.textContent = err instanceof Error ? err.message : '查询失败';
     }
   });
+
+  /* ============ 下面都是纯视觉增强，逻辑仍以 select / input 为准 ============
+     共同点：**不改任何提交数据**，只是让界面好点用点。任何一段挂了都不影响提交。 */
+
+  /*
+   * 字段快捷按钮：把「要提交哪一项」那个下拉框变成一排按钮。
+   * 选择结果仍然写回 #f-field 并派发 change —— 后续逻辑（显示对应块、预填现值）完全不用改。
+   */
+  {
+    const chips = document.getElementById('field-chips');
+    const sel = document.getElementById('f-field') as HTMLSelectElement | null;
+    if (chips && sel) {
+      const sync = () => {
+        for (const b of chips.querySelectorAll<HTMLButtonElement>('button')) {
+          b.classList.toggle('on', b.dataset.v === sel.value);
+          b.setAttribute('aria-pressed', String(b.dataset.v === sel.value));
+        }
+      };
+      for (const opt of [...sel.options]) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.dataset.v = opt.value;
+        b.textContent = opt.textContent ?? opt.value;
+        b.title = rules[opt.value]?.hint ?? '';
+        b.addEventListener('click', () => {
+          sel.value = opt.value;
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+          sync();
+        });
+        chips.append(b);
+      }
+      sel.addEventListener('change', sync);
+      /* 有按钮了就把原生下拉框视觉上藏起来（保留在 DOM 里：键盘可达、无 JS 时也能用） */
+      sel.closest('.form-row')?.classList.add('has-chips');
+      sync();
+    }
+  }
+
+  /*
+   * 拖拽上传：文件直接拖到虚线框里就行。
+   * 靠 DataTransfer 把文件塞回原来的 file input 再派发 change ——
+   * 压缩 / 预览 / 上传那套逻辑一行都不用动。
+   */
+  for (const zone of document.querySelectorAll<HTMLElement>('.drop-zone')) {
+    const input = zone.querySelector<HTMLInputElement>('input[type="file"]');
+    if (!input) continue;
+    const stop = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    for (const ev of ['dragenter', 'dragover', 'dragleave', 'drop']) zone.addEventListener(ev, stop);
+    zone.addEventListener('dragenter', () => zone.classList.add('is-over'));
+    zone.addEventListener('dragover', () => zone.classList.add('is-over'));
+    zone.addEventListener('dragleave', () => zone.classList.remove('is-over'));
+    zone.addEventListener('drop', (e) => {
+      zone.classList.remove('is-over');
+      const files = (e as DragEvent).dataTransfer?.files;
+      if (!files || !files.length) return;
+      input.files = files;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    /* 选完文件后把文件名显示在框里（**不动标题那行说明**，只更新 .dz-files） */
+    input.addEventListener('change', () => {
+      const names = [...(input.files ?? [])].map((f) => f.name);
+      const filesEl = zone.querySelector<HTMLElement>('.dz-files');
+      if (filesEl) filesEl.textContent = names.join('、');
+      zone.classList.toggle('has-file', names.length > 0);
+    });
+  }
 </script>
