@@ -1,9 +1,9 @@
 ---
 import { render } from 'astro:content';
 import { getMaps } from '../../lib/maps';
-import { galleryFor } from '../../lib/gallery';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import MapCard from '../../components/MapCard.astro';
+import MapGallery from '../../components/MapGallery.astro';
 import DifficultyVote from '../../components/DifficultyVote.astro';
 import VideoEmbed from '../../components/VideoEmbed.astro';
 import { DIFFICULTY_CLASS } from '../../../shared/difficulty.mjs';
@@ -69,15 +69,12 @@ const VIDEOS_SHOWN = 2;
 const communityHistoryUrl = `https://github.com/hhjjdsj/ze-map-site/commits/main/data/community/${entry.id}.json`;
 
 /*
- * 图片集（data/gallery/<slug>.json → Cloudflare R2 上的图）。没有就整块不渲染。
- *
- * ⚠️ 工坊预览图（kind: workshop）现在同时是**没有人工封面时的封面**（见
- * scripts/entity-data/import-workshop-covers.mjs）。同一张图在页面上出现两次很傻：
- * 顶上当氛围底图、底下图片集里再来一张。所以当封面就是它时，图片集里把它去掉。
+ * 图片集（data/gallery/<slug>.json → Cloudflare R2 上的图）**不再固定渲染在这里**：
+ * 站长要求它排到正文靠上（紧跟「背景故事」小节，见 2026-10-08），而正文中间只有 MDX
+ * 自己能插东西 —— 所以正文里有一个 `<MapGallery slug cover />` 标记（生成器写，
+ * 手写正文的条目由 ensureGalleryMarker 兜底补），组件通过 <Content components> 传进去。
+ * 相关逻辑全在 components/MapGallery.astro，包括「封面就是工坊图时图片集里不重复」那条。
  */
-const galleryAll = galleryFor(entry.id);
-const coverIsWorkshop = String(entry.data.cover ?? '').includes('/images/covers/workshop/');
-const gallery = coverIsWorkshop ? galleryAll.filter((i) => i.kind !== 'workshop') : galleryAll;
 
 /*
  * 社区补过的「资料来源」由 mergeEntry 注入 entry.data.communitySources。
@@ -189,42 +186,11 @@ const related = all
         </section>
       )}
 
-      <Content />
-
       {/*
-        图片集：工坊预览图（作者上传的）+ 玩家投稿的真实截图。
-        **没有本站渲染的 3D 示意图**（2026-10-06 去掉：示意图混在真实截图里会误导人）。
-        图片在 Cloudflare R2（见 src/lib/gallery.ts 的说明），页面只读清单。
-        点开是大图：用原生 <dialog> 做灯箱，不引任何依赖。
+        正文里的 `<MapGallery />` 标记由这里解析：MDX 认得 components 映射里的名字，
+        所以正文不需要 import（标记由生成器写，见 components/MapGallery.astro 的说明）。
       */}
-      {gallery.length > 0 && (
-        <section class="gallery-block">
-          <h2>图片集{gallery.length > 1 ? `（${gallery.length}）` : ''}</h2>
-          <p class="gallery-hint">
-            工坊预览图由地图作者上传，其余来自玩家投稿。点开可看大图；
-            手上也有这张图的截图？<a href={`/submit/?map=${entry.id}&field=gallery`}>投稿图片</a>
-            —— 通过后会出现在这里，并署上你的昵称。
-          </p>
-          <div class="gallery-grid" id="gallery-grid">
-            {gallery.map((img) => (
-              <button
-                class="gallery-item"
-                type="button"
-                data-src={img.src}
-                data-caption={img.caption}
-                {...(img.by ? { 'data-by': img.by } : {})}
-                title={img.caption}
-              >
-                <img src={img.src} alt={`${title} · ${img.caption}`} loading="lazy" decoding="async" />
-                <span class="gallery-cap">
-                  {img.caption}
-                  {img.by ? <em class="gallery-by">{` · ${img.by}`}</em> : null}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+      <Content components={{ MapGallery }} />
 
       {/*
         社区内容是**按投稿时选的字段分块显示**的：
@@ -365,53 +331,4 @@ const related = all
     </aside>
   </div>
 
-  {gallery.length > 0 && (
-    /*
-      灯箱：原生 <dialog>（2026 年的浏览器都支持 modal），不引任何依赖。
-      做成「点缩略图 → 看大图 → Esc / 点背景 / 左右键切换」，
-      JS 只有下面这一小段，且整页只跑一次。
-    */
-    <dialog class="gallery-lightbox" id="gallery-lightbox">
-      <img id="gl-img" alt="" />
-      <div class="gl-bar">
-        <span id="gl-cap"></span>
-        <span class="gl-nav">
-          <button type="button" id="gl-prev" aria-label="上一张">‹</button>
-          <span id="gl-idx"></span>
-          <button type="button" id="gl-next" aria-label="下一张">›</button>
-          <button type="button" id="gl-close" aria-label="关闭">✕</button>
-        </span>
-      </div>
-    </dialog>
-    <script>
-      const grid = document.getElementById('gallery-grid');
-      const box = document.getElementById('gallery-lightbox') as HTMLDialogElement | null;
-      if (grid && box) {
-        const items = [...grid.querySelectorAll<HTMLButtonElement>('.gallery-item')];
-        const img = document.getElementById('gl-img') as HTMLImageElement;
-        const cap = document.getElementById('gl-cap') as HTMLElement;
-        const idx = document.getElementById('gl-idx') as HTMLElement;
-        let at = 0;
-        const show = (i: number) => {
-          at = (i + items.length) % items.length;
-          const it = items[at];
-          const text = (it.dataset.caption ?? '') + (it.dataset.by ? ` · ${it.dataset.by}` : '');
-          img.src = it.dataset.src ?? '';
-          img.alt = text;
-          cap.textContent = text;
-          idx.textContent = `${at + 1} / ${items.length}`;
-        };
-        items.forEach((it, i) => it.addEventListener('click', () => { show(i); box.showModal(); }));
-        document.getElementById('gl-prev')?.addEventListener('click', () => show(at - 1));
-        document.getElementById('gl-next')?.addEventListener('click', () => show(at + 1));
-        document.getElementById('gl-close')?.addEventListener('click', () => box.close());
-        /* 点图片以外的空白也关掉（点图片本身不关，方便看细节） */
-        box.addEventListener('click', (e) => { if (e.target === box) box.close(); });
-        box.addEventListener('keydown', (e) => {
-          if (e.key === 'ArrowLeft') show(at - 1);
-          else if (e.key === 'ArrowRight') show(at + 1);
-        });
-      }
-    </script>
-  )}
 </BaseLayout>

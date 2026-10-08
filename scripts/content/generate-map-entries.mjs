@@ -342,6 +342,77 @@ const withResolvedCover = (text, coverRel) => {
   return next + rest;
 };
 
+/* ---------------- 图片集在正文里的位置 ----------------
+
+   站长要求（2026-10-08）：图片集**排在正文靠上** —— 紧跟「背景故事」小节，
+   正文里没有这一节的就紧跟正文开头；总之别压在最后那堆自动生成的资料段后面。
+
+   实现方式：正文里放一行 `<MapGallery slug="…" cover="…" />` 标记，详情页用
+   `<Content components={{ MapGallery }} />` 让 MDX 认得它（见 components/MapGallery.astro）。
+   标记由生成器负责：数据条目的正文每轮都重写，位置天然固定；
+   手写正文的条目（魔晄炉 / 米纳斯 / 黑珍珠号）正文照抄不动，但**这一行由 ensureGalleryMarker 维护** ——
+   找不到就补、位置不对就搬、slug/cover 变了就更新。所以：
+     · 贡献者提 PR 只改正文，标记不会丢（下一轮构建会补回来）；
+     · 社区投稿写回仓库后重新生成，标记照旧落在正确位置。
+*/
+
+/** 正文里的图片集标记（属性顺序固定，方便 diff 稳定） */
+const galleryMarker = (slug, coverRel) =>
+  `<MapGallery slug=${JSON.stringify(slug)}${coverRel ? ` cover=${JSON.stringify(coverRel)}` : ''} />`;
+
+/** frontmatter 与正文的分界（返回正文起始下标） */
+const bodyStartOf = (text) => {
+  if (!text.startsWith('---\n')) return 0;
+  const end = text.indexOf('\n---', 3);
+  return end < 0 ? 0 : end + 1;
+};
+
+/**
+ * 手写正文条目：保证标记存在且位置正确。
+ * 位置：`## 背景故事` 那一节之后 → 没有就正文第一个 `##` 小节之后 → 再没有就放正文末尾。
+ * 返回 { text, where, moved }：where 是落点说明（日志里打出来），moved 表示这次动过。
+ */
+const ensureGalleryMarker = (text, slug, coverRel) => {
+  const marker = galleryMarker(slug, coverRel);
+  const start = bodyStartOf(text);
+  const fm = text.slice(0, start);
+  /* 先把已有的标记行摘掉（可能在别处、可能是旧的 slug/cover），下面统一重新插 */
+  const had = /^<MapGallery\b[^\n]*\/>\s*$/m.test(text);
+  let body = text
+    .slice(start)
+    .replace(/^[ \t]*<MapGallery\b[^\n]*\/>[ \t]*\r?\n?/gm, '')
+    .replace(/\n{3,}/g, '\n\n');
+
+  const lines = body.split('\n');
+  const h2 = [];
+  lines.forEach((l, i) => {
+    if (/^##\s+\S/.test(l)) h2.push(i);
+  });
+
+  const storyAt = h2.find((i) => /^##\s*背景故事/.test(lines[i]));
+  let at;
+  let where;
+  if (storyAt !== undefined) {
+    const next = h2.find((i) => i > storyAt);
+    at = next === undefined ? lines.length : next;
+    where = '背景故事小节之后';
+  } else if (h2.length) {
+    const next = h2.find((i) => i > h2[0]);
+    at = next === undefined ? lines.length : next;
+    where = '正文第一个小节之后';
+  } else {
+    at = lines.length;
+    where = '正文末尾';
+  }
+  /* 插到 at 之前，并保证标记前后各有一个空行 ——
+     MDX 里紧贴段落的 JSX 会被当成**行内**元素解析，`<section>` 就塞进 `<p>` 里了（结构坏掉） */
+  while (at > 0 && lines[at - 1].trim() === '') at--;
+  lines.splice(at, 0, ...(at > 0 ? ['', marker, ''] : [marker, '']));
+  body = lines.join('\n').replace(/\n{3,}/g, '\n\n');
+  if (!body.endsWith('\n')) body += '\n';
+  return { text: fm + body, where, moved: !had || text !== fm + body };
+};
+
 /* ---------------- 生成一个条目的 MDX ---------------- */
 function renderEntry(rec, research, wsRec, gfl) {
   const slug = rec.m;
@@ -585,8 +656,16 @@ function renderEntry(rec, research, wsRec, gfl) {
     ''
   );
 
-  const body = [...intro, ...gameplay, ...meta];
-  return fm.join('\n') + '\n' + body.filter((x) => x !== null).join('\n');
+  const body = [...intro, galleryMarker(rec.m, coverRel), '', ...gameplay, ...meta];
+  /*
+   * 标记前后各留一个空行：MDX 里紧贴段落的 JSX 会被当成**行内**元素解析，
+   * `<section>` 会被塞进 `<p>` 里 —— HTML 结构坏掉，浏览器自己"修"出来的树会很怪。
+   * ⚠️ 要在**拼接之后**再规范：标记前面那一行往往是 frontmatter 数组里的 MDX 注释，
+   * 只对 body 做替换是碰不到它的（2026-10-08 踩过）。
+   */
+  return (fm.join('\n') + '\n' + body.filter((x) => x !== null).join('\n'))
+    .replace(/([^\n])\n(<MapGallery\b[^\n]*\/>)/, '$1\n\n$2')
+    .replace(/(<MapGallery\b[^\n]*\/>)\n(?=[^\n])/, '$1\n\n');
 }
 
 /* ---------------- 主流程 ---------------- */
@@ -631,6 +710,8 @@ for (const [slug, research] of researchFiles) {
 const existing = new Map(fs.readdirSync(MAPS_DIR).filter((f) => f.endsWith('.mdx')).map((f) => [f.replace(/\.mdx$/, ''), fs.readFileSync(path.join(MAPS_DIR, f), 'utf8')]));
 /** 手写正文条目的封面被层级改写过的（正常情况下只该在补了新封面时出现） */
 const curatedCoverFixes = [];
+/** 手写正文条目的图片集标记被补/被搬过的（第一轮迁移时每张都会出现一次） */
+const curatedGalleryFixes = [];
 
 /* 收集标签写法：富内容 JSON 文档中的标签优先当作规范写法 */
 const parseFmTags = (text) => {
@@ -708,17 +789,23 @@ for (const slug of Object.keys(LINKS).filter((s) => !s.startsWith('_'))) {
     communityRows
   );
   const changed = merged.rows.filter((r) => r.kind !== 'server');
+  /* 正文一字不改，但 frontmatter 的 cover 和正文里的图片集标记得跟其它 545 张一样由生成器维护 ——
+     这几页的 frontmatter 是写正文那天冻结的（后来补的人工封面 / 工坊预览图永远进不来），
+     图片集标记同理：贡献者改正文时删了它，下一轮构建会补回正确位置 */
+  const rec = zeMaps.find((m) => m.m === (LINKS[slug].primary || slug)) ?? zeMaps.find((m) => m.m === slug);
+  const coverRel = rec ? resolveCover(rec, slug) : null;
+  /* ⚠️ 标记要在追加社区神器表**之前**插：追加的那一节是正文最后一段，
+     先追加再插标记的话，没有「背景故事」的正文会把图片集插到社区更正后面 */
+  const marked = ensureGalleryMarker(document, slug, coverRel);
+  if (marked.moved) curatedGalleryFixes.push(`${slug}（${marked.where}）`);
   const withItems = changed.length
-    ? `${document}\n${itemsBlock(changed, {
+    ? `${marked.text}\n${itemsBlock(changed, {
         title: '神器 / 道具更正（社区投稿）',
         lead: `上面的神器表由本站人工整理；以下是[社区投稿](/contribute/)的更正与补充（${changed.length} 件），未列出的行仍以原表为准：`,
         showNote: true,
       }).join('\n')}`
-    : document;
-  /* 正文一字不改，但 frontmatter 的 cover 得跟其它 545 张走同一套层级 ——
-     这几页的 frontmatter 是写正文那天冻结的，后来补的人工封面 / 工坊预览图永远进不来 */
-  const rec = zeMaps.find((m) => m.m === (LINKS[slug].primary || slug)) ?? zeMaps.find((m) => m.m === slug);
-  const mdx = rec ? withResolvedCover(withItems, resolveCover(rec, slug)) : withItems;
+    : marked.text;
+  const mdx = withResolvedCover(withItems, coverRel);
 
   const prev = existing.get(slug);
   /* 封面被层级改写过就说一声：这三页的封面历史上冻结过，静默改动容易让人以为图挂了 */
@@ -741,6 +828,10 @@ console.log(
 if (curatedCoverFixes.length) {
   console.log(`  手写正文条目按层级改写封面 ${curatedCoverFixes.length} 张：`);
   for (const f of curatedCoverFixes.slice(0, 10)) console.log(`    ${f}`);
+}
+if (curatedGalleryFixes.length) {
+  console.log(`  手写正文条目的图片集标记已归位 ${curatedGalleryFixes.length} 张：`);
+  for (const f of curatedGalleryFixes.slice(0, 10)) console.log(`    ${f}`);
 }
 if (stageFix.length) {
   console.log(`  关卡数按实体命名修正 ${stageFix.length} 张：`);

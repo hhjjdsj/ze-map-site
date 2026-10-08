@@ -1,0 +1,286 @@
+---
+/**
+ * 地图图片集（工坊预览图 + 玩家投稿的真实截图），含灯箱与缩放。
+ *
+ * 为什么是「组件 + 正文标记」而不是写死在详情页里：
+ *   站长要求图片集**排在正文靠上的位置** —— 紧跟「背景故事」小节，
+ *   正文里没有这一节的就紧跟正文开头（2026-10-08）。而正文是 MDX 渲染的，
+ *   详情页模板只能在正文之前或之后整块插入，插不进中间。所以改成：
+ *     正文里放一行 `<MapGallery slug="…" cover="…" />` 标记，
+ *     详情页用 `<Content components={{ MapGallery }} />` 把本组件交给 MDX 解析 ——
+ *     MDX 会因为 components 映射认得这个名字，正文里**不需要 import**。
+ *
+ *   标记由 scripts/content/generate-map-entries.mjs 负责写：
+ *     · 数据条目：每轮构建重写正文，标记固定插在正文开头那段之后；
+ *     · 手写正文的条目（魔晄炉 / 米纳斯 / 黑珍珠号）：正文原样照抄，
+ *       但 cover 行和这一行标记由生成器统一维护（ensureGalleryMarker），
+ *       所以贡献者提 PR 只改正文也不会把标记弄丢，社区投稿写回仓库后重建同样正确。
+ *
+ * 图片本身在 Cloudflare R2（terr.ze-map.cn/gallery/...），页面只读 data/gallery/<slug>.json 清单。
+ * 灯箱用原生 <dialog>，缩放 / 平移 / 双指是下面那十几行自己写的，不引任何依赖。
+ */
+import { galleryFor } from '../lib/gallery';
+
+interface Props {
+  slug?: string;
+  /** 详情页最终用的封面；封面本身就是工坊预览图时，图片集里那张不再重复出现 */
+  cover?: string;
+}
+
+/** 标记里带了 slug（生成器写的）；万一没带就从 URL 兜底（/maps/<slug>/） */
+const slug = String(Astro.props.slug ?? '').trim() || (Astro.url.pathname.match(/^\/maps\/([^/]+)\//)?.[1] ?? '');
+const cover = String(Astro.props.cover ?? '');
+
+/*
+ * 封面就是工坊图时，把图片集里的工坊图去掉：同一张图在页面顶部当完封面，
+ * 再在图片集里出现一次很傻（见 docs/cover-images.md）。
+ */
+const coverIsWorkshop = cover.includes('/images/covers/workshop/');
+const images = galleryFor(slug).filter((i) => !(coverIsWorkshop && i.kind === 'workshop'));
+---
+
+{
+  images.length > 0 && (
+    <section class="gallery-block">
+      <h2>图片集{images.length > 1 ? `（${images.length}）` : ''}</h2>
+      <p class="gallery-hint">
+        工坊预览图由地图作者上传，其余来自玩家投稿。点开可看大图，滚轮 / 双击 / 双指缩放，拖动平移；
+        手上也有这张图的截图？<a href={`/submit/?map=${slug}&field=gallery`}>投稿图片</a>
+        —— 通过后会出现在这里，并署上你的昵称。
+      </p>
+      <div class="gallery-grid" id="gallery-grid">
+        {images.map((img) => (
+          <button
+            class="gallery-item"
+            type="button"
+            data-src={img.src}
+            data-caption={img.caption}
+            {...(img.by ? { 'data-by': img.by } : {})}
+            title={img.caption}
+          >
+            <img src={img.src} alt={`${slug} · ${img.caption}`} loading="lazy" decoding="async" />
+            <span class="gallery-cap">
+              {img.caption}
+              {img.by ? <em class="gallery-by">{` · ${img.by}`}</em> : null}
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+{
+  images.length > 0 && (
+    /*
+      灯箱：原生 <dialog>（现代浏览器都支持 modal），不引任何依赖。
+      交互：点缩略图 → 看大图；Esc / 点背景关闭；←/→ 换图；
+           滚轮、双击、双指、±/0 键缩放；放大后按住拖动平移。
+    */
+    <dialog class="gallery-lightbox" id="gallery-lightbox">
+      <img id="gl-img" alt="" draggable="false" />
+      <div class="gl-bar">
+        <span id="gl-cap"></span>
+        <span class="gl-nav">
+          <button type="button" id="gl-zoom-out" aria-label="缩小" title="缩小（-）">
+            −
+          </button>
+          <button type="button" id="gl-zoom-reset" aria-label="原始大小" title="原始大小（0）">
+            <span id="gl-zoom-val">100%</span>
+          </button>
+          <button type="button" id="gl-zoom-in" aria-label="放大" title="放大（+）">
+            ＋
+          </button>
+          <button type="button" id="gl-prev" aria-label="上一张" title="上一张（←）">
+            ‹
+          </button>
+          <span id="gl-idx"></span>
+          <button type="button" id="gl-next" aria-label="下一张" title="下一张（→）">
+            ›
+          </button>
+          <button type="button" id="gl-close" aria-label="关闭" title="关闭（Esc）">
+            ✕
+          </button>
+        </span>
+      </div>
+    </dialog>
+    <script>
+      const grid = document.getElementById('gallery-grid');
+      const box = document.getElementById('gallery-lightbox') as HTMLDialogElement | null;
+      if (grid && box) {
+        const items = [...grid.querySelectorAll<HTMLButtonElement>('.gallery-item')];
+        const img = document.getElementById('gl-img') as HTMLImageElement;
+        const cap = document.getElementById('gl-cap') as HTMLElement;
+        const idx = document.getElementById('gl-idx') as HTMLElement;
+        const val = document.getElementById('gl-zoom-val') as HTMLElement;
+
+        let at = 0;
+        let scale = 1;
+        let tx = 0;
+        let ty = 0;
+        /*
+         * 缩放锚点要用**未变换**的图片框：把打开那一瞬间的框记下来，
+         * 之后所有换算都基于它，滚轮缩放才能"光标指哪儿放大哪儿"。
+         */
+        let base = { cx: 0, cy: 0, w: 0, h: 0 };
+        const MIN = 1;
+        const MAX = 8;
+
+        const clamp = () => {
+          const mx = ((scale - 1) * base.w) / 2;
+          const my = ((scale - 1) * base.h) / 2;
+          tx = Math.min(mx, Math.max(-mx, tx));
+          ty = Math.min(my, Math.max(-my, ty));
+        };
+        const apply = () => {
+          img.style.transform = scale === 1 && !tx && !ty ? '' : `translate(${tx}px, ${ty}px) scale(${scale})`;
+          val.textContent = `${Math.round(scale * 100)}%`;
+          box.classList.toggle('zoomed', scale > 1.001);
+        };
+        const reset = () => {
+          scale = 1;
+          tx = 0;
+          ty = 0;
+          apply();
+        };
+        const measure = () => {
+          img.style.transform = '';
+          const r = img.getBoundingClientRect();
+          base = { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, h: r.height };
+          apply();
+        };
+        /** 以 (cx,cy) 为锚点缩放到 next 倍：锚点下的那个像素保持不动 */
+        const zoomTo = (next: number, cx: number, cy: number) => {
+          const s2 = Math.min(MAX, Math.max(MIN, next));
+          if (Math.abs(s2 - scale) < 0.001) return;
+          const px = (cx - base.cx - tx) / scale;
+          const py = (cy - base.cy - ty) / scale;
+          scale = s2;
+          tx = cx - base.cx - scale * px;
+          ty = cy - base.cy - scale * py;
+          clamp();
+          apply();
+        };
+
+        const show = (i: number) => {
+          at = (i + items.length) % items.length;
+          const it = items[at];
+          const text = (it.dataset.caption ?? '') + (it.dataset.by ? ` · ${it.dataset.by}` : '');
+          img.src = it.dataset.src ?? '';
+          img.alt = text;
+          cap.textContent = text;
+          idx.textContent = `${at + 1} / ${items.length}`;
+          reset();
+        };
+
+        items.forEach((it, i) =>
+          it.addEventListener('click', () => {
+            show(i);
+            box.showModal();
+            /* 打开后再量：此时图片有布局尺寸，之前的 rect 是 0 */
+            requestAnimationFrame(measure);
+          })
+        );
+        img.addEventListener('load', measure);
+        window.addEventListener('resize', () => {
+          if (box.open) measure();
+        });
+
+        document.getElementById('gl-prev')?.addEventListener('click', () => show(at - 1));
+        document.getElementById('gl-next')?.addEventListener('click', () => show(at + 1));
+        document.getElementById('gl-close')?.addEventListener('click', () => box.close());
+        document.getElementById('gl-zoom-in')?.addEventListener('click', () => {
+          const r = box.getBoundingClientRect();
+          zoomTo(scale * 1.5, r.left + r.width / 2, r.top + r.height / 2);
+        });
+        document.getElementById('gl-zoom-out')?.addEventListener('click', () => {
+          const r = box.getBoundingClientRect();
+          zoomTo(scale / 1.5, r.left + r.width / 2, r.top + r.height / 2);
+        });
+        document.getElementById('gl-zoom-reset')?.addEventListener('click', reset);
+
+        /* 滚轮缩放（必须 passive:false，否则拦不住页面滚动） */
+        box.addEventListener(
+          'wheel',
+          (e) => {
+            e.preventDefault();
+            zoomTo(scale * Math.exp(-e.deltaY * 0.0016), e.clientX, e.clientY);
+          },
+          { passive: false }
+        );
+
+        /* 双击：1 倍 ↔ 2.5 倍（按双击点放大） */
+        img.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          zoomTo(scale > 1.001 ? 1 : 2.5, e.clientX, e.clientY);
+        });
+
+        /*
+         * 指针：单指/鼠标拖动平移，双指捏合缩放（手机上是主要交互）。
+         * 用 Pointer Events 统一处理，不用分别写鼠标和触摸两套。
+         */
+        const pointers = new Map<number, { x: number; y: number }>();
+        let pinchFrom = 0;
+        let pinchScale = 1;
+        img.addEventListener('pointerdown', (e) => {
+          /*
+           * 这里**不能**因为「还没放大」就 return：双指捏合的第一根手指按下去时 scale 就是 1，
+           * 早退的话手机上永远捏不开（2026-10-08 实测：桌面按钮正常，手机双指无反应）。
+           * 单指拖动在 1 倍时本来也移不动 —— clamp() 在 scale=1 时把位移锁成 0。
+           */
+          img.setPointerCapture(e.pointerId);
+          pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (pointers.size === 2) {
+            const [a, b] = [...pointers.values()];
+            pinchFrom = Math.hypot(a.x - b.x, a.y - b.y);
+            pinchScale = scale;
+            box.classList.add('dragging');
+          }
+        });
+        img.addEventListener('pointermove', (e) => {
+          const prev = pointers.get(e.pointerId);
+          if (!prev) return;
+          const cur = { x: e.clientX, y: e.clientY };
+          if (pointers.size === 1) {
+            tx += cur.x - prev.x;
+            ty += cur.y - prev.y;
+            clamp();
+            apply();
+            box.classList.add('dragging');
+          }
+          pointers.set(e.pointerId, cur);
+          if (pointers.size === 2 && pinchFrom > 0) {
+            const [a, b] = [...pointers.values()];
+            const dist = Math.hypot(a.x - b.x, a.y - b.y);
+            zoomTo((pinchScale * dist) / pinchFrom, (a.x + b.x) / 2, (a.y + b.y) / 2);
+          }
+        });
+        const endPointer = (e: PointerEvent) => {
+          pointers.delete(e.pointerId);
+          if (pointers.size < 2) pinchFrom = 0;
+          if (!pointers.size) box.classList.remove('dragging');
+        };
+        img.addEventListener('pointerup', endPointer);
+        img.addEventListener('pointercancel', endPointer);
+
+        /* 点图片以外的空白关掉；放大以后不关（容易在拖动时误触） */
+        box.addEventListener('click', (e) => {
+          if (e.target === box && scale <= 1.001) box.close();
+        });
+        box.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowLeft') show(at - 1);
+          else if (e.key === 'ArrowRight') show(at + 1);
+          else if (e.key === '+' || e.key === '=') {
+            const r = box.getBoundingClientRect();
+            zoomTo(scale * 1.5, r.left + r.width / 2, r.top + r.height / 2);
+          } else if (e.key === '-' || e.key === '_') {
+            const r = box.getBoundingClientRect();
+            zoomTo(scale / 1.5, r.left + r.width / 2, r.top + r.height / 2);
+          } else if (e.key === '0') reset();
+        });
+        /* 关闭时复位，下次打开是干净状态 */
+        box.addEventListener('close', reset);
+      }
+    </script>
+  )
+}

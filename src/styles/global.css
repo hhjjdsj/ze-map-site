@@ -1927,7 +1927,9 @@ img { max-width: 100%; display: block; }
   max-height: 96vh;
   /* 明确居中：别只依赖 UA 样式（不同浏览器表现不一致，实测有不居中的） */
   margin: auto;
-  overflow: visible;
+  /* 放大后的图裁在灯箱范围内（标准看图器行为），不然它会盖住下面的工具条 ——
+     2026-10-08 实测：transform 生成层叠上下文，浮在未定位的 .gl-bar 之上，复位按钮点不到 */
+  overflow: hidden;
 }
 
 .gallery-lightbox[open] {
@@ -1960,9 +1962,29 @@ img { max-width: 100%; display: block; }
   background: var(--panel);
   color: var(--text-2);
   font-size: 13px;
+  /* 永远压在图片之上：放大后的图会铺到这一行，工具条必须还能点 */
+  position: relative;
+  z-index: 2;
 }
 
-.gl-nav { display: inline-flex; align-items: center; gap: 6px; }
+.gl-nav { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/*
+ * 说明文字别把按钮挤走：桌面单行省略号；窄屏整行放到按钮下面居中 ——
+ * 2026-10-08 手机实测：不加这段的话，「工坊预览图（作者上传）」会被挤成**每行一个字**的竖条。
+ */
+#gl-cap {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .gl-bar { flex-wrap: wrap; justify-content: center; row-gap: 8px; }
+  .gl-nav { order: 1; }
+  #gl-cap { order: 2; flex: 1 1 100%; text-align: center; white-space: normal; }
+}
 
 .gl-nav button {
   min-width: 34px;
@@ -1979,6 +2001,34 @@ img { max-width: 100%; display: block; }
 .gl-nav button:hover { border-color: var(--accent-2); }
 
 #gl-idx { font-variant-numeric: tabular-nums; color: var(--text-3); }
+
+/*
+ * 灯箱缩放（2026-10-08 站长反馈「只能看，不能放大缩小」）。
+ * 缩放/平移全在 components/MapGallery.astro 的脚本里算，这里只管表现：
+ *   · transform 上给一条短过渡，按钮缩放时顺滑；拖动/捏合时加 .dragging 关掉过渡跟手；
+ *   · touch-action: none —— 双指缩放由脚本接管，别让浏览器去缩放整个页面；
+ *   · 光标提示可操作性：未放大是 zoom-in，放大后可抓取。
+ */
+.gallery-lightbox img {
+  transition: transform 0.18s ease-out;
+  cursor: zoom-in;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  /* 缩放后不要被工具条压住（它自己在下面有 z-index） */
+  position: relative;
+  z-index: 1;
+}
+
+.gallery-lightbox.zoomed img { cursor: grab; }
+.gallery-lightbox.dragging img { transition: none; cursor: grabbing; }
+
+/* 缩放比例按钮比旁边的箭头宽一点，数字别跳 */
+.gl-nav button#gl-zoom-reset {
+  min-width: 60px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ===== 社区补充（P2）=====
    内容来自 data/community/<slug>.json（审核通过后写回仓库），
