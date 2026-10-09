@@ -4,6 +4,8 @@ import { getMaps } from '../../lib/maps';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import MapCard from '../../components/MapCard.astro';
 import MapGallery from '../../components/MapGallery.astro';
+import GuideFigure from '../../components/GuideFigure.astro';
+import GuideNote from '../../components/GuideNote.astro';
 import DifficultyVote from '../../components/DifficultyVote.astro';
 import VideoEmbed from '../../components/VideoEmbed.astro';
 import RouteMap from '../../components/RouteMap.astro';
@@ -70,7 +72,8 @@ const sizeText = typeof size === 'number' && size > 0
     ? `~${(size / 1024).toFixed(2)} GB`
     : `~${Math.round(size)} MB`
   : null;
-/* 社区正文按投稿字段分块：背景故事单独一块，其余进「社区补充」 */
+/* 社区正文按投稿字段分块：攻略单独一块、背景故事一块，其余进「社区补充」 */
+const guideNotes = communityNotes.filter((n: { field?: string | null }) => n.field === 'guide');
 const storyNotes = communityNotes.filter((n: { field?: string | null }) => n.field === 'story');
 const otherNotes = communityNotes.filter((n: { field?: string | null }) => n.field !== 'story');
 /*
@@ -245,7 +248,7 @@ const related = all
         MapGallery 由生成器插（见 components/MapGallery.astro），另外三个出现在
         人工整理的 sections 里（魔晄炉 / 米纳斯 / 黑珍珠号：视频攻略、关卡流程、路线图）。
       */}
-      <Content components={{ MapGallery, VideoEmbed, StageAccordion, RouteMap }} />
+      <Content components={{ MapGallery, VideoEmbed, StageAccordion, RouteMap, GuideFigure }} />
 
       {/*
         社区内容是**按投稿时选的字段分块显示**的：
@@ -253,12 +256,26 @@ const related = all
         以前一律塞进「社区补充」，投背景故事的人会以为稿子没生效（2026-09-28 反馈）。
         区块仍然与本站整理的正文分开，并逐条署名 —— 不覆盖正文本就是有意的设计。
       */}
+      {guideNotes.length > 0 && (
+        <section class="community-block">
+          <h2>攻略 / 神器讲解（社区投稿）</h2>
+          {guideNotes.map((n: { text: string; by: string; at: string | null }) => (
+            <div class="community-note">
+              <GuideNote slug={entry.id} text={n.text} />
+              <p class="community-note-by">
+                由 {n.by} 补充{n.at ? ` · ${n.at.slice(0, 10)}` : ''}
+              </p>
+            </div>
+          ))}
+        </section>
+      )}
+
       {storyNotes.length > 0 && (
         <section class="community-block">
           <h2>背景故事（社区投稿）</h2>
           {storyNotes.map((n: { text: string; by: string; at: string | null }) => (
             <div class="community-note">
-              <p class="community-note-text">{n.text}</p>
+              <GuideNote slug={entry.id} text={n.text} />
               <p class="community-note-by">
                 由 {n.by} 补充{n.at ? ` · ${n.at.slice(0, 10)}` : ''}
               </p>
@@ -272,7 +289,7 @@ const related = all
           <h2>社区补充</h2>
           {otherNotes.map((n: { text: string; by: string; at: string | null }) => (
             <div class="community-note">
-              <p class="community-note-text">{n.text}</p>
+              <GuideNote slug={entry.id} text={n.text} />
               <p class="community-note-by">
                 由 {n.by} 补充{n.at ? ` · ${n.at.slice(0, 10)}` : ''}
               </p>

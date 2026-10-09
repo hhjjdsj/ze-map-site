@@ -28,6 +28,7 @@ import { DIFFICULTIES, isDifficulty, normalizeDifficulty } from '../../shared/di
 import { BAKED_SOURCE, normalizeEntitySource } from '../../shared/entity-source.mjs';
 import { normalizeDoc } from '../../shared/community-doc.mjs';
 import { cdText, docItemRows, mergeItems, usesText } from '../../shared/items.mjs';
+import { guideTextToMdx, relicAnchorId } from '../../shared/guide-blocks.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const MAPS_DIR = path.join(ROOT, 'src/content/maps');
@@ -228,7 +229,13 @@ const cell = (s) => mdSafe(String(s ?? '').replace(/\|/g, '\\|').replace(/\s*\n\
  * 两个地方要用：一般条目（renderEntry）与手写正文的条目（document 分支）——
  * 后者没法重写正文里的表，只能在正文末尾补一节「社区更正」。
  */
-function itemsBlock(rows, { title, lead, showNote }) {
+function itemsBlock(rows, { title, lead, showNote, anchors }) {
+  /* 有对应讲解的行，道具名变成锚点链接（跳到自己那条教程）——
+     没有讲解的保持纯文本，免得整表都是点不动的假链接。 */
+  const nameCell = (r) => {
+    const anchor = anchors?.get(r.name);
+    return cell(anchor ? `[${r.name}](#${anchor})` : r.name);
+  };
   return [
     `## ${title}`,
     '',
@@ -238,11 +245,49 @@ function itemsBlock(rows, { title, lead, showNote }) {
     showNote ? '|---|---|---|---|' : '|---|---|---|',
     ...rows.map((r) =>
       showNote
-        ? `| ${cell(r.name)} | ${cell(cdText(r.cd))} | ${cell(usesText(r.uses))} | ${cell(itemNoteCell(r))} |`
-        : `| ${cell(r.name)} | ${cell(cdText(r.cd))} | ${cell(usesText(r.uses))} |`
+        ? `| ${nameCell(r)} | ${cell(cdText(r.cd))} | ${cell(usesText(r.uses))} | ${cell(itemNoteCell(r))} |`
+        : `| ${nameCell(r)} | ${cell(cdText(r.cd))} | ${cell(usesText(r.uses))} |`
     ),
     '',
   ];
+}
+
+/**
+ * 教程小节（research.guides）→ 正文。
+ *
+ * 为什么单独一个字段、而不是并进 sections：`sections` 是「只渲染这些小节、不再叠加自动正文」的
+ * 整篇手写模式（魔晄炉 / 米纳斯那三张）。教程是要**叠在**自动正文之上的 —— 神器表、数据概况
+ * 都还要留着，只是在表后面多出一节「这件神器怎么用」。
+ *
+ * 每节前面插一个锚点 `<span id="relic-N">`：神器 / 道具表里对应的行会链到它
+ * （见 itemsBlock 的 anchors），这样读者从表就能点进讲解，不用自己滚。
+ */
+function guidesToBody(guides, slug) {
+  const out = [];
+  guides.forEach((g, i) => {
+    const title = String(g.title).trim();
+    out.push(
+      `<span id="${relicAnchorId(i)}" class="relic-anchor"></span>`,
+      '',
+      `## ${title}`,
+      '',
+      guideTextToMdx(String(g.body), { slug }),
+      ''
+    );
+  });
+  return out;
+}
+
+/** 哪件道具在哪一节讲解里被提到（标题里出现道具名就算）→ 表格那一行链过去 */
+function guideAnchorsFor(guides, rows) {
+  const map = new Map();
+  guides.forEach((g, i) => {
+    const title = String(g.title);
+    for (const r of rows) {
+      if (r?.name && !map.has(r.name) && title.includes(r.name)) map.set(r.name, relicAnchorId(i));
+    }
+  });
+  return map;
 }
 
 /**
@@ -599,6 +644,11 @@ function renderEntry(rec, research, wsRec, gfl) {
   const communityRows = communityItemsOf(pageSlug);
   const merged = mergeItems(gfl?.items ?? [], communityRows);
   const communityCount = merged.rows.filter((r) => r.kind !== 'server').length;
+  /* 教程小节（research.guides）：叠在自动正文之上，不取代它 */
+  const guides = (Array.isArray(research?.guides) ? research.guides : []).filter(
+    (g) => g && typeof g.title === 'string' && g.title.trim() && typeof g.body === 'string' && g.body.trim()
+  );
+  const guideAnchors = guideAnchorsFor(guides, merged.rows);
 
   if (merged.rows.length) {
     /* 备注列只在真的有社区行时出现：没有社区投稿的图，表格保持三列，
@@ -608,9 +658,11 @@ function renderEntry(rec, research, wsRec, gfl) {
     const lead = gfl?.items?.length
       ? `以下 ${merged.rows.length} 件道具来自公开的服务器 entwatch 配置，是本图在服务器上实际注册的神器与道具${
           gfl._from ? `（取自 GFL 的 \`${gfl._from}\` 配置）` : ''
-        }${communityCount ? '；备注里标了「社区更正 / 社区补充」的行来自社区投稿' : ''}：`
+        }${communityCount ? '；备注里标了「社区更正 / 社区补充」的行来自社区投稿' : ''}${
+          guideAnchors.size ? '；带链接的道具名可以点进下面的教程' : ''
+        }：`
       : `本站没有这张图的服务器配置解析结果，以下 ${merged.rows.length} 件来自[社区投稿](/contribute/)补充：`;
-    gameplay.push(...itemsBlock(merged.rows, { title, lead, showNote }));
+    gameplay.push(...itemsBlock(merged.rows, { title, lead, showNote, anchors: guideAnchors }));
   }
 
   if (gfl?.bosses?.length) {
@@ -673,10 +725,13 @@ function renderEntry(rec, research, wsRec, gfl) {
    * 神器表，所以投稿只能这样显式补出来，不能让投稿石沉大海。
    */
   const hasSections = Array.isArray(research?.sections) && research.sections.length > 0;
+  /* 教程小节：两条路径都要有 —— 手写整篇的图（sections）也常需要补神器讲解 */
+  const guideBody = guides.length ? ['', ...guidesToBody(guides, pageSlug)] : [];
   const body = hasSections
     ? [
         ...intro,
         ...sectionsToBody(research.sections, pageSlug, coverRel),
+        ...guideBody,
         ...(() => {
           const docRows = docItemRows(research.sections.map((s) => `## ${s.title}\n\n${s.body}`).join('\n\n'));
           const mergedDoc = mergeItems(docRows.map((r) => ({ name: r.name, cd: r.cd, maxuses: null })), communityItemsOf(pageSlug));
@@ -688,12 +743,13 @@ function renderEntry(rec, research, wsRec, gfl) {
                   title: '神器 / 道具更正（社区投稿）',
                   lead: `上面的神器表由本站人工整理；以下是[社区投稿](/contribute/)的更正与补充（${changed.length} 件），未列出的行仍以原表为准：`,
                   showNote: true,
+                  anchors: guideAnchorsFor(guides, mergedDoc.rows),
                 }),
               ]
             : [];
         })(),
       ]
-    : [...intro, galleryMarker(pageSlug, coverRel), '', ...gameplay, ...meta];
+    : [...intro, galleryMarker(pageSlug, coverRel), '', ...gameplay, ...guideBody, ...meta];
   /*
    * 标记前后各留一个空行：MDX 里紧贴段落的 JSX 会被当成**行内**元素解析，
    * `<section>` 会被塞进 `<p>` 里 —— HTML 结构坏掉，浏览器自己"修"出来的树会很怪。

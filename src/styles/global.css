@@ -2115,6 +2115,79 @@ img { max-width: 100%; display: block; }
   color: var(--muted);
 }
 
+/* ===== 教程 / 攻略的图文块（左图右文） =====
+   作者写的是纯文本约定 `:::figure 2 right`（见 shared/guide-blocks.mjs），
+   渲染成这里的 .guide-figure。窄屏自动堆成上下，避免图被压成一条。 */
+.guide-para {
+  margin: 0 0 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+  color: var(--text);
+}
+.guide-para:last-child { margin-bottom: 0; }
+
+.guide-figure {
+  display: grid;
+  grid-template-columns: minmax(0, 46%) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  margin: 16px 0;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+/* 图在右：把两列顺序换过来（DOM 顺序不动，读屏与手机端仍是「先文后图」的语义） */
+.guide-figure.is-right .gf-media { order: 2; }
+.guide-figure.is-right .gf-body { order: 1; }
+
+.gf-media { min-width: 0; }
+.gf-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.gf-cap {
+  margin: 7px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.gf-body { min-width: 0; }
+.gf-body > :first-child { margin-top: 0; }
+
+/* 引用的图还没有（作者写错序号 / 图还没传）：只渲染文字 + 提示，不让整段消失 */
+.gf-missing {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px dashed var(--border-2);
+  background: var(--panel);
+}
+.gf-warn {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+/* 神器表点进讲解：跳转后标题别被吸顶导航盖住 */
+.relic-anchor {
+  display: block;
+  height: 0;
+  scroll-margin-top: 84px;
+}
+
+@media (max-width: 640px) {
+  .guide-figure { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .guide-figure.is-right .gf-media,
+  .guide-figure.is-right .gf-body { order: initial; }
+}
+
 .community-credit {
   margin: 8px 0 0;
   font-size: 12.5px;

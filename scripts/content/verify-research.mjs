@@ -27,6 +27,8 @@ const KNOWN_FIELDS = new Set([
   'difficulty', 'summary', 'tags', 'videoUrls', 'sources', 'confidence', 'verified',
   /* 手写小节的图：正文放 sections，页面 slug ≠ 实体名时用 maps 声明 */
   'sections', 'maps',
+  /* 教程 / 神器讲解：叠在自动正文之上的小节（左图右文用 :::figure 语法，见 shared/guide-blocks.mjs） */
+  'guides',
 ]);
 
 /** 给写错的字段名猜一个最接近的正确写法（编辑距离 ≤3 才给提示） */
@@ -88,6 +90,23 @@ for (const file of files) {
         `见 scripts/content/generate-map-entries.mjs 的说明`
     );
     continue;
+  }
+
+  if (j.guides !== undefined) {
+    if (!Array.isArray(j.guides) || !j.guides.length) {
+      errors.push(`${file}: guides 必须是非空数组（不需要就删掉这个字段）`);
+    } else {
+      j.guides.forEach((s, i) => {
+        if (!s || typeof s !== 'object') errors.push(`${file}: guides[${i}] 应该是 { title, body }`);
+        else {
+          if (typeof s.title !== 'string' || !s.title.trim()) errors.push(`${file}: guides[${i}].title 不能为空`);
+          if (typeof s.body !== 'string' || !s.body.trim()) errors.push(`${file}: guides[${i}].body 不能为空`);
+          for (const k of Object.keys(s)) {
+            if (k !== 'title' && k !== 'body') errors.push(`${file}: guides[${i}] 有多余字段「${k}」（只认 title / body）`);
+          }
+        }
+      });
+    }
   }
 
   if (j.sections !== undefined) {

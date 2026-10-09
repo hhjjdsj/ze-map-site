@@ -1,0 +1,33 @@
+---
+/**
+ * 渲染「纯文本教程正文」：段落 + `:::figure N [left|right]` 图文块。
+ *
+ * 用在社区投稿（data/community/<map>.json 的 notes）——
+ * 那些正文按设计只能是纯文本 / 简单 Markdown（禁 JSX），所以走这个组件按块渲染；
+ * 原稿（data/research/<map>.json 的 guides[]）不经过这里，由生成器转成 MDX 组件。
+ *
+ * 段落保持 `white-space: pre-wrap`（作者换行就换行，和以前的表现一致）。
+ */
+import { parseGuideBlocks } from '../../shared/guide-blocks.mjs';
+import GuideFigure from './GuideFigure.astro';
+
+interface Props {
+  slug: string;
+  text: string;
+}
+
+const { slug, text } = Astro.props;
+const blocks = parseGuideBlocks(text);
+---
+
+{
+  blocks.map((b) =>
+    b.type === 'figure' ? (
+      <GuideFigure slug={slug} n={b.n} side={b.side}>
+        <p class="guide-para">{b.text}</p>
+      </GuideFigure>
+    ) : (
+      <p class="guide-para">{b.text}</p>
+    )
+  )
+}
