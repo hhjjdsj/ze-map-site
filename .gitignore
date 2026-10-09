@@ -154,6 +154,11 @@ data/research/_*/
 # 地图体积（MB，详情页侧栏那行「体积 ~194 MB」），由 npm run data:sizes 从 s2ze 的公开数据抓来。
 # 必须入库：构建不联网（第三方接口挂掉不该让整站构建变红），运行时只读这份文件。
 !data/map-sizes.json
+# 哪些图**拿不到**实体数据、原因是什么（详情页据此解释「为什么没有实体预览」）。
+# 必须入库：详情页直接 import 这个文件 —— 2026-10-09 忘了加这条白名单，
+# 本机有文件、仓库里没有，Cloudflare 构建挂在 [UNRESOLVED_IMPORT]，
+# 所以现在 npm run build 第一步会跑 scripts/content/check-build-inputs.mjs 拦这类错误。
+!data/entity-status.json
 
 # Astro 生成的类型与缓存（不要入库）
 .astro/

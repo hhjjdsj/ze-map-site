@@ -1,0 +1,17 @@
+{
+  "_说明": "烘焙管线的实测结论：哪些图**拿不到**实体/地形数据、原因是什么。地图详情页据此解释「为什么没有实体预览」（见 src/pages/maps/[...slug].astro）。只写实测过的结论，不写猜测。code 取值：delisted=工坊已下架（下载不到）；no-entity-data=地图包内没有实体定义；no-physics=地图包内没有世界碰撞网格；parse-failed=包能下但解析报错。",
+  "_维护": "由烘焙结果登记：scripts/terr-bake 跑完后按 bake.log 里失败的 stage 归类（download → delisted；extract-entities 的 no default_ents.vents_c → no-entity-data；find-physics / glb → no-physics；其余解析类报错 → parse-failed）。手工补充也可以，key 是工坊文件 ID。",
+  "_最近登记": "2026-10-09（成批扩图：330 张在售图烘焙，11 张失败）",
+  "maps": {
+    "3478053698": { "code": "delisted", "note": "steamcmd 下载失败：工坊条目已不可用" },
+    "3307319851": { "code": "delisted", "note": "steamcmd 下载失败：工坊条目已不可用（ze_alien_shooter_v7）" },
+    "3782356411": { "code": "delisted", "note": "steamcmd 下载失败：工坊条目已不可用（ze_changed）" },
+    "3792156638": { "code": "no-entity-data", "note": "地图包里没有 entities/default_ents.vents_c（ARPSEL Server Package，是服务器整合包不是地图）" },
+    "3307901441": { "code": "no-entity-data", "note": "地图包里没有 entities/default_ents.vents_c（ze_humans model pack，是模型包不是地图）" },
+    "3805860243": { "code": "no-entity-data", "note": "地图包里没有 entities/default_ents.vents_c（ze_evolutionPack_test）" },
+    "3728365438": { "code": "no-entity-data", "note": "内层 VPK 里没有任何 _c 编译文件（ze_omochi）" },
+    "3491610173": { "code": "no-physics", "note": "找不到 maps/ze_random_escape_p/world_physics.vmdl_c，无法生成真实碰撞地形" },
+    "2958335120": { "code": "parse-failed", "note": "地图包里找不到 VPK（ze_sunset_b1）" },
+    "3649835052": { "code": "parse-failed", "note": "实体模型导出失败：maps/ze_surf_inferno/entities/diamonda_laser2_188.vmdl_c（ze_surf_inferno）" }
+  }
+}

@@ -2,6 +2,27 @@
   "_说明": "每张地图的资料进站 / 最近改动日期，由 scripts/content/build-map-dates.mjs 从 git 历史生成，别手改。added = src/content/maps/<slug>.mdx 首次新增；updated = research / community / mdx 最近一次改动。",
   "version": 1,
   "maps": {
+    "ZE_baboon_escape_cs2": {
+      "added": "2026-10-09"
+    },
+    "Ze_Re_SenS": {
+      "added": "2026-10-09"
+    },
+    "ze_01": {
+      "added": "2026-10-09"
+    },
+    "ze_12dehome": {
+      "added": "2026-10-09"
+    },
+    "ze_1_ScHiZo": {
+      "added": "2026-10-09"
+    },
+    "ze_1_april": {
+      "added": "2026-10-09"
+    },
+    "ze_1way_tunnel": {
+      "added": "2026-10-09"
+    },
     "ze_2012_p": {
       "added": "2026-09-23",
       "updated": "2026-09-24"
@@ -15,27 +36,165 @@
     "ze_2049": {
       "added": "2026-09-23"
     },
+    "ze_20_seconds_diamond_patch": {
+      "added": "2026-10-09"
+    },
     "ze_20_seconds_v1": {
       "added": "2026-09-23"
+    },
+    "ze_240s_survival_v1": {
+      "added": "2026-10-09"
     },
     "ze_30_seconds_p": {
       "added": "2026-09-23"
     },
+    "ze_360_tower_island_m": {
+      "added": "2026-10-09"
+    },
+    "ze_666_crazy_escape": {
+      "added": "2026-10-09"
+    },
     "ze_8bit": {
       "added": "2026-09-23"
     },
+    "ze_AAA_diman_world": {
+      "added": "2026-10-09"
+    },
+    "ze_ATIX_panic_2077": {
+      "added": "2026-10-09"
+    },
+    "ze_BLACK_DOOR": {
+      "added": "2026-10-09"
+    },
+    "ze_Bible_Adventure_OT_p": {
+      "added": "2026-10-09"
+    },
+    "ze_CyberBloods": {
+      "added": "2026-10-09"
+    },
+    "ze_Doors": {
+      "added": "2026-10-09"
+    },
+    "ze_Elevator_Returns": {
+      "added": "2026-10-09"
+    },
+    "ze_Exit_This_Earths_Atomosphere_p": {
+      "added": "2026-10-09"
+    },
+    "ze_FFVII_Fako_Reactor": {
+      "added": "2026-10-09"
+    },
+    "ze_FFVII_Mako_Reactor_v5_p": {
+      "added": "2026-10-09"
+    },
+    "ze_FFVII_temple_ancient": {
+      "added": "2026-10-09"
+    },
+    "ze_FFXII_Bestersand_Beta": {
+      "added": "2026-10-09"
+    },
+    "ze_Fe8_Sacred_Stones": {
+      "added": "2026-10-09"
+    },
+    "ze_Genso_Of_Last_v3": {
+      "added": "2026-10-09"
+    },
+    "ze_Genso_Of_Last_v4": {
+      "added": "2026-10-09"
+    },
+    "ze_LOLXD_p_final": {
+      "added": "2026-10-09"
+    },
+    "ze_MAGA": {
+      "added": "2026-10-09"
+    },
+    "ze_MC_museum": {
+      "added": "2026-10-09"
+    },
+    "ze_Minecraft_Dreamland": {
+      "added": "2026-10-09"
+    },
+    "ze_Minecraft_Flood_Escape": {
+      "added": "2026-10-09"
+    },
+    "ze_Minecraft_rooftop_runaway2": {
+      "added": "2026-10-09"
+    },
+    "ze_NY_Marathon_p": {
+      "added": "2026-10-09"
+    },
+    "ze_OBJ_PePsI_ReVengeance_v67_p": {
+      "added": "2026-10-09"
+    },
+    "ze_OBJ_PePsI_Tower_ReVengeance_v67_p": {
+      "added": "2026-10-09"
+    },
+    "ze_PC": {
+      "added": "2026-10-09"
+    },
+    "ze_Paindown": {
+      "added": "2026-10-09"
+    },
+    "ze_Sit_Caelum_Paradisus": {
+      "added": "2026-10-09"
+    },
+    "ze_Steyliff_Grove_Re": {
+      "added": "2026-10-09"
+    },
+    "ze_Time_of_Dawn_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_Tower_of_Babel": {
+      "added": "2026-10-09"
+    },
+    "ze_YuanMengStar": {
+      "added": "2026-10-09"
+    },
+    "ze_Zulu": {
+      "added": "2026-10-09"
+    },
+    "ze__hell_p": {
+      "added": "2026-10-09"
+    },
     "ze_a_e_s_t_h_e_t_i_c_p": {
       "added": "2026-09-23"
+    },
+    "ze_aaa_rt4_hessel_valley_old": {
+      "added": "2026-10-09"
+    },
+    "ze_aaa_santartika_baseum_xyyyyyy": {
+      "added": "2026-10-09"
     },
     "ze_abandoned_industry_p": {
       "added": "2026-09-23",
       "updated": "2026-09-24"
     },
+    "ze_abandoned_project_p": {
+      "added": "2026-10-09"
+    },
+    "ze_act_character_relic": {
+      "added": "2026-10-09"
+    },
+    "ze_action_plan_hurricane_a2fix5": {
+      "added": "2026-10-09"
+    },
     "ze_aepp_nano_grid2_p": {
       "added": "2026-09-23"
     },
+    "ze_akala_p": {
+      "added": "2026-10-09"
+    },
+    "ze_alien_mountain_escape_ffvii_v5": {
+      "added": "2026-10-09"
+    },
     "ze_alien_mountain_escape_p": {
       "added": "2026-09-23"
+    },
+    "ze_alien_shooter": {
+      "added": "2026-10-09"
+    },
+    "ze_alien_shooter_v7": {
+      "added": "2026-10-09"
     },
     "ze_amdaporkeep": {
       "added": "2026-09-23",
@@ -43,6 +202,15 @@
     },
     "ze_ancient_wrath_p": {
       "added": "2026-09-23"
+    },
+    "ze_angelbeats_guild": {
+      "added": "2026-10-09"
+    },
+    "ze_angels_of_death": {
+      "added": "2026-10-09"
+    },
+    "ze_antartika_p": {
+      "added": "2026-10-09"
     },
     "ze_aooka": {
       "added": "2026-09-23"
@@ -55,11 +223,17 @@
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_aot_trost_v8": {
+      "added": "2026-10-09"
+    },
     "ze_aperturescience_p": {
       "added": "2026-09-23"
     },
     "ze_apollo_p": {
       "added": "2026-09-23"
+    },
+    "ze_apprehended": {
+      "added": "2026-10-09"
     },
     "ze_aragami_p": {
       "added": "2026-09-23"
@@ -70,6 +244,9 @@
     "ze_arctic_escape_p": {
       "added": "2026-09-23"
     },
+    "ze_ardenweald": {
+      "added": "2026-10-09"
+    },
     "ze_arknights_caerula_arbor": {
       "added": "2026-09-23"
     },
@@ -79,11 +256,20 @@
     "ze_arknights_sows": {
       "added": "2026-09-23"
     },
+    "ze_arpiel_lost_ruins_p": {
+      "added": "2026-10-09"
+    },
     "ze_artika_base_p": {
       "added": "2026-09-23"
     },
+    "ze_ascend_escape": {
+      "added": "2026-10-09"
+    },
     "ze_ashen_keep_p": {
       "added": "2026-09-23"
+    },
+    "ze_asiangirl_mm11el4nu4cp2io1yv7_r_p": {
+      "added": "2026-10-09"
     },
     "ze_at_dusk": {
       "added": "2026-09-23"
@@ -93,6 +279,12 @@
     },
     "ze_atix_panic_2017_p": {
       "added": "2026-09-23"
+    },
+    "ze_atix_panic_p": {
+      "added": "2026-10-09"
+    },
+    "ze_atl_lgnition_a1": {
+      "added": "2026-10-09"
     },
     "ze_atos": {
       "added": "2026-09-23"
@@ -112,6 +304,12 @@
     "ze_aztecnoob_p": {
       "added": "2026-09-23"
     },
+    "ze_baboonpox_escape_p": {
+      "added": "2026-10-09"
+    },
+    "ze_back_to_the_future_remix": {
+      "added": "2026-10-09"
+    },
     "ze_backroom_level4_v1": {
       "added": "2026-09-23"
     },
@@ -126,6 +324,15 @@
       "added": "2026-09-23",
       "updated": "2026-09-24"
     },
+    "ze_backrooms_lenny": {
+      "added": "2026-10-09"
+    },
+    "ze_backrooms_run": {
+      "added": "2026-10-09"
+    },
+    "ze_bakabox": {
+      "added": "2026-10-09"
+    },
     "ze_bang_dream_mygo": {
       "added": "2026-09-23",
       "updated": "2026-10-09"
@@ -133,17 +340,35 @@
     "ze_barrage_p": {
       "added": "2026-09-23"
     },
+    "ze_barrel_of_death": {
+      "added": "2026-10-09"
+    },
+    "ze_barrelrooms": {
+      "added": "2026-10-09"
+    },
     "ze_basic_geometric": {
       "added": "2026-09-23"
     },
+    "ze_basic_geometric_test": {
+      "added": "2026-10-09"
+    },
     "ze_bathroom": {
       "added": "2026-09-23"
+    },
+    "ze_be_very_careful": {
+      "added": "2026-10-09"
     },
     "ze_best_guess": {
       "added": "2026-09-23"
     },
     "ze_best_korea_p": {
       "added": "2026-09-23"
+    },
+    "ze_beyond_horizon": {
+      "added": "2026-10-09"
+    },
+    "ze_beyond_the_boundary": {
+      "added": "2026-10-09"
     },
     "ze_bh3rd_babel_z": {
       "added": "2026-09-23",
@@ -172,11 +397,17 @@
     "ze_bioluminescent": {
       "added": "2026-09-23"
     },
+    "ze_bioshock_v6_cs2": {
+      "added": "2026-10-09"
+    },
     "ze_bisounours_party": {
       "added": "2026-09-23"
     },
     "ze_black_lion_p": {
       "added": "2026-09-23"
+    },
+    "ze_black_souls2": {
+      "added": "2026-10-09"
     },
     "ze_blackmesa_escape_p": {
       "added": "2026-09-23"
@@ -184,12 +415,18 @@
     "ze_blackmesa_remix_cs2": {
       "added": "2026-09-23"
     },
+    "ze_block_escape_v1": {
+      "added": "2026-10-09"
+    },
     "ze_blood_castle": {
       "added": "2026-09-23"
     },
     "ze_blue_magic_castle": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
+    },
+    "ze_bluearchive_abydos_b1": {
+      "added": "2026-10-09"
     },
     "ze_boacceho_p": {
       "added": "2026-09-23"
@@ -207,11 +444,26 @@
     "ze_boatescape999": {
       "added": "2026-09-23"
     },
+    "ze_boatescape_arte_v2_1": {
+      "added": "2026-10-09"
+    },
     "ze_boatescape_ultimate": {
       "added": "2026-09-23"
     },
+    "ze_boralus": {
+      "added": "2026-10-09"
+    },
+    "ze_box_defend_v1_4": {
+      "added": "2026-10-09"
+    },
+    "ze_bp-infested-prison_p": {
+      "added": "2026-10-09"
+    },
     "ze_breakable_p": {
       "added": "2026-09-23"
+    },
+    "ze_breakdream_v1": {
+      "added": "2026-10-09"
     },
     "ze_bunny_story": {
       "added": "2026-09-23"
@@ -230,14 +482,41 @@
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_cat_girl_hentai": {
+      "added": "2026-10-09"
+    },
     "ze_celestial_ops": {
       "added": "2026-09-23"
+    },
+    "ze_cemetery_escape": {
+      "added": "2026-10-09"
+    },
+    "ze_cfguilai_v1_0": {
+      "added": "2026-10-09"
     },
     "ze_challenge_run": {
       "added": "2026-09-23"
     },
+    "ze_changed": {
+      "added": "2026-10-09"
+    },
+    "ze_changing_room": {
+      "added": "2026-10-09"
+    },
+    "ze_chenbai_rideon": {
+      "added": "2026-10-09"
+    },
+    "ze_chicago_bean_gassy_fart_life": {
+      "added": "2026-10-09"
+    },
+    "ze_chicken_kingdom": {
+      "added": "2026-10-09"
+    },
     "ze_chicken_lords_tower_p": {
       "added": "2026-09-23"
+    },
+    "ze_chicken_nugget_v1_9": {
+      "added": "2026-10-09"
     },
     "ze_chip_n_dale": {
       "added": "2026-09-23"
@@ -251,17 +530,38 @@
     "ze_christmas_p": {
       "added": "2026-09-23"
     },
+    "ze_chroma": {
+      "added": "2026-10-09"
+    },
+    "ze_chronicle_a": {
+      "added": "2026-10-09"
+    },
     "ze_chrono_trigger": {
       "added": "2026-09-23"
     },
+    "ze_chronoplague_v12": {
+      "added": "2026-10-09"
+    },
     "ze_chronus_p": {
       "added": "2026-09-23"
+    },
+    "ze_circle": {
+      "added": "2026-10-09"
     },
     "ze_clawfactory": {
       "added": "2026-09-23"
     },
     "ze_clockwork": {
       "added": "2026-09-23"
+    },
+    "ze_coasstalcity_xyy": {
+      "added": "2026-10-09"
+    },
+    "ze_coastalcity_xyy": {
+      "added": "2026-10-09"
+    },
+    "ze_color_levels": {
+      "added": "2026-10-09"
     },
     "ze_colorful": {
       "added": "2026-09-23"
@@ -270,14 +570,35 @@
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_colors_fight_v1": {
+      "added": "2026-10-09"
+    },
     "ze_colors_p": {
       "added": "2026-09-23"
+    },
+    "ze_compound_escape": {
+      "added": "2026-10-09"
+    },
+    "ze_concrete_journey": {
+      "added": "2026-10-09"
     },
     "ze_conflict": {
       "added": "2026-09-23"
     },
+    "ze_contradiction_spiral": {
+      "added": "2026-10-09"
+    },
+    "ze_cookie": {
+      "added": "2026-10-09"
+    },
     "ze_coolcoolsnowman_n64": {
       "added": "2026-09-23"
+    },
+    "ze_country_balls_escape": {
+      "added": "2026-10-09"
+    },
+    "ze_covid_1984_p": {
+      "added": "2026-10-09"
     },
     "ze_crashbandicoot_p": {
       "added": "2026-09-23"
@@ -285,9 +606,15 @@
     "ze_crazy_christmas_p": {
       "added": "2026-09-23"
     },
+    "ze_crazy_escape_p": {
+      "added": "2026-10-09"
+    },
     "ze_crimson_azure_nexus": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
+    },
+    "ze_croc2_adventure_time": {
+      "added": "2026-10-09"
     },
     "ze_croc2_sailor_village": {
       "added": "2026-09-23"
@@ -297,6 +624,9 @@
     },
     "ze_cube_defense": {
       "added": "2026-09-23"
+    },
+    "ze_cubic": {
+      "added": "2026-10-09"
     },
     "ze_cursed_bear_tales": {
       "added": "2026-09-23",
@@ -314,6 +644,9 @@
     "ze_dangerous_waters_p": {
       "added": "2026-09-23"
     },
+    "ze_dark_cave_remake_m": {
+      "added": "2026-10-09"
+    },
     "ze_dark_sanctuary": {
       "added": "2026-09-23"
     },
@@ -323,8 +656,14 @@
     "ze_darkest_hour": {
       "added": "2026-09-23"
     },
+    "ze_date_a_live": {
+      "added": "2026-10-09"
+    },
     "ze_deadcore_r": {
       "added": "2026-09-23"
+    },
+    "ze_deadless_pyramid_p": {
+      "added": "2026-10-09"
     },
     "ze_deadly_archive": {
       "added": "2026-09-23"
@@ -339,11 +678,26 @@
     "ze_death_star_escape_p": {
       "added": "2026-09-23"
     },
+    "ze_deathinvain_palace": {
+      "added": "2026-10-09"
+    },
+    "ze_decayed_dreams": {
+      "added": "2026-10-09"
+    },
+    "ze_decayed_dreams2": {
+      "added": "2026-10-09"
+    },
+    "ze_deep_dark_fantasy_v1": {
+      "added": "2026-10-09"
+    },
     "ze_deepice_p": {
       "added": "2026-09-23"
     },
     "ze_defense3002_p": {
       "added": "2026-09-23"
+    },
+    "ze_demon_slayer": {
+      "added": "2026-10-09"
     },
     "ze_depths": {
       "added": "2026-09-23"
@@ -351,9 +705,15 @@
     "ze_descent_into_cerberon_p": {
       "added": "2026-09-23"
     },
+    "ze_desert_tour_cs2": {
+      "added": "2026-10-09"
+    },
     "ze_desperate_soul": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
+    },
+    "ze_destruction_of_exorath": {
+      "added": "2026-10-09"
     },
     "ze_diablo": {
       "added": "2026-09-23"
@@ -378,12 +738,18 @@
       "added": "2026-09-23",
       "updated": "2026-09-24"
     },
+    "ze_dnd_hydra_z": {
+      "added": "2026-10-09"
+    },
     "ze_doom": {
       "added": "2026-09-23",
       "updated": "2026-10-09"
     },
     "ze_doomglaven": {
       "added": "2026-09-23"
+    },
+    "ze_dormitory_uestc_cs2": {
+      "added": "2026-10-09"
     },
     "ze_dorororo": {
       "added": "2026-09-23",
@@ -412,9 +778,15 @@
       "added": "2026-09-23",
       "updated": "2026-09-24"
     },
+    "ze_eizures_b1_1": {
+      "added": "2026-10-09"
+    },
     "ze_eizures_b2": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
+    },
+    "ze_elevator_breakout": {
+      "added": "2026-10-09"
     },
     "ze_elevator_escape_p": {
       "added": "2026-09-23"
@@ -422,8 +794,14 @@
     "ze_elmas": {
       "added": "2026-09-23"
     },
+    "ze_embertwin_v1": {
+      "added": "2026-10-09"
+    },
     "ze_emerald": {
       "added": "2026-09-23"
+    },
+    "ze_emiya": {
+      "added": "2026-10-09"
     },
     "ze_empirecity_p": {
       "added": "2026-09-23"
@@ -431,11 +809,26 @@
     "ze_endless_dream": {
       "added": "2026-09-23"
     },
+    "ze_endor": {
+      "added": "2026-10-09"
+    },
+    "ze_enick_p": {
+      "added": "2026-10-09"
+    },
+    "ze_epstein_island": {
+      "added": "2026-10-09"
+    },
     "ze_error": {
       "added": "2026-09-23"
     },
+    "ze_escape2024": {
+      "added": "2026-10-09"
+    },
     "ze_escape_the_eye_p": {
       "added": "2026-09-23"
+    },
+    "ze_escape_together": {
+      "added": "2026-10-09"
     },
     "ze_escapetheworld": {
       "added": "2026-09-23"
@@ -443,11 +836,20 @@
     "ze_eternal_grove": {
       "added": "2026-09-23"
     },
+    "ze_eternal_journey": {
+      "added": "2026-10-09"
+    },
     "ze_evernight": {
       "added": "2026-09-23"
     },
+    "ze_evil_mansion_cs2_l": {
+      "added": "2026-10-09"
+    },
     "ze_evil_mansion_p": {
       "added": "2026-09-23"
+    },
+    "ze_evolutionPack_test": {
+      "added": "2026-10-09"
     },
     "ze_evolution_by_selection": {
       "added": "2026-09-23"
@@ -456,11 +858,20 @@
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_exit8": {
+      "added": "2026-10-09"
+    },
     "ze_eye_factory_escape": {
       "added": "2026-09-23"
     },
+    "ze_eye_for_an_eye_v22": {
+      "added": "2026-10-09"
+    },
     "ze_ez_run": {
       "added": "2026-09-23"
+    },
+    "ze_fabulous": {
+      "added": "2026-10-09"
     },
     "ze_fall_guys": {
       "added": "2026-09-23"
@@ -526,6 +937,9 @@
     "ze_ffxiv_reisen_temple": {
       "added": "2026-09-23"
     },
+    "ze_ffxiv_the_orbonne_monastery_demo": {
+      "added": "2026-10-09"
+    },
     "ze_ffxiv_wanderers_palace": {
       "added": "2026-09-23"
     },
@@ -549,6 +963,9 @@
     "ze_firstone_x": {
       "added": "2026-09-23"
     },
+    "ze_flat_surviva": {
+      "added": "2026-10-09"
+    },
     "ze_flex_p": {
       "added": "2026-09-23"
     },
@@ -564,6 +981,12 @@
     },
     "ze_flying_world": {
       "added": "2026-09-23"
+    },
+    "ze_fond_dream": {
+      "added": "2026-10-09"
+    },
+    "ze_forest_remake_m": {
+      "added": "2026-10-09"
     },
     "ze_forestbunkers_p": {
       "added": "2026-09-23"
@@ -581,6 +1004,9 @@
     "ze_forsaken_temple": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
+    },
+    "ze_fragment_ops_rewind": {
+      "added": "2026-10-09"
     },
     "ze_frostdrake_tower_p": {
       "added": "2026-09-23"
@@ -600,14 +1026,32 @@
     "ze_gameshow": {
       "added": "2026-09-23"
     },
+    "ze_gary_mood": {
+      "added": "2026-10-09"
+    },
+    "ze_gear_palace": {
+      "added": "2026-10-09"
+    },
     "ze_geometric": {
       "added": "2026-09-23"
+    },
+    "ze_gettingoverit": {
+      "added": "2026-10-09"
     },
     "ze_gods_wrath_p": {
       "added": "2026-09-23"
     },
+    "ze_goldeneye_64": {
+      "added": "2026-10-09"
+    },
     "ze_golubenkaya_meow": {
       "added": "2026-09-23"
+    },
+    "ze_goobers_basement": {
+      "added": "2026-10-09"
+    },
+    "ze_grace": {
+      "added": "2026-10-09"
     },
     "ze_grau_p": {
       "added": "2026-09-23"
@@ -622,11 +1066,41 @@
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_grm_or_jail": {
+      "added": "2026-10-09"
+    },
+    "ze_gta4_liberto_city_remix_m": {
+      "added": "2026-10-09"
+    },
+    "ze_gta_police_station_garage_m": {
+      "added": "2026-10-09"
+    },
+    "ze_gugugaga_escape": {
+      "added": "2026-10-09"
+    },
+    "ze_gunma": {
+      "added": "2026-10-09"
+    },
+    "ze_guye_room": {
+      "added": "2026-10-09"
+    },
+    "ze_halloween_castle": {
+      "added": "2026-10-09"
+    },
     "ze_halloween_house_p": {
       "added": "2026-09-23"
     },
+    "ze_halo3_thestorm": {
+      "added": "2026-10-09"
+    },
     "ze_hammer_bunker_part1": {
       "added": "2026-09-23"
+    },
+    "ze_happiness_factory": {
+      "added": "2026-10-09"
+    },
+    "ze_happiness_factory_v2": {
+      "added": "2026-10-09"
     },
     "ze_haunted_lab_escape_p": {
       "added": "2026-09-23"
@@ -634,11 +1108,62 @@
     "ze_hazard_escape_p": {
       "added": "2026-09-23"
     },
+    "ze_hell_escape_p": {
+      "added": "2026-10-09"
+    },
     "ze_hidden_fortress_p": {
       "added": "2026-09-23"
     },
+    "ze_hidden_temple": {
+      "added": "2026-10-09"
+    },
+    "ze_highest_to_lowest": {
+      "added": "2026-10-09"
+    },
+    "ze_hive_complex_xyy": {
+      "added": "2026-10-09"
+    },
+    "ze_hlc_cave_p": {
+      "added": "2026-10-09"
+    },
+    "ze_hlc_citadel_p": {
+      "added": "2026-10-09"
+    },
+    "ze_hlc_citadel_v1": {
+      "added": "2026-10-09"
+    },
+    "ze_hlc_city17_p": {
+      "added": "2026-10-09"
+    },
+    "ze_hlc_mini_mesa_p": {
+      "added": "2026-10-09"
+    },
+    "ze_hlc_street_p": {
+      "added": "2026-10-09"
+    },
+    "ze_hlc_the_end_p": {
+      "added": "2026-10-09"
+    },
+    "ze_hlc_the_forest_p": {
+      "added": "2026-10-09"
+    },
+    "ze_hlc_train_p": {
+      "added": "2026-10-09"
+    },
+    "ze_hold2_boring_z": {
+      "added": "2026-10-09"
+    },
     "ze_hold_em_p": {
       "added": "2026-09-23"
+    },
+    "ze_honkai_impact_3rd_cyberpunk_city": {
+      "added": "2026-10-09"
+    },
+    "ze_honkai_impact_changkongshi": {
+      "added": "2026-10-09"
+    },
+    "ze_honkai_impact_tqs": {
+      "added": "2026-10-09"
     },
     "ze_hr_dead_center": {
       "added": "2026-09-23"
@@ -646,11 +1171,17 @@
     "ze_hsc": {
       "added": "2026-09-23"
     },
+    "ze_huoxing_v1": {
+      "added": "2026-10-09"
+    },
     "ze_hydroponic_garden": {
       "added": "2026-09-23"
     },
     "ze_hypernova_p": {
       "added": "2026-09-23"
+    },
+    "ze_hypnotize_me_baby_p": {
+      "added": "2026-10-09"
     },
     "ze_i_wanna_play_ze": {
       "added": "2026-09-23"
@@ -666,11 +1197,17 @@
     "ze_ice_hold_p": {
       "added": "2026-09-23"
     },
+    "ze_icebreaker": {
+      "added": "2026-10-09"
+    },
     "ze_icecap_escape_ia_super": {
       "added": "2026-09-23"
     },
     "ze_icecap_escape_p": {
       "added": "2026-09-23"
+    },
+    "ze_icecap_solo": {
+      "added": "2026-10-09"
     },
     "ze_iceskate": {
       "added": "2026-09-23",
@@ -679,11 +1216,17 @@
     "ze_iceworld_athletic_cs2": {
       "added": "2026-09-23"
     },
+    "ze_idk_what_to_call_this": {
+      "added": "2026-10-09"
+    },
     "ze_illusory_world": {
       "added": "2026-09-23"
     },
     "ze_immortal_flame": {
       "added": "2026-09-23"
+    },
+    "ze_imperial_sanctum": {
+      "added": "2026-10-09"
     },
     "ze_imperium": {
       "added": "2026-09-23"
@@ -703,6 +1246,12 @@
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_infected_sewers_v4": {
+      "added": "2026-10-09"
+    },
+    "ze_infested-industry_p": {
+      "added": "2026-10-09"
+    },
     "ze_infiltration_final_p": {
       "added": "2026-09-23"
     },
@@ -715,9 +1264,15 @@
     "ze_isla_nublar_p": {
       "added": "2026-09-23"
     },
+    "ze_istanbul_escape_pro": {
+      "added": "2026-10-09"
+    },
     "ze_italy_town_z": {
       "added": "2026-09-23",
       "updated": "2026-10-09"
+    },
+    "ze_japans_3rd_bombing": {
+      "added": "2026-10-09"
     },
     "ze_jiangnan_town_v3_1": {
       "added": "2026-09-23",
@@ -725,6 +1280,12 @@
     },
     "ze_journey_p": {
       "added": "2026-09-23"
+    },
+    "ze_jp_trip_k1ne2": {
+      "added": "2026-10-09"
+    },
+    "ze_jurassic_life": {
+      "added": "2026-10-09"
     },
     "ze_jurassic_park_story_p": {
       "added": "2026-09-23",
@@ -748,18 +1309,36 @@
     "ze_kebab_immigrant": {
       "added": "2026-09-23"
     },
+    "ze_kenshin_v1": {
+      "added": "2026-10-09"
+    },
     "ze_kitchen": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_knife_stray_p": {
+      "added": "2026-10-09"
+    },
     "ze_kororinpa": {
       "added": "2026-09-23"
+    },
+    "ze_kraznov_poopata_p": {
+      "added": "2026-10-09"
+    },
+    "ze_kuwei_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_kz": {
+      "added": "2026-10-09"
     },
     "ze_l0v0l_p": {
       "added": "2026-09-23"
     },
     "ze_lab_cs2_l": {
       "added": "2026-09-23"
+    },
+    "ze_labor_trading_factory": {
+      "added": "2026-10-09"
     },
     "ze_laser_competition": {
       "added": "2026-09-23",
@@ -772,11 +1351,23 @@
     "ze_last_man_standing": {
       "added": "2026-09-23"
     },
+    "ze_lazers_p": {
+      "added": "2026-10-09"
+    },
+    "ze_legend_of_astrum_z": {
+      "added": "2026-10-09"
+    },
     "ze_legends_of_dawn": {
       "added": "2026-09-23"
     },
     "ze_lego": {
       "added": "2026-09-23"
+    },
+    "ze_legoland_crackheads": {
+      "added": "2026-10-09"
+    },
+    "ze_lemonade": {
+      "added": "2026-10-09"
     },
     "ze_lemonysnickets_p": {
       "added": "2026-09-23"
@@ -790,18 +1381,39 @@
     "ze_light_911": {
       "added": "2026-09-23"
     },
+    "ze_light_shadow_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_lightnight_v1": {
+      "added": "2026-10-09"
+    },
     "ze_lila_panic_escape_p": {
       "added": "2026-09-23"
+    },
+    "ze_literally_source2zecommunity_map": {
+      "added": "2026-10-09"
+    },
+    "ze_little_trip": {
+      "added": "2026-10-09"
     },
     "ze_loom": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_lootus_v1_2": {
+      "added": "2026-10-09"
+    },
     "ze_lorem_ipsum_p": {
       "added": "2026-09-23"
     },
+    "ze_lost_ruins": {
+      "added": "2026-10-09"
+    },
     "ze_lostclue_cs2_l": {
       "added": "2026-09-23"
+    },
+    "ze_lotr_dol_guldur": {
+      "added": "2026-10-09"
     },
     "ze_lotr_helms_deep_p": {
       "added": "2026-09-23"
@@ -831,8 +1443,26 @@
     "ze_luigismansion_p": {
       "added": "2026-09-23"
     },
+    "ze_luminous_escape": {
+      "added": "2026-10-09"
+    },
+    "ze_luna_escape": {
+      "added": "2026-10-09"
+    },
+    "ze_m0w0m_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_m0w0m_p": {
+      "added": "2026-10-09"
+    },
+    "ze_m0w0m_ws": {
+      "added": "2026-10-09"
+    },
     "ze_mabinogi_f4_1_cs2": {
       "added": "2026-09-23"
+    },
+    "ze_mad_max_xyz": {
+      "added": "2026-10-09"
     },
     "ze_madara_temple": {
       "added": "2026-09-23"
@@ -846,11 +1476,17 @@
     "ze_magic_carpet_p": {
       "added": "2026-09-23"
     },
+    "ze_magus_v2_4": {
+      "added": "2026-10-09"
+    },
     "ze_maixia_v1": {
       "added": "2026-09-23"
     },
     "ze_maontain_escape": {
       "added": "2026-09-23"
+    },
+    "ze_map_tast_v1": {
+      "added": "2026-10-09"
     },
     "ze_mario_tower_p": {
       "added": "2026-09-23",
@@ -862,16 +1498,28 @@
     "ze_mars_escape_xmas": {
       "added": "2026-09-23"
     },
+    "ze_maze": {
+      "added": "2026-10-09"
+    },
     "ze_maze_runner": {
       "added": "2026-09-23"
+    },
+    "ze_megastructure": {
+      "added": "2026-10-09"
     },
     "ze_melong_dow_learjet_p": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_menu": {
+      "added": "2026-10-09"
+    },
     "ze_mgden_z": {
       "added": "2026-09-23",
       "updated": "2026-10-09"
+    },
+    "ze_military_escape_p": {
+      "added": "2026-10-09"
     },
     "ze_mindtree": {
       "added": "2026-09-23"
@@ -890,8 +1538,14 @@
     "ze_minecraft_escape": {
       "added": "2026-09-23"
     },
+    "ze_minecraft_genetic_crisis_v2": {
+      "added": "2026-10-09"
+    },
     "ze_minecraft_hortus_de_escapismo": {
       "added": "2026-09-23"
+    },
+    "ze_minecraft_journey_v1": {
+      "added": "2026-10-09"
     },
     "ze_minecraft_lucky_blocks": {
       "added": "2026-09-23"
@@ -911,11 +1565,23 @@
       "added": "2026-09-23",
       "updated": "2026-09-24"
     },
+    "ze_minecraft_sky_islands": {
+      "added": "2026-10-09"
+    },
+    "ze_minecraft_superflat_v1": {
+      "added": "2026-10-09"
+    },
     "ze_minecraft_universe": {
       "added": "2026-09-23"
     },
+    "ze_minecratix": {
+      "added": "2026-10-09"
+    },
     "ze_minimal": {
       "added": "2026-09-23"
+    },
+    "ze_mirrors_edge_reborn_p": {
+      "added": "2026-10-09"
     },
     "ze_misaka": {
       "added": "2026-09-23"
@@ -937,8 +1603,26 @@
     "ze_mist_p": {
       "added": "2026-09-23"
     },
+    "ze_misty_lake": {
+      "added": "2026-10-09"
+    },
+    "ze_mix": {
+      "added": "2026-10-09"
+    },
+    "ze_mkzk_scarab_v4": {
+      "added": "2026-10-09"
+    },
     "ze_mkzk_scarab_v4_remake": {
       "added": "2026-09-23"
+    },
+    "ze_mlgsurf": {
+      "added": "2026-10-09"
+    },
+    "ze_mls_ultimate": {
+      "added": "2026-10-09"
+    },
+    "ze_mo3_time_capsule": {
+      "added": "2026-10-09"
     },
     "ze_mochi_island": {
       "added": "2026-09-23",
@@ -950,11 +1634,38 @@
     "ze_moltentemple": {
       "added": "2026-09-23"
     },
+    "ze_moonshadow_ex": {
+      "added": "2026-10-09"
+    },
+    "ze_morell_april_vacation_p": {
+      "added": "2026-10-09"
+    },
+    "ze_mota": {
+      "added": "2026-10-09"
+    },
+    "ze_mount_seela": {
+      "added": "2026-10-09"
+    },
+    "ze_mountain_escape_p": {
+      "added": "2026-10-09"
+    },
     "ze_mountain_escape_snow": {
       "added": "2026-09-23"
     },
     "ze_mountain_ultimate": {
       "added": "2026-09-23"
+    },
+    "ze_my_first_escape": {
+      "added": "2026-10-09"
+    },
+    "ze_my_first_ze_map_p": {
+      "added": "2026-10-09"
+    },
+    "ze_nalbina": {
+      "added": "2026-10-09"
+    },
+    "ze_name_defense": {
+      "added": "2026-10-09"
     },
     "ze_namviet_p": {
       "added": "2026-09-23"
@@ -963,17 +1674,56 @@
       "added": "2026-09-23",
       "updated": "2026-10-09"
     },
+    "ze_necromanteion_p": {
+      "added": "2026-10-09"
+    },
+    "ze_negative_legacy_a2": {
+      "added": "2026-10-09"
+    },
+    "ze_neko_canyon_p": {
+      "added": "2026-10-09"
+    },
     "ze_neochrome": {
       "added": "2026-09-23"
+    },
+    "ze_neovia": {
+      "added": "2026-10-09"
     },
     "ze_neron": {
       "added": "2026-09-23"
     },
+    "ze_new_forest_cs2": {
+      "added": "2026-10-09"
+    },
     "ze_new_italy_cs2": {
       "added": "2026-09-23"
     },
+    "ze_new_silent_mountain_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_newyear_v18": {
+      "added": "2026-10-09"
+    },
     "ze_newyork_escape_p": {
       "added": "2026-09-23"
+    },
+    "ze_nibui": {
+      "added": "2026-10-09"
+    },
+    "ze_nibui_a3_1a_f1": {
+      "added": "2026-10-09"
+    },
+    "ze_night_club": {
+      "added": "2026-10-09"
+    },
+    "ze_night_run": {
+      "added": "2026-10-09"
+    },
+    "ze_nightmare_dimension": {
+      "added": "2026-10-09"
+    },
+    "ze_nmzj_cs2": {
+      "added": "2026-10-09"
     },
     "ze_no_name_v2_3": {
       "added": "2026-09-23",
@@ -992,8 +1742,23 @@
     "ze_notredame_p": {
       "added": "2026-09-23"
     },
+    "ze_npst_v8_gmod": {
+      "added": "2026-10-09"
+    },
+    "ze_nuclear_site_survie_by_gm": {
+      "added": "2026-10-09"
+    },
     "ze_nuke_p": {
       "added": "2026-09-23"
+    },
+    "ze_ny_marathon_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_ny_marathon_ultimate": {
+      "added": "2026-10-09"
+    },
+    "ze_obf_cats_run_v1_9": {
+      "added": "2026-10-09"
     },
     "ze_obf_filth_v1": {
       "added": "2026-09-23",
@@ -1031,6 +1796,9 @@
       "added": "2026-09-23",
       "updated": "2026-09-30"
     },
+    "ze_obg_ultimate": {
+      "added": "2026-10-09"
+    },
     "ze_obj_abyss": {
       "added": "2026-09-23",
       "updated": "2026-09-26"
@@ -1038,6 +1806,9 @@
     "ze_obj_abyss_v2": {
       "added": "2026-09-23",
       "updated": "2026-09-30"
+    },
+    "ze_obj_abyss_v2_test": {
+      "added": "2026-10-09"
     },
     "ze_obj_annihilate_dd_v1": {
       "added": "2026-09-23",
@@ -1050,13 +1821,34 @@
       "added": "2026-09-23",
       "updated": "2026-10-01"
     },
+    "ze_obj_eclipsis": {
+      "added": "2026-10-09"
+    },
     "ze_obj_ember": {
       "added": "2026-09-23",
       "updated": "2026-09-30"
     },
+    "ze_obj_encounter": {
+      "added": "2026-10-09"
+    },
     "ze_obj_escalation_v1": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
+    },
+    "ze_obj_federation": {
+      "added": "2026-10-09"
+    },
+    "ze_obj_goosestep_v1": {
+      "added": "2026-10-09"
+    },
+    "ze_obj_horizons": {
+      "added": "2026-10-09"
+    },
+    "ze_obj_kokomiyako": {
+      "added": "2026-10-09"
+    },
+    "ze_obj_nirvana_xyy": {
+      "added": "2026-10-09"
     },
     "ze_obj_ouroboros_aurora": {
       "added": "2026-09-23",
@@ -1070,6 +1862,9 @@
       "added": "2026-09-23",
       "updated": "2026-09-30"
     },
+    "ze_obj_prison": {
+      "added": "2026-10-09"
+    },
     "ze_obj_rampage_v1_2": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
@@ -1082,6 +1877,9 @@
       "added": "2026-09-23",
       "updated": "2026-09-30"
     },
+    "ze_obj_redheart": {
+      "added": "2026-10-09"
+    },
     "ze_obj_rove_v1": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
@@ -1089,6 +1887,12 @@
     "ze_obj_void_v1": {
       "added": "2026-09-23",
       "updated": "2026-09-30"
+    },
+    "ze_oblivion_castle": {
+      "added": "2026-10-09"
+    },
+    "ze_obscura_tower": {
+      "added": "2026-10-09"
     },
     "ze_ocarina_of_time": {
       "added": "2026-09-23"
@@ -1108,18 +1912,51 @@
     "ze_omen_cs2": {
       "added": "2026-09-23"
     },
+    "ze_omochi": {
+      "added": "2026-10-09"
+    },
+    "ze_omochix_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_onahole_p": {
+      "added": "2026-10-09"
+    },
+    "ze_one_dream_machine": {
+      "added": "2026-10-09"
+    },
     "ze_oneiros_p": {
       "added": "2026-09-23"
     },
     "ze_only_up": {
       "added": "2026-09-23"
     },
+    "ze_oot_shadowtemple": {
+      "added": "2026-10-09"
+    },
+    "ze_opti_variety_missions_cs2_l": {
+      "added": "2026-10-09"
+    },
+    "ze_opti_variety_missions_p": {
+      "added": "2026-10-09"
+    },
     "ze_otakuroom_pt": {
       "added": "2026-09-23"
+    },
+    "ze_out_into_the_open": {
+      "added": "2026-10-09"
+    },
+    "ze_out_of_the_cinema": {
+      "added": "2026-10-09"
+    },
+    "ze_outerwilds": {
+      "added": "2026-10-09"
     },
     "ze_outlast": {
       "added": "2026-09-23",
       "updated": "2026-10-09"
+    },
+    "ze_outpost_escape_p": {
+      "added": "2026-10-09"
     },
     "ze_overkill_p": {
       "added": "2026-09-23",
@@ -1142,14 +1979,32 @@
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_panicastic": {
+      "added": "2026-10-09"
+    },
     "ze_paradise_t": {
       "added": "2026-09-23"
+    },
+    "ze_paranoia_cs2": {
+      "added": "2026-10-09"
     },
     "ze_parkers_pit_p": {
       "added": "2026-09-23"
     },
+    "ze_parking_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_parking_p": {
+      "added": "2026-10-09"
+    },
     "ze_parkour": {
       "added": "2026-09-23"
+    },
+    "ze_pausechamp_escape": {
+      "added": "2026-10-09"
+    },
+    "ze_paycheck_p": {
+      "added": "2026-10-09"
     },
     "ze_payload_swarm": {
       "added": "2026-09-23"
@@ -1163,6 +2018,12 @@
     },
     "ze_peach_insanity_n64": {
       "added": "2026-09-23"
+    },
+    "ze_penguin_of_doom": {
+      "added": "2026-10-09"
+    },
+    "ze_pepsi_tower": {
+      "added": "2026-10-09"
     },
     "ze_percocet_p": {
       "added": "2026-09-23"
@@ -1180,11 +2041,20 @@
     "ze_platformer_p": {
       "added": "2026-09-23"
     },
+    "ze_pm_biome1": {
+      "added": "2026-10-09"
+    },
     "ze_pogworld": {
       "added": "2026-09-23"
     },
+    "ze_pokemon_johto": {
+      "added": "2026-10-09"
+    },
     "ze_pokemon_kanto_v1": {
       "added": "2026-09-23"
+    },
+    "ze_polatrio_xyy": {
+      "added": "2026-10-09"
     },
     "ze_pool_hollow": {
       "added": "2026-09-23"
@@ -1217,8 +2087,14 @@
     "ze_pretender": {
       "added": "2026-09-23"
     },
+    "ze_prey_bedroom": {
+      "added": "2026-10-09"
+    },
     "ze_prisonbreak_rescue": {
       "added": "2026-09-23"
+    },
+    "ze_project_alcaria": {
+      "added": "2026-10-09"
     },
     "ze_project_codex_z": {
       "added": "2026-09-23",
@@ -1227,12 +2103,30 @@
     "ze_prototype": {
       "added": "2026-09-23"
     },
+    "ze_psycho_pass": {
+      "added": "2026-10-09"
+    },
     "ze_purification_a1": {
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_puritytest": {
+      "added": "2026-10-09"
+    },
     "ze_puta_p": {
       "added": "2026-09-23"
+    },
+    "ze_qmffpdlemzlvj": {
+      "added": "2026-10-09"
+    },
+    "ze_quiver_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_quiver_p": {
+      "added": "2026-10-09"
+    },
+    "ze_r00ms": {
+      "added": "2026-10-09"
     },
     "ze_r_w_b_ulti": {
       "added": "2026-09-23"
@@ -1243,8 +2137,29 @@
     "ze_raccoon_facility_p": {
       "added": "2026-09-23"
     },
+    "ze_radio_building": {
+      "added": "2026-10-09"
+    },
+    "ze_radio_building_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_raid_ffxiv_eorzea": {
+      "added": "2026-10-09"
+    },
+    "ze_rainbow_factory": {
+      "added": "2026-10-09"
+    },
+    "ze_rainbow_world_p": {
+      "added": "2026-10-09"
+    },
     "ze_raintime2_stormwindkeep_v3": {
       "added": "2026-09-23"
+    },
+    "ze_ramp_xyyy": {
+      "added": "2026-10-09"
+    },
+    "ze_random_escape_p": {
+      "added": "2026-10-09"
     },
     "ze_random_p": {
       "added": "2026-09-23"
@@ -1256,8 +2171,14 @@
     "ze_rats_escape": {
       "added": "2026-09-23"
     },
+    "ze_ravenholm_xyy": {
+      "added": "2026-10-09"
+    },
     "ze_rawnscape_p": {
       "added": "2026-09-23"
+    },
+    "ze_re_abydos": {
+      "added": "2026-10-09"
     },
     "ze_re_creation": {
       "added": "2026-09-23"
@@ -1265,12 +2186,24 @@
     "ze_realm": {
       "added": "2026-09-23"
     },
+    "ze_realm_of_shadows": {
+      "added": "2026-10-09"
+    },
+    "ze_red_planet": {
+      "added": "2026-10-09"
+    },
     "ze_requiem_test": {
       "added": "2026-09-23",
       "updated": "2026-10-06"
     },
+    "ze_residence_of_cloud": {
+      "added": "2026-10-09"
+    },
     "ze_resident_evil_3": {
       "added": "2026-09-23"
+    },
+    "ze_rien_z": {
+      "added": "2026-10-09"
     },
     "ze_rizomata_p": {
       "added": "2026-09-23"
@@ -1280,6 +2213,9 @@
     },
     "ze_rooftop_madness_p": {
       "added": "2026-09-23"
+    },
+    "ze_rooftop_reborn_v3_2_xyy": {
+      "added": "2026-10-09"
     },
     "ze_rooftop_rogue_ws": {
       "added": "2026-09-23"
@@ -1293,11 +2229,17 @@
     "ze_rooftop_runaway3_xyy": {
       "added": "2026-09-23"
     },
+    "ze_roscente_xyy": {
+      "added": "2026-10-09"
+    },
     "ze_rt0_genesis_cs2": {
       "added": "2026-09-23"
     },
     "ze_rt1_torontoisland_cs2": {
       "added": "2026-09-23"
+    },
+    "ze_rt4_hessel_valley": {
+      "added": "2026-10-09"
     },
     "ze_rt4_hessel_valley_fys": {
       "added": "2026-09-23",
@@ -1306,8 +2248,14 @@
     "ze_rtcw_ominous_rumors_p": {
       "added": "2026-09-23"
     },
+    "ze_rtv_one_more_p": {
+      "added": "2026-10-09"
+    },
     "ze_rtx_code0_cs2": {
       "added": "2026-09-23"
+    },
+    "ze_run_jiayouzhan_v1": {
+      "added": "2026-10-09"
     },
     "ze_runaway_roofside1": {
       "added": "2026-09-23"
@@ -1328,6 +2276,12 @@
     "ze_s_s_a_df": {
       "added": "2026-09-23"
     },
+    "ze_sa2_pumpkin_hill": {
+      "added": "2026-10-09"
+    },
+    "ze_sad_banana_p": {
+      "added": "2026-10-09"
+    },
     "ze_sakuzyo": {
       "added": "2026-09-23"
     },
@@ -1342,8 +2296,14 @@
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_save_nato_bunker_rn": {
+      "added": "2026-10-09"
+    },
     "ze_saw_p": {
       "added": "2026-09-23"
+    },
+    "ze_sc_turtles": {
+      "added": "2026-10-09"
     },
     "ze_scourge_p": {
       "added": "2026-09-23"
@@ -1352,11 +2312,23 @@
       "added": "2026-09-23",
       "updated": "2026-10-09"
     },
+    "ze_screaming_bells": {
+      "added": "2026-10-09"
+    },
+    "ze_secret_garden": {
+      "added": "2026-10-09"
+    },
     "ze_sekiro": {
       "added": "2026-09-23"
     },
     "ze_sele": {
       "added": "2026-09-23"
+    },
+    "ze_sens": {
+      "added": "2026-10-09"
+    },
+    "ze_serenity": {
+      "added": "2026-10-09"
     },
     "ze_serpentis_temple": {
       "added": "2026-09-23"
@@ -1367,14 +2339,38 @@
     "ze_sewer": {
       "added": "2026-09-23"
     },
+    "ze_sewer_escape_p": {
+      "added": "2026-10-09"
+    },
+    "ze_sex_mod_hentai_beachescape_camper_p": {
+      "added": "2026-10-09"
+    },
+    "ze_shadow_corridor": {
+      "added": "2026-10-09"
+    },
+    "ze_shadow_moses": {
+      "added": "2026-10-09"
+    },
     "ze_shaun_of_the_dead": {
       "added": "2026-09-23"
     },
     "ze_shaurma_v3": {
       "added": "2026-09-23"
     },
+    "ze_shenghuaxinnianguangchang_v0_1": {
+      "added": "2026-10-09"
+    },
+    "ze_shenzhimudi_dawn_ysn1": {
+      "added": "2026-10-09"
+    },
+    "ze_shenzhimudi_initial_y": {
+      "added": "2026-10-09"
+    },
     "ze_showdown_p": {
       "added": "2026-09-23"
+    },
+    "ze_shrine_of_umos_xyy": {
+      "added": "2026-10-09"
     },
     "ze_shroomforest2_p": {
       "added": "2026-09-23"
@@ -1384,6 +2380,9 @@
     },
     "ze_shroomforest_p": {
       "added": "2026-09-23"
+    },
+    "ze_siberia_1990_p": {
+      "added": "2026-10-09"
     },
     "ze_silent_hill_2_illusion": {
       "added": "2026-09-23"
@@ -1407,11 +2406,32 @@
     "ze_silent_hill_rengurn": {
       "added": "2026-09-23"
     },
+    "ze_silenthill_pt": {
+      "added": "2026-10-09"
+    },
     "ze_simple_teamplay_p": {
       "added": "2026-09-23"
     },
     "ze_sisyphus": {
       "added": "2026-09-23"
+    },
+    "ze_skibidi_toilet_remake": {
+      "added": "2026-10-09"
+    },
+    "ze_skill_escape_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_skill_escape_xmas": {
+      "added": "2026-10-09"
+    },
+    "ze_skin_brawl_s1": {
+      "added": "2026-10-09"
+    },
+    "ze_skin_map_test": {
+      "added": "2026-10-09"
+    },
+    "ze_sky_bridge_a01_fix3": {
+      "added": "2026-10-09"
     },
     "ze_sky_fantasy_v1": {
       "added": "2026-09-23"
@@ -1423,6 +2443,9 @@
       "added": "2026-09-23",
       "updated": "2026-10-06"
     },
+    "ze_skyheart": {
+      "added": "2026-10-09"
+    },
     "ze_skyline": {
       "added": "2026-09-23"
     },
@@ -1430,12 +2453,27 @@
       "added": "2026-09-23",
       "updated": "2026-10-06"
     },
+    "ze_skzroom": {
+      "added": "2026-10-09"
+    },
     "ze_slender_escape_p": {
       "added": "2026-09-23",
       "updated": "2026-10-06"
     },
+    "ze_solidarity_paper_cs2_l": {
+      "added": "2026-10-09"
+    },
+    "ze_something_ordinary": {
+      "added": "2026-10-09"
+    },
+    "ze_sorrento_arknights_cs2_l": {
+      "added": "2026-10-09"
+    },
     "ze_sorrento_escape_2016_p": {
       "added": "2026-09-23"
+    },
+    "ze_sorrento_escape_p": {
+      "added": "2026-10-09"
     },
     "ze_space_flight_p": {
       "added": "2026-09-23"
@@ -1456,6 +2494,9 @@
     },
     "ze_stalkermonolith": {
       "added": "2026-09-23"
+    },
+    "ze_stardust_a03": {
+      "added": "2026-10-09"
     },
     "ze_stark_escape": {
       "added": "2026-09-23"
@@ -1480,9 +2521,30 @@
     "ze_studying_the_factory": {
       "added": "2026-09-23"
     },
+    "ze_suchirifu_xyy": {
+      "added": "2026-10-09"
+    },
+    "ze_sumai_facility_lite": {
+      "added": "2026-10-09"
+    },
+    "ze_summer_house": {
+      "added": "2026-10-09"
+    },
+    "ze_summer_warehouse": {
+      "added": "2026-10-09"
+    },
     "ze_sunkentemple": {
       "added": "2026-09-23",
       "updated": "2026-10-09"
+    },
+    "ze_sunset2_a2": {
+      "added": "2026-10-09"
+    },
+    "ze_sunset_b1": {
+      "added": "2026-10-09"
+    },
+    "ze_sunshine_legend": {
+      "added": "2026-10-09"
     },
     "ze_surf_auv": {
       "added": "2026-09-23"
@@ -1498,6 +2560,9 @@
     },
     "ze_surf_daybreak": {
       "added": "2026-09-23"
+    },
+    "ze_surf_deterioration_operation": {
+      "added": "2026-10-09"
     },
     "ze_surf_easy": {
       "added": "2026-09-23"
@@ -1529,6 +2594,12 @@
     "ze_surf_hp": {
       "added": "2026-09-23"
     },
+    "ze_surf_inferno": {
+      "added": "2026-10-09"
+    },
+    "ze_surf_nannoimi": {
+      "added": "2026-10-09"
+    },
     "ze_surf_okitsu_shonyudo": {
       "added": "2026-09-23"
     },
@@ -1537,6 +2608,12 @@
     },
     "ze_surf_outside": {
       "added": "2026-09-23"
+    },
+    "ze_surf_sahok": {
+      "added": "2026-10-09"
+    },
+    "ze_surf_sahok_p": {
+      "added": "2026-10-09"
     },
     "ze_surf_saltfish": {
       "added": "2026-09-23"
@@ -1559,11 +2636,29 @@
     "ze_survivors_mountain": {
       "added": "2026-09-23"
     },
+    "ze_syrup": {
+      "added": "2026-10-09"
+    },
+    "ze_system": {
+      "added": "2026-10-09"
+    },
     "ze_system_cs2_l": {
       "added": "2026-09-23"
     },
+    "ze_szly_v1": {
+      "added": "2026-10-09"
+    },
+    "ze_tear_of_tide": {
+      "added": "2026-10-09"
+    },
     "ze_temple_escape_p": {
       "added": "2026-09-23"
+    },
+    "ze_temple_of_phantom_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_temple_of_the_demon_god": {
+      "added": "2026-10-09"
     },
     "ze_temple_raider_p": {
       "added": "2026-09-23"
@@ -1574,6 +2669,9 @@
     },
     "ze_tensor_of_ice_v1_1": {
       "added": "2026-09-23"
+    },
+    "ze_terraced_escape": {
+      "added": "2026-10-09"
     },
     "ze_tesv_skyrim_i": {
       "added": "2026-09-27",
@@ -1589,12 +2687,24 @@
     "ze_the_curse_of_blackwater": {
       "added": "2026-09-23"
     },
+    "ze_the_last_chapter": {
+      "added": "2026-10-09"
+    },
+    "ze_the_lost_tomb_xyy": {
+      "added": "2026-10-09"
+    },
+    "ze_the_shifting_pool": {
+      "added": "2026-10-09"
+    },
     "ze_theback_bureau": {
       "added": "2026-09-23",
       "updated": "2026-10-09"
     },
     "ze_thelostworld_redux_p": {
       "added": "2026-09-23"
+    },
+    "ze_thorny_torch": {
+      "added": "2026-10-09"
     },
     "ze_thousand_steps_p": {
       "added": "2026-09-23"
@@ -1633,8 +2743,17 @@
       "added": "2026-09-23",
       "updated": "2026-10-04"
     },
+    "ze_torun_v1": {
+      "added": "2026-10-09"
+    },
     "ze_totemo_roka_p": {
       "added": "2026-09-23"
+    },
+    "ze_tower_of_babe": {
+      "added": "2026-10-09"
+    },
+    "ze_townscapes": {
+      "added": "2026-10-09"
     },
     "ze_toy_world_final": {
       "added": "2026-09-23"
@@ -1652,8 +2771,23 @@
       "added": "2026-09-23",
       "updated": "2026-10-06"
     },
+    "ze_transformers_pyramid": {
+      "added": "2026-10-09"
+    },
     "ze_trap_escape_p": {
       "added": "2026-09-23"
+    },
+    "ze_tree_story": {
+      "added": "2026-10-09"
+    },
+    "ze_trepang": {
+      "added": "2026-10-09"
+    },
+    "ze_tv_station_xyy": {
+      "added": "2026-10-09"
+    },
+    "ze_twice": {
+      "added": "2026-10-09"
     },
     "ze_tyranny2": {
       "added": "2026-09-23"
@@ -1676,14 +2810,32 @@
     "ze_umbrella_zombie": {
       "added": "2026-09-23"
     },
+    "ze_umbrellazombie_v1_p3_final": {
+      "added": "2026-10-09"
+    },
+    "ze_umbrellazombie_v1_part2_1": {
+      "added": "2026-10-09"
+    },
+    "ze_umbrellazombiezmtr_v1": {
+      "added": "2026-10-09"
+    },
     "ze_undead_shrine_p": {
       "added": "2026-09-23"
+    },
+    "ze_undersea_temple": {
+      "added": "2026-10-09"
     },
     "ze_undertale_sans_final": {
       "added": "2026-09-23"
     },
+    "ze_undertunnel_escape_xyy": {
+      "added": "2026-10-09"
+    },
     "ze_unfulfilled_ambition": {
       "added": "2026-09-23"
+    },
+    "ze_unmaterials_m": {
+      "added": "2026-10-09"
     },
     "ze_untitled_touhou": {
       "added": "2026-09-23"
@@ -1701,6 +2853,9 @@
     "ze_urbanstone": {
       "added": "2026-09-23"
     },
+    "ze_ut2004_convoy_p": {
+      "added": "2026-10-09"
+    },
     "ze_uyuni": {
       "added": "2026-09-23"
     },
@@ -1711,15 +2866,42 @@
       "added": "2026-09-23",
       "updated": "2026-10-06"
     },
+    "ze_van_helsing_s1": {
+      "added": "2026-10-09"
+    },
+    "ze_variis": {
+      "added": "2026-10-09"
+    },
+    "ze_vauff_gachi_club_p": {
+      "added": "2026-10-09"
+    },
+    "ze_vending_machine_factory_v1_1_fix_p": {
+      "added": "2026-10-09"
+    },
     "ze_venice_escape_p": {
       "added": "2026-09-23"
+    },
+    "ze_verdant": {
+      "added": "2026-10-09"
     },
     "ze_vietnam_p": {
       "added": "2026-09-23"
     },
+    "ze_virtual_insanity_v1": {
+      "added": "2026-10-09"
+    },
+    "ze_vision_town": {
+      "added": "2026-10-09"
+    },
     "ze_visualizer": {
       "added": "2026-09-23",
       "updated": "2026-10-06"
+    },
+    "ze_void": {
+      "added": "2026-10-09"
+    },
+    "ze_void_tree": {
+      "added": "2026-10-09"
     },
     "ze_voodoo_islands_p": {
       "added": "2026-09-23"
@@ -1734,14 +2916,32 @@
     "ze_watagi_tunnel_rewind": {
       "added": "2026-09-23"
     },
+    "ze_waterpark": {
+      "added": "2026-10-09"
+    },
+    "ze_whitechapel_escape": {
+      "added": "2026-10-09"
+    },
+    "ze_wicked_organization": {
+      "added": "2026-10-09"
+    },
     "ze_winter": {
       "added": "2026-09-23"
+    },
+    "ze_winter_house": {
+      "added": "2026-10-09"
     },
     "ze_winter_warehouse_p": {
       "added": "2026-09-23"
     },
+    "ze_workcell_cancer": {
+      "added": "2026-10-09"
+    },
     "ze_world_escapes": {
       "added": "2026-09-23"
+    },
+    "ze_x_game_room": {
+      "added": "2026-10-09"
     },
     "ze_xenovation": {
       "added": "2026-09-23"
@@ -1749,8 +2949,29 @@
     "ze_xiii_winslow_bank": {
       "added": "2026-09-23"
     },
+    "ze_xiyi": {
+      "added": "2026-10-09"
+    },
+    "ze_xuyanzhiting_jiushu": {
+      "added": "2026-10-09"
+    },
     "ze_xuyanzhiting_qy": {
       "added": "2026-09-23"
+    },
+    "ze_yhnorla": {
+      "added": "2026-10-09"
+    },
+    "ze_yueyingchuanshuo": {
+      "added": "2026-10-09"
+    },
+    "ze_yueyingchuanshuo_cs2": {
+      "added": "2026-10-09"
+    },
+    "ze_zalupahui": {
+      "added": "2026-10-09"
+    },
+    "ze_zandalar_forever": {
+      "added": "2026-10-09"
     },
     "ze_zertinan": {
       "added": "2026-09-23"
