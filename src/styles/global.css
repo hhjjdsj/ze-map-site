@@ -2115,6 +2115,39 @@ img { max-width: 100%; display: block; }
   color: var(--muted);
 }
 
+/* ===== 加入 QQ 群（页脚 / 关于页 / 投稿页共用，见 components/QqGroup.astro） ===== */
+.qq-group { white-space: nowrap; }
+.qq-group b { color: var(--text); letter-spacing: 0.02em; }
+.qq-copy,
+.qq-open {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  cursor: pointer;
+  text-decoration: none;
+}
+.qq-copy:hover,
+.qq-open:hover { color: var(--text); border-color: var(--accent-2); }
+
+.qq-group-card {
+  margin: 14px 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+}
+.qq-group-card .qg-t { margin: 0; font-weight: 700; color: var(--text); }
+.qq-group-card .qg-t b { letter-spacing: 0.02em; }
+.qq-group-card .qg-d { margin: 6px 0 0; font-size: 12.5px; line-height: 1.7; color: var(--muted); }
+.qq-group-card .qg-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 0; }
+.qq-group-card .qg-actions .btn { margin: 0; }
+[data-theme="light"] .qq-group-card { background: var(--panel); }
+
 /* ===== 教程 / 攻略的图文块（左图右文） =====
    作者写的是纯文本约定 `:::figure 2 right`（见 shared/guide-blocks.mjs），
    渲染成这里的 .guide-figure。窄屏自动堆成上下，避免图被压成一条。 */

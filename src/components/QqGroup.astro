@@ -1,0 +1,96 @@
+---
+/**
+ * 加入 QQ 群。
+ *
+ * 为什么不直接放一个「一键加群」链接：QQ 官方的加群短链（`qm.qq.com/cgi-bin/qm/qr?k=…`）
+ * 需要群主在群管后台生成一个 key，没有 key 就用不了；所以这里给三件事：
+ *   1) **群号始终可见** —— 手机上搜群号、电脑上都能用；
+ *   2) **手机上点按钮直接唤起 QQ**（`mqqapi://card/show_pslcard…`，官方「分享群名片」用的就是这个协议）
+ *      —— 这个链接必须 `target="_self"`：BaseLayout 给全站 <a> 套了 target="_blank"，
+ *      协议链接被塞进新窗口就什么都不发生；
+ *   3) **桌面上点一下复制群号**（剪贴板 API 不可用时退回 execCommand，再不行就让人自己选）。
+ *
+ * 不引任何外部服务、不发网络请求：群号只写在这一处，换群改这里。
+ */
+const GROUP = '1124932957';
+const OPEN_IN_QQ = `mqqapi://card/show_pslcard?src_type=internal&version=1&uin=${GROUP}&card_type=group&source=qrcode`;
+
+interface Props {
+  /** inline = 一句话里嵌一段（页脚、关于页的行内）；card = 一张小卡片（投稿页、说明页用） */
+  variant?: 'inline' | 'card';
+}
+const { variant = 'inline' } = Astro.props;
+---
+
+{
+  variant === 'card' ? (
+    <div class="qq-group-card">
+      <p class="qg-t">
+        💬 加入 QQ 群 <b>{GROUP}</b>
+      </p>
+      <p class="qg-d">
+        投稿、报错、问神器怎么用都行。手机点下面的按钮直接跳 QQ；电脑上点「复制群号」再搜。
+      </p>
+      <p class="qg-actions">
+        <a class="btn btn-primary" href={OPEN_IN_QQ} target="_self" rel="noopener">
+          手机点这里加群
+        </a>
+        <button class="btn" type="button" data-qq-copy={GROUP}>
+          复制群号
+        </button>
+      </p>
+    </div>
+  ) : (
+    <span class="qq-group">
+      QQ 群 <b>{GROUP}</b>
+      <button class="qq-copy" type="button" data-qq-copy={GROUP} title="复制群号">
+        复制
+      </button>
+      <a class="qq-open" href={OPEN_IN_QQ} target="_self" rel="noopener" title="手机上点这里直接打开 QQ 加群">
+        手机加群
+      </a>
+    </span>
+  )
+}
+
+<script>
+  /*
+   * 复制群号。用事件委托：一个页面可能出现好几处（页脚 + 正文），逐个绑容易漏。
+   * 剪贴板 API 在非 https / 老浏览器上会 reject，退回 execCommand —— 再不行就明说让用户手动复制，
+   * 不要静默失败（点了没反应最让人困惑）。
+   */
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    const btn = target?.closest?.('[data-qq-copy]') as HTMLElement | null;
+    if (!btn) return;
+    const number = btn.getAttribute('data-qq-copy') ?? '';
+    if (!number) return;
+    const original = btn.textContent ?? '';
+    const flash = (text: string) => {
+      btn.textContent = text;
+      window.setTimeout(() => {
+        btn.textContent = original;
+      }, 1600);
+    };
+    const fallback = () => {
+      const area = document.createElement('textarea');
+      area.value = number;
+      area.setAttribute('readonly', 'readonly');
+      area.style.cssText = 'position:fixed;top:-1000px';
+      document.body.append(area);
+      area.select();
+      try {
+        document.execCommand('copy');
+        flash('已复制 ✓');
+      } catch {
+        flash('请手动复制');
+      }
+      area.remove();
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(number).then(() => flash('已复制 ✓'), fallback);
+    } else {
+      fallback();
+    }
+  });
+</script>

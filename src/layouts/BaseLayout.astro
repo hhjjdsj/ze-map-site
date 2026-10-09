@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import SearchBox from '../components/SearchBox.astro';
+import QqGroup from '../components/QqGroup.astro';
 
 interface Props {
   title?: string;
@@ -114,6 +115,7 @@ const ogImage = image ? new URL(image, site).href : new URL('/images/hero-bg.jpg
     <footer class="site-footer" data-pagefind-ignore>
       <div class="container">
         <p>ZE 地图资料站 · 由社区维护 · 地图版权归原作者所有</p>
+        <p class="footer-qq"><QqGroup /></p>
       </div>
     </footer>
 

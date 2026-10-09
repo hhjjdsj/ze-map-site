@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import QqGroup from '../components/QqGroup.astro';
 import { FIELD_RULES } from '../../shared/submission-fields.mjs';
 
 /*
@@ -391,6 +392,10 @@ const fieldRows = Object.entries(R).map(([key, r]) => ({
         QQ <b>3157410575</b>（宇宙机器人）。把资料发过来就行 —— 文字、截图、视频链接、攻略原文都可以，
         整理的事交给站长。
       </p>
+      <p>
+        也可以<b>进 QQ 群</b>说：投稿、报错、问神器怎么用都行，群里也有人在玩同一张图。
+      </p>
+      <QqGroup variant="card" />
 
       <h2>提交之后会发生什么</h2>
       <table class="doc-table">

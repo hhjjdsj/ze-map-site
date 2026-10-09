@@ -9,6 +9,7 @@
  * 所以这里既不用手写控件，也不会和「什么算合法投稿」的规则漂移。
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import QqGroup from '../../components/QqGroup.astro';
 import { FIELD_RULES } from '../../../shared/submission-fields.mjs';
 
 const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => ({
@@ -237,6 +238,9 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
         <button class="btn btn-primary btn-lg" type="submit" id="f-submit">提交审核</button>
         <span class="s-actions-note">提交后进入人工审核队列 —— 通过才会写进条目，不通过会告诉你原因。</span>
       </div>
+      <p class="form-hint">
+        等得急、或者想问怎么写：<QqGroup />（群里也会贴审核进度）
+      </p>
       <p class="form-error" id="f-error" hidden></p>
     </form>
 

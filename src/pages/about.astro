@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getMaps } from '../lib/maps';
+import QqGroup from '../components/QqGroup.astro';
 // 构建期导入（由打包器按模块图解析，与运行时工作目录无关）
 import catalog from '../../public/entity/catalog.json';
 import { BAKED_SOURCE } from '../../shared/entity-source.mjs';
@@ -123,6 +124,10 @@ const bakedMaps = catalog.maps.filter((m) => m.source === BAKED_SOURCE).length;
       <h3>联系与反馈</h3>
       <ul>
         <li><b>站长</b>：宇宙机器人（ZE 游戏 ID），QQ <b>3157410575</b>，可联系。</li>
+        <li>
+          <b>QQ 群</b>：<QqGroup /> —— 投稿、报错、问神器怎么用都可以在群里说；
+          想直接看进度、催更也欢迎。
+        </li>
         <li>
           发现错误或想补充资料，可到 <a href="/contribute/">投稿页</a> 查看投稿方式，
           或在 GitHub 仓库 <a href="https://github.com/hhjjdsj/ze-map-site" target="_blank" rel="noopener">hhjjdsj/ze-map-site</a> 提 issue / PR。
