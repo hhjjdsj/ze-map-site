@@ -39,19 +39,16 @@ npm run cover:verify               # 4) 核对（会打印「人工 88 · 工坊
   而它本来就是 16:9，不会变形。
 - ⚠️ 图片集里的同一张工坊图不会再重复出现：地图页在地工坊图当封面时，会把图片集里那条 `kind: workshop` 过滤掉。
 
-## 第 3 层：渲染兜底图（以及为什么有 18 张看起来「没有封面」）
+## 第 3 层：渲染兜底图（以及为什么还剩下 2 张看起来「没有封面」）
 
 第 3 层是 `npm run data:covers` 从实体数据画出来的**俯视密度图**：黑底 + 彩色点位。
 它信息量不小（一眼看出机关、传送门都堆在哪），但详情页顶部只把它当 **22% 透明度**的氛围底图，
 在深色页面上几乎看不见；卡片列表里就是一张黑图 —— 观感上等于没有封面。
 
-截至 2026-10-08 还有 **18 张**停在这一层，`npm run cover:verify` 会把它们列出来：
+截至 2026-10-09 只剩 **2 张**停在这一层，`npm run cover:verify` 会把它们列出来：
 
 ```
-ze_bang_dream_mygo、ze_cursed_bear_tales、ze_doom、ze_ice_cavern_z、ze_italy_town_z、
-ze_laser_competition、ze_laser_island_z、ze_mgden_z、ze_mission_escape、ze_naruto_z、
-ze_outlast、ze_project_codex_z、ze_scp_containment_breach、ze_steyliff_grove、
-ze_sunkentemple、ze_tesv_skyrim_i、ze_tesv_skyrim_p、ze_theback_bureau
+ze_laser_competition、ze_tesv_skyrim_i
 ```
 
 原因不是漏抓：这些图的创意工坊条目**已被作者删除 / 下架**（Steam 接口返回 `result=9`，
@@ -59,8 +56,32 @@ ze_sunkentemple、ze_tesv_skyrim_i、ze_tesv_skyrim_p、ze_theback_bureau
 要救只能靠人工封面：
 
 ```bash
-npm run cover:set -- ze_doom "D:\图片\游戏内截图.png"
+npm run cover:set -- ze_laser_competition "D:\图片\游戏内截图.png"
 ```
+
+### 2026-10-09：从 s2ze 的公开数据补回 16 张
+
+原本有 18 张卡在这一层。**s2ze.com（Ruby Bot）** 维护了一份公开的地图数据
+（`https://api.s2ze.com/site/data/maps.json`，1400+ 条，字段 `name / addon(工坊ID) / image / height(体积) / creators`），
+其中 16 张**还留着原工坊预览图的 Steam CDN 地址** —— 工坊条目下架了，但图片还在 `images.steamusercontent.com` 上，
+实测仍然下得下来。于是把这 16 张抓回来，走正常的工坊封面链路入库：
+
+```bash
+# 1) 抓到 bake/gallery/<slug>/05-workshop.<ext>（脚本一次性用完即删，逻辑见下面「怎么复现」）
+npm run cover:workshop     # 2) 导成封面 → public/images/covers/workshop/
+npm run maps:generate      # 3) 重新生成条目
+npm run cover:verify       # 4) 核对：人工 88 · 工坊 458 · 渲染兜底 1 · 无 cover 1
+```
+
+补进来的 16 张里有 6 张本来就是高清（`ze_cursed_bear_tales` 2560×1440、`ze_italy_town_z` / `ze_mgden_z` /
+`ze_sunkentemple` 1920×1080、`ze_doom` / `ze_theback_bureau` 1600×900），其余仍是 555×312 的工坊标准尺寸。
+
+**出处与致谢**：图片本身是各作者上传到 Steam 创意工坊的预览图（版权归作者），
+**「哪张图对应哪张地图」这份聚合是 s2ze / Ruby Bot 整理的** —— 站内提到数据来源时写「Ruby Bot（s2ze.com）」。
+若日后还要用他们别的字段（体积、creators），同样按社区同好站互相引用来处理。
+
+**顺带记一笔**：他们的图片 URL 上带 `?imw=637`，别指望换参数能拿更高清 —— 实测 `imw=1280/1920`
+拿回来还是 555×312（Steam 存的就那么大）。上面那 6 张高清是因为**作者当年上传的原图就大**。
 
 ## 怎么做（人工封面，优先级最高）
 
