@@ -2,8 +2,14 @@
   "_说明": "改这个文件就行。difficulty 只能填：入门/简单/普通/困难/火星/入土/未知；summary 写介绍正文（分段就在段与段之间打 \\n\\n）；tags 是标签数组；videoUrls 放视频链接。改完点页面下面的 Commit changes 提交即可。",
   "_来源": "2026-10-08 从一份服务器地图列表（视频）里补的难度，与 ze_tesv_skyrim_p 同一张图。",
   "difficulty": "火星",
-  "summary": null,
+  "summary": "这张图在服务器上有两个名字：ze_tesv_skyrim_i 与 ze_tesv_skyrim_p，实体数据完全相同（同一个工坊条目 3239514390）。**现在主流跑的是 p 组移植的 p 版** —— 见 [上古卷轴5:天际（p 版）](/maps/ze_tesv_skyrim_p/)。本页保留 i 版的数据与通关录像。",
   "tags": [],
-  "videoUrls": [],
-  "confidence": "low"
+  "videoUrls": [
+    "https://www.bilibili.com/video/BV1VS421o7bc/"
+  ],
+  "confidence": "low",
+  "title": "上古卷轴5：天际（i 版）",
+  "sources": [
+    "https://www.bilibili.com/video/BV1VS421o7bc/"
+  ]
 }
