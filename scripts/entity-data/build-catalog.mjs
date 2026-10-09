@@ -82,6 +82,9 @@ export function buildCatalog(root = ROOT) {
   }
 
   // Preserve historical index entries if a shard is temporarily unavailable.
+  // 注意：这是**有意**保留的（分片暂时缺失时不丢元数据），所以它不会自动清除条目 ——
+  // 要下线一张图，得同时删掉 public/entity/data 下的分片*和*公共索引里的条目
+  // （索引本身是「已下线」的事实来源，只删分片的话下次构建会把它并回来）。
   maps.push(...previous.values());
   maps.sort((x, y) => x.a.localeCompare(y.a) || x.m.localeCompare(y.m) || x.f.localeCompare(y.f));
   const legacySource = normalizeEntitySource(

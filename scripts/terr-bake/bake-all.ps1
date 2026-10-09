@@ -93,8 +93,19 @@ while ($queue.Count -gt 0 -or $active.Count -gt 0) {
     $id = [string]$queue.Dequeue()
     $job = Start-Job -Name "terr-$id" -ArgumentList $one,$id,$work,$terr,$localCache,$dlCache,$cli,$bake,$entity,$entityDir,$boundsDir,$ERR,([bool]$KeepDownloaded) -ScriptBlock {
       param($script,$map,$workDir,$terrDir,$cache,$downloads,$viewer,$baker,$entityScript,$entityOut,$boundsOut,$err,$keep)
-      $extra = if ($keep) { @('-KeepDownloaded') } else { @() }
-      & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -MapId $map -WorkDir $workDir -TerrDir $terrDir -LocalCache $cache -DownloadCache $downloads -Cli $viewer -Bake $baker -Entity $entityScript -EntityDir $entityOut -BoundsDir $boundsOut -ErrorTolerance $err @extra
+      # Splat the worker call instead of hopping through `powershell.exe -File`. Windows PowerShell
+      # 5.1 drops an empty string argument in a native call, so `-LocalCache $cache` with no Steam
+      # install swallowed the next parameter and the worker died on parameter binding in <1s. The
+      # error arrived as an error record only, so the dispatcher reported "worker no result".
+      $workerArgs = @{
+        MapId = $map; WorkDir = $workDir; TerrDir = $terrDir
+        DownloadCache = $downloads; Cli = $viewer; Bake = $baker
+        Entity = $entityScript; EntityDir = $entityOut; BoundsDir = $boundsOut
+        ErrorTolerance = $err
+      }
+      if ($cache) { $workerArgs.LocalCache = $cache }
+      if ($keep) { $workerArgs.KeepDownloaded = $true }
+      & $script @workerArgs
     }
     $active[$job.Id] = $job
     Log "START $id"
@@ -104,12 +115,17 @@ while ($queue.Count -gt 0 -or $active.Count -gt 0) {
     $job = $active[$key]
     if ($job.State -in @('Completed','Failed','Stopped')) {
       $raw = @(Receive-Job $job -ErrorAction SilentlyContinue)
+      # Grab the worker's error records before the job is removed, otherwise a crash is invisible.
+      $why = (@($job.ChildJobs[0].Error | Where-Object { $_ } | ForEach-Object { $_.ToString().Trim() }) -join ' ').Trim()
       Remove-Job $job -Force -ErrorAction SilentlyContinue
       $active.Remove($key)
       $json = ($raw | Where-Object { $_ -is [string] } | Select-Object -Last 1)
       if ($json) {
-        $r = $json | ConvertFrom-Json
-        if ($r.ok) {
+        $r = $null
+        try { $r = $json | ConvertFrom-Json } catch { }
+        if (-not $r) {
+          Log "FAIL job-$key stage=worker unparsable output :: $json"
+        } elseif ($r.ok) {
           Add-Content $doneFile $r.id
           Log ("OK   {0} nt={1} src={2}MB {3}s" -f $r.id,$r.nt,$r.srcMB,$r.seconds)
         } else {
@@ -117,7 +133,8 @@ while ($queue.Count -gt 0 -or $active.Count -gt 0) {
           Log ("FAIL {0} stage={1} {2}" -f $r.id,$r.stage,$r.error)
         }
       } else {
-        Log "FAIL job-$key stage=worker no result"
+        if ($why) { $why = ' :: ' + $why }
+        Log "FAIL job-$key stage=worker no result$why"
       }
     }
   }
