@@ -29,6 +29,8 @@ const KNOWN_FIELDS = new Set([
   'sections', 'maps',
   /* 教程 / 神器讲解：叠在自动正文之上的小节（左图右文用 :::figure 语法，见 shared/guide-blocks.mjs） */
   'guides',
+  /* 每件神器一句话说明：{ "Heal": "给人类回血…" } → 神器表多一列「说明」 */
+  'relicIntros',
 ]);
 
 /** 给写错的字段名猜一个最接近的正确写法（编辑距离 ≤3 才给提示） */
@@ -90,6 +92,18 @@ for (const file of files) {
         `见 scripts/content/generate-map-entries.mjs 的说明`
     );
     continue;
+  }
+
+  if (j.relicIntros !== undefined) {
+    if (!j.relicIntros || typeof j.relicIntros !== 'object' || Array.isArray(j.relicIntros)) {
+      errors.push(`${file}: relicIntros 必须是 { "神器名": "一句话说明" } 形式的对象`);
+    } else {
+      for (const [name, text] of Object.entries(j.relicIntros)) {
+        if (!name.trim()) errors.push(`${file}: relicIntros 里有空的神器名`);
+        if (typeof text !== 'string' || !text.trim()) errors.push(`${file}: relicIntros["${name}"] 必须是非空字符串（不知道就删掉这一项）`);
+        else if (text.length > 200) errors.push(`${file}: relicIntros["${name}"] 太长了（${text.length} 字）—— 这里是一句话说明，长文写进 guides`);
+      }
+    }
   }
 
   if (j.guides !== undefined) {

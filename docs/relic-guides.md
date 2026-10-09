@@ -50,6 +50,35 @@ Markdown 照常（**粗体**、`代码`、列表、链接都行）。
 - 多节按数组顺序排，排在哪：自动正文的**神器表之后**、数据概况之前；手写整篇的图（`sections`）排在手工小节之后。
 - 校验由 `npm run content:verify` 把关：`guides` 只能有 `title` / `body` 两个字段，都不能为空。
 
+## 一句话说明（每张图的「全神器总览」）
+
+除了长文讲解，每件神器还能写**一句话说明**：填进同一份原稿的 `relicIntros` 对象。
+
+```json
+{
+  "relicIntros": {
+    "Push": "把人或僵尸推开的起手神器，冷却 60 秒，适合开局抢位。",
+    "Wall": "在身前立一道墙挡僵尸，冷却 60 秒。"
+  }
+}
+```
+
+- 神器表会因此**多出一列「说明」**：写了的显示说明，没写的显示「待补充」；标题里出现了这件道具的 `guides` 小节会在同行挂一个「详细 ↓」锚点。
+- **一张图里只要有人写过一句（或有 `guides` 小节），这一列才出现** —— 什么都没写的图，表格保持原样，不会整站多出一列「待补充」。
+- 说明超过 200 字会被 `content:verify` 拦下：这里是一句话，长文写进 `guides`。
+
+### 谁来写、怎么不写漏
+
+```bash
+node scripts/content/relic-intro-todo.mjs                 # 进度：多少图 / 多少件神器还没写
+node scripts/content/relic-intro-todo.mjs --map ze_castlevania   # 打印这张图可直接填的骨架
+node scripts/content/relic-intro-todo.mjs --write         # 导出勾选清单 data/relic-intros.todo.md
+```
+
+2026-10-09 的起点：站内有神器数据的图 **193 张 / 1609 件神器，说明 0 件**。
+清单按图列出每件神器的名字与「是否已有讲解」，可以当工作清单逐图推进。
+`data/relic-intros.todo.md` 是生成物（在 `.gitignore` 覆盖的 `data/` 下），随时重跑即可。
+
 ## 相关文件
 
 | 文件 | 作用 |

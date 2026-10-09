@@ -229,24 +229,47 @@ const cell = (s) => mdSafe(String(s ?? '').replace(/\|/g, '\\|').replace(/\s*\n\
  * 两个地方要用：一般条目（renderEntry）与手写正文的条目（document 分支）——
  * 后者没法重写正文里的表，只能在正文末尾补一节「社区更正」。
  */
-function itemsBlock(rows, { title, lead, showNote, anchors }) {
+function itemsBlock(rows, { title, lead, showNote, anchors, intros }) {
   /* 有对应讲解的行，道具名变成锚点链接（跳到自己那条教程）——
      没有讲解的保持纯文本，免得整表都是点不动的假链接。 */
   const nameCell = (r) => {
     const anchor = anchors?.get(r.name);
     return cell(anchor ? `[${r.name}](#${anchor})` : r.name);
   };
+  /*
+   * 「说明」列只在真的有人写的时候才出现（和备注列同一套逻辑）：
+   * 没写的图多一列全是「待补充」，210 张图的表格会一起变丑，diff 也全是噪音。
+   * 这一列就是社区说的「全神器总览」——一件神器一句话，想细看就点「详细 ↓」到 guides 小节。
+   */
+  const hasIntro = Boolean(intros && [...intros.values()].some((v) => v && v.trim()));
+  const introCell = (r) => {
+    const text = intros?.get(String(r.name).trim().toLowerCase()) ?? '';
+    const anchor = anchors?.get(r.name);
+    const tail = anchor ? `[详细 ↓](#${anchor})` : '';
+    if (!text && !tail) return '待补充';
+    return [text ? cell(text) : '待补充', tail].filter(Boolean).join(' ');
+  };
+
+  const head = ['道具', '冷却', '使用次数', hasIntro ? '说明' : null, showNote ? '备注' : null].filter(Boolean);
   return [
     `## ${title}`,
     '',
     lead,
     '',
-    showNote ? '| 道具 | 冷却 | 使用次数 | 备注 |' : '| 道具 | 冷却 | 使用次数 |',
-    showNote ? '|---|---|---|---|' : '|---|---|---|',
+    `| ${head.join(' | ')} |`,
+    `|${head.map(() => '---').join('|')}|`,
     ...rows.map((r) =>
-      showNote
-        ? `| ${nameCell(r)} | ${cell(cdText(r.cd))} | ${cell(usesText(r.uses))} | ${cell(itemNoteCell(r))} |`
-        : `| ${nameCell(r)} | ${cell(cdText(r.cd))} | ${cell(usesText(r.uses))} |`
+      [
+        nameCell(r),
+        cell(cdText(r.cd)),
+        cell(usesText(r.uses)),
+        hasIntro ? introCell(r) : null,
+        showNote ? cell(itemNoteCell(r)) : null,
+      ]
+        .filter((x) => x !== null)
+        .join(' | ')
+        .replace(/^/, '| ')
+        .replace(/$/, ' |')
     ),
     '',
   ];
@@ -649,6 +672,12 @@ function renderEntry(rec, research, wsRec, gfl) {
     (g) => g && typeof g.title === 'string' && g.title.trim() && typeof g.body === 'string' && g.body.trim()
   );
   const guideAnchors = guideAnchorsFor(guides, merged.rows);
+  /* 一句话说明（神器名 → 说明），大小写与首尾空格不敏感 */
+  const relicIntros = new Map(
+    Object.entries(research?.relicIntros && typeof research.relicIntros === 'object' ? research.relicIntros : {})
+      .map(([k, v]) => [String(k).trim().toLowerCase(), String(v ?? '').trim()])
+      .filter(([, v]) => v)
+  );
 
   if (merged.rows.length) {
     /* 备注列只在真的有社区行时出现：没有社区投稿的图，表格保持三列，
@@ -660,9 +689,9 @@ function renderEntry(rec, research, wsRec, gfl) {
           gfl._from ? `（取自 GFL 的 \`${gfl._from}\` 配置）` : ''
         }${communityCount ? '；备注里标了「社区更正 / 社区补充」的行来自社区投稿' : ''}${
           guideAnchors.size ? '；带链接的道具名可以点进下面的教程' : ''
-        }：`
+        }${relicIntros.size ? '；「说明」列是社区写的一句话介绍' : ''}：`
       : `本站没有这张图的服务器配置解析结果，以下 ${merged.rows.length} 件来自[社区投稿](/contribute/)补充：`;
-    gameplay.push(...itemsBlock(merged.rows, { title, lead, showNote, anchors: guideAnchors }));
+    gameplay.push(...itemsBlock(merged.rows, { title, lead, showNote, anchors: guideAnchors, intros: relicIntros }));
   }
 
   if (gfl?.bosses?.length) {
@@ -744,6 +773,7 @@ function renderEntry(rec, research, wsRec, gfl) {
                   lead: `上面的神器表由本站人工整理；以下是[社区投稿](/contribute/)的更正与补充（${changed.length} 件），未列出的行仍以原表为准：`,
                   showNote: true,
                   anchors: guideAnchorsFor(guides, mergedDoc.rows),
+                  intros: relicIntros,
                 }),
               ]
             : [];
