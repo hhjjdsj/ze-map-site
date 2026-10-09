@@ -10,6 +10,7 @@ param(
   [string]$LocalCache = '',
   [int]$ErrorTolerance = 4,
   [string]$IdsFile = '',
+  [string]$LogFile = '',
   [switch]$IgnoreDone
 )
 
@@ -43,7 +44,7 @@ $one = Join-Path $root 'bake-one.ps1'
 $dataDir = Join-Path $root 'data'
 $doneFile = Join-Path $dataDir 'done.txt'
 $failFile = Join-Path $dataDir 'failed.txt'
-$logFile = Join-Path $root 'bake.log'
+$logFile = if ($LogFile) { if ([IO.Path]::IsPathRooted($LogFile)) { $LogFile } else { Join-Path $root $LogFile } } else { Join-Path $root 'bake.log' }
 $idsFile = if ($IdsFile) { $IdsFile } else { Join-Path $dataDir 'capped.txt' }
 $ERR = $ErrorTolerance
 
@@ -72,6 +73,10 @@ elseif ($MaxMaps -gt 0) { $todo = @($todo | Select-Object -First $MaxMaps) }
 Log "START total=$($ids.Count) todo=$($todo.Count) parallel=$Parallel"
 
 # Download missing Workshop items serially; all cached maps can then be processed safely in parallel.
+#
+# 试过「一次登录连下多张」（一条命令行里连写 25 个 +workshop_download_item，想省掉每张约 20 秒的
+# 匿名登录开销）：**实测行不通** —— 2026-10-09 那次整整卡了 59 分钟、25 张一张都没下成，
+# 随后的逐张重试反而每张 10~20 秒正常完成。所以保持逐张调用，别再合并。
 foreach ($id in $todo) {
   if (($localCache -and (Test-Path (Join-Path $localCache $id))) -or (Test-Path (Join-Path $dlCache $id))) { continue }
   Log "DOWNLOAD $id"

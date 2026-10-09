@@ -393,9 +393,17 @@ function renderEntry(rec, research, wsRec, gfl) {
   const wsUrl = `https://steamcommunity.com/sharedfiles/filedetails/?id=${rec.f}`;
   const groups = Object.fromEntries((catalog.groups || []).map((g) => [g.id, g]));
   const baked = rec.source === BAKED_SOURCE;
-  const provenance = baked
-    ? 'Steam 创意工坊地图包中的实体定义（Source2Viewer 解析）'
-    : `${normalizeEntitySource(rec.source || catalog.meta.legacySource)}（${rec.sourceBuilt || catalog.meta.legacyBuilt}）`;
+  /*
+   * noEntity：有原稿、但**没有实体分片**的图（多是工坊已下架、地图文件再也拿不到）。
+   * 这类条目要能存在、且不能假装有数据：正文里不写实体数/分片点位/实体预览链接，
+   * 详情页侧栏会显示「暂无实体预览」并说明原因（见 src/pages/maps/[...slug].astro）。
+   */
+  const noEntity = Boolean(rec.noEntity);
+  const provenance = noEntity
+    ? '暂无实体数据（原因见本页「实体预览」的说明）'
+    : baked
+      ? 'Steam 创意工坊地图包中的实体定义（Source2Viewer 解析）'
+      : `${normalizeEntitySource(rec.source || catalog.meta.legacySource)}（${rec.sourceBuilt || catalog.meta.legacyBuilt}）`;
   const cats = Object.entries(rec.c || {}).sort((a, b) => b[1] - a[1]);
   const subs = wsRec?.result === 1 ? (wsRec.subscriptions ?? 0) : 0;
   const tags = [
@@ -482,9 +490,9 @@ function renderEntry(rec, research, wsRec, gfl) {
     wsRec?.views ? `workshopViews: ${wsRec.views}` : null,
     uploader && !research?.author ? `uploader: ${JSON.stringify(uploader)}` : null,
     wsRec && wsRec.result !== 1 ? `workshopMissing: true` : null,
-    `entitySlug: ${JSON.stringify(rec.s)}`,
-    `entityKey: ${JSON.stringify(rec.k)}`,
-    `entityCount: ${rec.n}`,
+    noEntity ? null : `entitySlug: ${JSON.stringify(rec.s)}`,
+    noEntity ? null : `entityKey: ${JSON.stringify(rec.k)}`,
+    noEntity ? null : `entityCount: ${rec.n}`,
     released ? `releaseDate: ${JSON.stringify(released)}` : null,
     updated ? `lastUpdated: ${JSON.stringify(updated)}` : null,
     research?.videoUrls?.length ? `videoUrls: [${research.videoUrls.map((x) => JSON.stringify(x)).join(', ')}]` : null,
@@ -531,7 +539,9 @@ function renderEntry(rec, research, wsRec, gfl) {
     );
   } else if (wsRec && wsRec.result !== 1) {
     meta.push(
-      '> 该地图的工坊条目在 Steam 上已**查无此项**（可能是作者删除或设为隐藏），下方实体数据仍保留在本站分片中。',
+      noEntity
+        ? '> 该地图的工坊条目在 Steam 上已**查无此项**（可能是作者删除或设为隐藏），地图文件无法再获取，因此本站也没有它的实体与地形数据。'
+        : '> 该地图的工坊条目在 Steam 上已**查无此项**（可能是作者删除或设为隐藏），下方实体数据仍保留在本站分片中。',
       ''
     );
   }
@@ -549,26 +559,28 @@ function renderEntry(rec, research, wsRec, gfl) {
     wsRec?.timeUpdated ? `| 工坊最近更新 | ${wsRec.timeUpdated} |` : null,
     subs ? `| 工坊订阅数 | ${n(subs)} |` : null,
     wsRec?.views ? `| 工坊浏览量 | ${n(wsRec.views)} |` : null,
-    `| 实体总数 | ${n(rec.n)} |`,
-    `| 分片点位 | ${n(rec.k2)} |`,
-    `| 关卡数 | ${rec.st || 0}${rec.st ? '（按实体命名推断）' : ''} |`,
+    noEntity ? null : `| 实体总数 | ${n(rec.n)} |`,
+    noEntity ? null : `| 分片点位 | ${n(rec.k2)} |`,
+    noEntity ? null : `| 关卡数 | ${rec.st || 0}${rec.st ? '（按实体命名推断）' : ''} |`,
     ''
   );
 
-  meta.push(
-    '## 实体构成',
-    '',
-    `本图共记录 ${n(rec.n)} 个实体，分片包含 ${n(rec.k2)} 个实体点位：`,
-    '',
-    '| 类别 | 数量 |',
-    '|---|---|',
-    ...cats.map(([gid, cnt]) => `| ${groups[gid]?.label || gid} | ${n(cnt)} |`),
-    '',
-    (rec.t || []).length
-      ? `数量最多的实体类型：${rec.t.slice(0, 6).map((x) => `\`${x[0]}\` ${n(x[1])}`).join(' · ')}。`
-      : null,
-    ''
-  );
+  if (!noEntity) {
+    meta.push(
+      '## 实体构成',
+      '',
+      `本图共记录 ${n(rec.n)} 个实体，分片包含 ${n(rec.k2)} 个实体点位：`,
+      '',
+      '| 类别 | 数量 |',
+      '|---|---|',
+      ...cats.map(([gid, cnt]) => `| ${groups[gid]?.label || gid} | ${n(cnt)} |`),
+      '',
+      (rec.t || []).length
+        ? `数量最多的实体类型：${rec.t.slice(0, 6).map((x) => `\`${x[0]}\` ${n(x[1])}`).join(' · ')}。`
+        : null,
+      ''
+    );
+  }
 
   if (rec.st) {
     gameplay.push(
@@ -623,14 +635,16 @@ function renderEntry(rec, research, wsRec, gfl) {
     );
   }
 
-  meta.push(
-    '## 实体预览',
-    '',
-    `[打开《${rec.cn || rec.m}》的实体预览 →](/preview/?map=${rec.s})`,
-    '',
-    '可交互查看本图的可破坏物、传送门、机关、危险区、路径点等点位，支持 3D / 平面两种视图与关卡分层。',
-    ''
-  );
+  if (!noEntity) {
+    meta.push(
+      '## 实体预览',
+      '',
+      `[打开《${rec.cn || rec.m}》的实体预览 →](/preview/?map=${rec.s})`,
+      '',
+      '可交互查看本图的可破坏物、传送门、机关、危险区、路径点等点位，支持 3D / 平面两种视图与关卡分层。',
+      ''
+    );
+  }
 
   if (research?.sources?.length) {
     meta.push('## 资料来源', '', ...research.sources.map((s) => `- ${s}`), '');
@@ -640,7 +654,11 @@ function renderEntry(rec, research, wsRec, gfl) {
     '## 数据说明',
     '',
     `- 实体数据来源：${provenance}。`,
-    baked ? '- 实体点位来自地图实体定义；有模型碰撞壳的刷子实体带真实包围盒，其余使用类别典型尺寸。' : '- 历史快照的实体点位和体积说明保留原始口径。',
+    noEntity
+      ? '- 本图没有实体数据，因此没有实体预览与关卡分层；原因见页面侧栏「实体预览」的说明。'
+      : baked
+        ? '- 实体点位来自地图实体定义；有模型碰撞壳的刷子实体带真实包围盒，其余使用类别典型尺寸。'
+        : '- 历史快照的实体点位和体积说明保留原始口径。',
     gfl ? '- 神器 / 道具、BOSS 与音乐名单来自 GFL 公开服务器配置（entwatch / bosshud / musicname），可能与其它服务器不一致。' : null,
     communityCount
       ? '- 神器 / 道具表里标注「社区更正 / 社区补充」的行来自社区投稿（投稿页提交、人工审核）；原值保留在备注里，未标注的行仍是服务器配置原值。'
@@ -784,6 +802,8 @@ if (variantReport.length) {
 let created = 0, updated = 0, enriched = 0;
 const usedSlugs = new Set(existing.keys());
 const stageFix = [];
+/** 主循环用掉了哪些原稿 —— 第二轮靠它找出「有原稿、没分片」的图 */
+const usedResearch = new Set();
 
 for (const rec of zeMaps) {
   /* 被别人的 maps 声明的实体版本：不单独出页（例如 mako 的 v5_3 并进 ze_ffvii_mako_reactor） */
@@ -804,6 +824,7 @@ for (const rec of zeMaps) {
   }
   const mdx = renderEntry({ ...rec, pageSlug: slug, st: stages }, research, loadWorkshop(rec.f), loadGfl(rec.m));
   if (research?.summary) enriched++;
+  if (research) usedResearch.add(research);
 
   if (prev?.replace(/\r\n/g, '\n') === mdx) continue;
   if (DRY) { if (prev) updated++; else created++; continue; }
@@ -813,9 +834,62 @@ for (const rec of zeMaps) {
   usedSlugs.add(slug);
 }
 
+/*
+ * 第二轮：「有原稿、但没有实体分片」的条目。
+ *
+ * 为什么需要：条目一直是**由实体分片驱动**的（catalog → 页面），而工坊已下架的图永远拿不到
+ * 地图文件、也就永远不会有分片 —— 但它们仍然值得有资料页（名称、封面、体积、工坊信息，
+ * 以及「为什么没有实体预览」的说明）。这类图靠 data/research 里的 slug（`2001-<英文名>-<工坊ID>`）
+ * 认出来，生成时打上 noEntity：正文不写实体数/分片点位/预览链接，页面侧栏显示原因。
+ *
+ * 一旦这张图以后烘出了分片，主循环就会接管它（同一个 slug），第二轮自动不再重复生成。
+ */
+let noEntityCreated = 0;
+/*
+ * 只处理**真正没有任何实体数据**的图。三条排除缺一不可：
+ *   entityAlias / claimedEntities —— 这个实体名被别人的 maps 声明过（例如 mako 的 v6_p 并进
+ *     ze_ffvii_mako_reactor），单独出页会变成重复条目（2026-10-09 踩过：多出一页 mako v6_p）；
+ *   entityNames —— 名字就是某个实体分片的内部名，说明它归主循环管，不该走这条路；
+ *   usedSlugs —— 主循环这次已经生成过同名页面。
+ */
+const entityNames = new Set(zeMaps.map((r) => r.m));
+for (const research of new Set(researchFiles.values())) {
+  if (usedResearch.has(research)) continue;
+  const m = /^(\d+)-([a-zA-Z0-9_]+)-(\d+)$/.exec(String(research.slug || ''));
+  if (!m) continue;
+  const [, group, mapName, wsId] = m;
+  if (
+    group !== '2001' ||
+    claimedEntities.has(mapName) ||
+    entityAlias.has(mapName) ||
+    entityNames.has(mapName) ||
+    usedSlugs.has(mapName)
+  ) continue;
+  const prev = existing.get(mapName);
+  const stageCount = Number.isFinite(research.stages) ? research.stages : 0;
+  const mdx = renderEntry(
+    {
+      k: `${group}/${mapName}/${wsId}`, s: research.slug, m: mapName, i: mapName, cn: null,
+      a: group, f: wsId, d: null, st: stageCount, n: 0, k2: 0, c: {}, b: [], t: [],
+      bg: false, rb: false, source: null, sourceBuilt: null, pageSlug: mapName, noEntity: true,
+    },
+    research,
+    loadWorkshop(wsId),
+    loadGfl(mapName)
+  );
+  if (prev?.replace(/\r\n/g, '\n') === mdx) continue;
+  if (DRY) { if (prev) updated++; else created++; noEntityCreated++; continue; }
+  if (prev) updated++; else created++;
+  await writeEntry(path.join(MAPS_DIR, `${mapName}.mdx`), mdx);
+  usedSlugs.add(mapName);
+  noEntityCreated++;
+}
+
 
 console.log(`ZE 地图 ${zeMaps.length} 张`);
 console.log(`  ${DRY ? '将生成' : '新建'} ${created} · ${DRY ? '将更新' : '更新'} ${updated}`);
+/* 注意：这是**本次写出**的条数，不是总数 —— 已经有页面、内容也没变的不会重复写 */
+console.log(`  其中没有实体分片（已下架 / 还没烘到）、只出资料页的：${noEntityCreated} 张`);
 console.log(`  其中带线上检索资料：${enriched} 张`);
 /* 封面层级一眼可见：人工 > 工坊预览图 > 渲染兜底（本地跑会打印，CI 日志里同样能看到） */
 console.log(

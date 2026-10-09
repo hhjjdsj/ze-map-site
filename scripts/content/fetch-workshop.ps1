@@ -12,6 +12,8 @@
 param(
   [string]$Mode = '',
   [string]$Id = '',
+  [string]$IdsFile = '',
+  [string]$Proxy = '',
   [int]$Batch = 80,
   [string]$Root = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
 )
@@ -24,8 +26,15 @@ $outDir = Join-Path $Root 'data/workshop'
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
 $catalog = Get-Content $catalogPath -Raw -Encoding UTF8 | ConvertFrom-Json
-$maps = $catalog.maps | Where-Object { (-not $Mode -or $_.a -eq $Mode) -and (-not $Id -or [string]$_.f -eq $Id) }
-$ids = $maps | ForEach-Object { [string]$_.f } | Where-Object { $_ } | Select-Object -Unique
+if ($IdsFile) {
+  # -IdsFile：直接点名要抓哪些工坊 ID。给「还没有实体分片、因此进不了 catalog」的图用 ——
+  # 典型是**已下架**的图（工坊接口返回 result=9，仍要落一份 data/workshop/<id>.json，
+  # 生成器靠它标 workshopMissing，页面才能解释「为什么没有实体预览」）。
+  $ids = @(Get-Content $IdsFile | ForEach-Object { $_.Trim() } | Where-Object { $_ -match '^\d+$' } | Select-Object -Unique)
+} else {
+  $maps = $catalog.maps | Where-Object { (-not $Mode -or $_.a -eq $Mode) -and (-not $Id -or [string]$_.f -eq $Id) }
+  $ids = $maps | ForEach-Object { [string]$_.f } | Where-Object { $_ } | Select-Object -Unique
+}
 $cached = @(Get-ChildItem $outDir -Filter *.json -ErrorAction SilentlyContinue | ForEach-Object { $_.BaseName })
 $todo = @($ids | Where-Object { $cached -notcontains $_ })
 
@@ -56,8 +65,23 @@ for ($b = 0; $b -lt $batches; $b++) {
   for ($i = 0; $i -lt $slice.Count; $i++) { $body["publishedfileids[$i]"] = $slice[$i] }
 
   try {
-    $r = Invoke-RestMethod -Uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' `
-      -Method Post -Body $body -TimeoutSec 60
+    # 国内网络直连 api.steampowered.com 时通时不通（同一个接口几分钟前还通），
+    # 所以：-Proxy 可指定本地代理；失败自动重试 3 次、间隔递增。
+    $req = @{
+      Uri        = 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/'
+      Method     = 'Post'
+      Body       = $body
+      TimeoutSec = 60
+    }
+    if ($Proxy) { $req.Proxy = $Proxy }
+    $r = $null
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+      try { $r = Invoke-RestMethod @req; break }
+      catch {
+        if ($attempt -eq 3) { throw }
+        Start-Sleep -Seconds (2 * $attempt)
+      }
+    }
   } catch {
     Write-Warning ("  batch {0} failed: {1}" -f ($b + 1), $_.Exception.Message)
     $failed += $slice.Count

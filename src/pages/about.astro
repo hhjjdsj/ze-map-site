@@ -61,8 +61,9 @@ const bakedMaps = catalog.maps.filter((m) => m.source === BAKED_SOURCE).length;
         <li><b>{withSubs}</b> 张关联到 Steam 创意工坊条目（含发布时间与订阅数）</li>
         <li>其中 <b>{stub}</b> 张仍标注「资料待补充」——剧情、作者、难度、攻略等欢迎社区补全</li>
         <li>
-          <a href="/preview/">实体预览工具</a>覆盖同一批 <b>{allMaps}</b> 张地图，合计
-          <b>{catalog.meta.entities_all.toLocaleString('en-US')}</b> 个实体。
+          <a href="/preview/">实体预览工具</a>覆盖其中 <b>{allMaps}</b> 张、合计
+          <b>{catalog.meta.entities_all.toLocaleString('en-US')}</b> 个实体；
+          没有实体数据的图（例如工坊已下架、地图包内没有实体定义）会在该图条目里写明原因。
         </li>
       </ul>
 

@@ -10,6 +10,8 @@ import RouteMap from '../../components/RouteMap.astro';
 import StageAccordion from '../../components/StageAccordion.astro';
 import { DIFFICULTY_CLASS } from '../../../shared/difficulty.mjs';
 import catalog from '../../../public/entity/catalog.json';
+import terrManifest from '../../../data/terr-manifest.json';
+import entityStatus from '../../../data/entity-status.json';
 
 export async function getStaticPaths() {
   const maps = await getMaps();
@@ -102,6 +104,45 @@ const diffClass = DIFFICULTY_CLASS[difficulty as keyof typeof DIFFICULTY_CLASS] 
 const previewUrl = entitySlug ? `/preview/?map=${entitySlug}` : null;
 const entityMeta = entitySlug ? catalog.maps.find((m) => m.s === entitySlug) : null;
 const bakedEntities = entityMeta?.source === 'Source2Viewer default_ents.vents_c';
+
+/*
+ * 没有实体预览时，页面上必须写清楚**为什么没有** —— 读者看到侧栏空着只会以为网站坏了。
+ * 判定只用可查证的事实，分四层，绝不写「可能」：
+ *   delisted       该图已在创意工坊下架 → 地图文件拿不到，实体与碰撞地形都解析不了（不可逆）
+ *   no-entity-data 地图文件在，但包里没有实体定义（default_ents.vents_c）→ 解析不出点位
+ *   no-physics     点位有、但包里没有世界物理网格 → 没有真实碰撞地形
+ *   not-baked      源文件在、我们还没解析入库（可补）
+ * 前三种来自 data/entity-status.json（烘焙时的实测结论），最后一种是默认。
+ */
+const idFrom = (value?: string) =>
+  /-(\d+)$/.exec(value ?? '')?.[1] ?? /[?&]id=(\d+)/.exec(value ?? '')?.[1] ?? null;
+const workshopId = idFrom(entitySlug) ?? idFrom(workshopUrl);
+const hasTerrain = workshopId ? new Set(terrManifest.ids.map(String)).has(workshopId) : false;
+const entityStatusCode: string | null = workshopId
+  ? ((entityStatus.maps as Record<string, { code?: string }>)[workshopId]?.code ?? null)
+  : null;
+const noPreviewCode = previewUrl ? null : (entityStatusCode ?? (workshopMissing ? 'delisted' : 'not-baked'));
+const NO_PREVIEW_COPY: Record<string, string> = {
+  delisted:
+    '这张图已经从 Steam 创意工坊下架，地图文件无法再下载，因此解析不出实体点位与碰撞地形 —— 所以没有实体预览。如果你手上有这张图的地图文件，欢迎在「补充 / 纠错」里告诉我们，可以本地解析。',
+  'no-entity-data':
+    '我们的烘焙管线解析过这张图的地图文件，但包里没有实体定义文件（default_ents.vents_c），因此拿不到传送门、机关、危险区这些点位 —— 所以没有实体预览。',
+  'no-physics':
+    '这张图能解析出实体点位，但地图包里没有世界碰撞网格，因此预览工具里没有真实地形（点位与关卡分层照常）。',
+  'parse-failed':
+    '这张图的地图包能下载，但解析实体数据时失败了（地图包内缺少编译文件，或某个实体模型导出报错），因此拿不到点位 —— 所以没有实体预览。',
+  'not-baked':
+    '这张图的实体数据还没有入库，所以暂时没有实体预览：预览点位需要从创意工坊地图包里解析，新收录的图会陆续补上。',
+};
+const noPreviewCopy = noPreviewCode ? NO_PREVIEW_COPY[noPreviewCode] : null;
+/** 基本信息表里那一行只放短语，完整解释在侧栏顶部的说明卡里 */
+const NO_PREVIEW_LABEL: Record<string, string> = {
+  delisted: '工坊已下架',
+  'no-entity-data': '地图包内无实体定义',
+  'no-physics': '缺碰撞地形',
+  'parse-failed': '解析失败',
+  'not-baked': '尚未入库',
+};
 const hasBasics = Boolean(author || version || players || duration || stages);
 
 // 同类地图推荐：共同标签多的优先，其次看工坊订阅
@@ -251,14 +292,27 @@ const related = all
     </main>
 
     <aside class="map-sidebar">
-      {previewUrl && (
+      {previewUrl ? (
         <a class="entity-cta" href={previewUrl} target="_blank" rel="noopener" title="在新标签页打开实体预览">
           <span class="ec-t">🧊 实体预览</span>
           <span class="ec-d">
             3D / 平面两种视图查看本图的传送门、可破坏物、机关、危险区与关卡分层。
           </span>
+          {!hasTerrain && (
+            <span class="ec-warn">
+              本图有点位、但没有真实碰撞地形：地图包里缺少世界碰撞网格，3D 视图里不显示地面起伏，点位与关卡分层不受影响。
+            </span>
+          )}
           <span class="ec-go">打开实体预览 ↗</span>
         </a>
+      ) : (
+        <div class="entity-cta is-off">
+          <span class="ec-t">🧊 实体预览：暂无</span>
+          <span class="ec-d">{noPreviewCopy}</span>
+          <span class="ec-src">
+            预览工具收录了 <b>{catalog.count}</b> 张图；没有入库的图，侧栏「数据来源」里会写明当前用的是哪份数据。
+          </span>
+        </div>
       )}
 
       <div class="sidebar-card">
@@ -275,6 +329,9 @@ const related = all
           {stages ? <><dt>关卡</dt><dd>{stages}</dd></> : null}
           {sizeText ? <><dt>体积</dt><dd title="地图文件的下载体积（数据来自 s2ze.com / Ruby Bot），可能与你实际下载的大小略有出入">{sizeText}</dd></> : null}
           {entityCount ? <><dt>实体数</dt><dd>{entityCount.toLocaleString('en-US')}</dd></> : null}
+          {!previewUrl && (
+            <><dt>实体预览</dt><dd title={noPreviewCopy ?? ''}>暂无（{NO_PREVIEW_LABEL[noPreviewCode ?? 'not-baked']}）</dd></>
+          )}
           {workshopSubs ? <><dt>工坊订阅</dt><dd>{workshopSubs.toLocaleString('en-US')}</dd></> : null}
           {workshopViews ? <><dt>工坊浏览</dt><dd>{workshopViews.toLocaleString('en-US')}</dd></> : null}
         </dl>
@@ -326,9 +383,11 @@ const related = all
       <div class="sidebar-card">
         <h3>数据来源</h3>
         <p class="sidebar-hint">
-          {bakedEntities
-            ? '实体数据从 Steam 创意工坊地图包解析，模型碰撞壳用于还原部分实体范围。'
-            : `实体数据保留历史服务端快照（${entityMeta?.sourceBuilt || catalog.meta.legacyBuilt}）。`}
+          {!entityMeta
+            ? '本图还没有实体数据，因此没有实体预览（原因见上方说明）。'
+            : bakedEntities
+              ? '实体数据从 Steam 创意工坊地图包解析，模型碰撞壳用于还原部分实体范围。'
+              : `实体数据保留历史服务端快照（${entityMeta?.sourceBuilt || catalog.meta.legacyBuilt}）。`}
         </p>
         {communitySources.length > 0 && (
           <p class="sidebar-hint">

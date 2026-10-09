@@ -1495,6 +1495,43 @@ img { max-width: 100%; display: block; }
 [data-theme="light"] .entity-cta .ec-d,
 [data-theme="light"] .entity-cta .ec-go { color: #fff; }
 
+/*
+ * 「没有实体预览」的说明卡：占着 CTA 的位置，但**必须一眼看出不是按钮** ——
+ * 中性面板 + 虚线描边、去掉渐变/投影/悬浮位移，免得读者对着它点。
+ */
+.entity-cta.is-off {
+  border: 1px dashed var(--border-2);
+  background: var(--panel);
+  box-shadow: none;
+  cursor: default;
+}
+.entity-cta.is-off:hover { transform: none; box-shadow: none; filter: none; }
+.entity-cta.is-off .ec-t { color: var(--text); }
+.entity-cta.is-off .ec-d { color: var(--muted); }
+.entity-cta.is-off .ec-src {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.85;
+}
+[data-theme="light"] .entity-cta.is-off .ec-t { color: var(--text); }
+[data-theme="light"] .entity-cta.is-off .ec-d,
+[data-theme="light"] .entity-cta.is-off .ec-src { color: var(--muted); }
+
+/* 有预览、但这张图缺真实碰撞地形时的提示（写在 CTA 里面） */
+.entity-cta .ec-warn {
+  display: block;
+  margin-top: 10px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.94);
+}
+[data-theme="light"] .entity-cta .ec-warn { color: #fff; }
+
 /* 卡片上的小标记 */
 .map-card-flags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .map-flag {
