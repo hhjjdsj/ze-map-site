@@ -211,7 +211,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         String(row.name ?? ''),
         cdText(row.cd === null || row.cd === undefined ? null : Number(row.cd)),
         usesText(row.uses === null || row.uses === undefined ? null : Number(row.uses)),
-        [row.note ? String(row.note) : '', row.by ? `by ${String(row.by)}` : ''].filter(Boolean).join(' · '),
+        /* 「说明」是神器表那一列的一句话介绍；和备注（我们服与原表的差别）分开显示，
+           否则审核员分不清投稿人到底在介绍这件神器，还是在说本服改了参数。 */
+        [
+          row.intro ? `说明：${String(row.intro)}` : '',
+          row.note ? `备注：${String(row.note)}` : '',
+          row.by ? `by ${String(row.by)}` : '',
+        ]
+          .filter(Boolean)
+          .join(' · '),
       ];
       for (const text of cells) {
         const td = el('td', undefined, text);

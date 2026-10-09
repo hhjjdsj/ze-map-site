@@ -73,6 +73,10 @@ export function normalizeItemRow(raw, extra = {}) {
     note: String(row.note ?? '')
       .replace(/\s+/g, ' ')
       .trim(),
+    /* 神器表「说明」列的一句话介绍（社区投稿可改，站长也能直接写进原稿的 relicIntros） */
+    intro: String(row.intro ?? '')
+      .replace(/\s+/g, ' ')
+      .trim(),
     by: String(extra.by ?? row.by ?? '').trim(),
     at: extra.at ?? row.at ?? null,
     submission: extra.submission ?? row.submission ?? null,
@@ -201,6 +205,8 @@ export function mergeItems(base = [], rows = []) {
     uses: intOrNull(it?.maxuses),
     kind: 'server',
     note: '',
+    /* 服务器配置里没有「说明」—— 那一列只有人写（原稿 relicIntros 或社区投稿的 intro） */
+    intro: '',
     by: '',
     original: null,
   })).filter((r) => r.name);
@@ -223,6 +229,8 @@ export function mergeItems(base = [], rows = []) {
         hit.original = { cd: hit.cd, uses: hit.uses };
         if (row.cd !== null) hit.cd = row.cd;
         if (row.uses !== null) hit.uses = row.uses;
+        /* 说明是「逐行盖上」：社区写了就以社区的为准（审核已过），没写就保持原样 */
+        if (row.intro) hit.intro = row.intro;
         hit.kind = 'updated';
         hit.note = row.note;
       }
@@ -237,6 +245,7 @@ export function mergeItems(base = [], rows = []) {
       uses: row.uses,
       kind: 'added',
       note: row.note,
+      intro: row.intro,
       by: row.by,
       original: null,
     });

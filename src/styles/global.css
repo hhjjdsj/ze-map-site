@@ -2583,6 +2583,10 @@ img { max-width: 100%; display: block; }
 .item-row .btn { min-width: 42px; padding: 8px 11px; font-size: 14px; }
 .ir-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .ir-note { flex: 1 1 260px; }
+.ir-intro { flex: 1 1 260px; }
+/* 现有神器表列成一排可点的按钮（点一件就带进下面的行里改） */
+.items-current-chips { margin-top: 6px; }
+.items-current-chips button { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ir-missing { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 13px; }
 .ir-status { margin: 6px 0 0; }
 .s-add-row { margin-top: 12px; }

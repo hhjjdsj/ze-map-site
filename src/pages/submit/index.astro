@@ -177,13 +177,15 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
                 */
                 <div>
                   <datalist id="items-known" />
+                  {/*
+                    站内现有的神器表列成一排按钮：点一件就把它的名字/冷却/次数/说明带进下面的行里改。
+                    以前只能靠记忆打名字（表单里做名称联想），更新过的人少、还容易打成新增。
+                  */}
+                  <div id="items-current" class="items-current" />
                   <div id="items-rows" class="items-rows" />
                   <button class="btn s-add-row" type="button" id="items-add">
-                    ＋ 再加一件
+                    ＋ 再加一件（表里没有的）
                   </button>
-                  <p class="form-hint s-cur">
-                    本站这张图现在的表：<span id="items-current">—</span>
-                  </p>
                 </div>
               ) : f.kind === 'longtext' ? (
                 <textarea id={`f-in-${f.key}`} data-input={f.key} rows="8" />
@@ -361,7 +363,7 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
      一行 = 一件道具。**动作不让投稿人选**：名字对得上本站已有的表就是「更正」，
      对不上就是「新增」，勾了「本图没有这件」就是「删除」（只加标注，不删行）。
      理由：2026-09-28 的反馈——面对「更正 / 新增」下拉框，投稿人不知道该选哪个。 */
-  type ItemRow = { n?: string; c?: string; u?: string; k?: string; l?: string };
+  type ItemRow = { n?: string; c?: string; u?: string; k?: string; l?: string; i?: string };
 
   /** 本站这张图现在的表（手写正文 + 服务器配置 + 已通过的社区更正，构建期合成） */
   function currentItemRows(): ItemRow[] {
@@ -385,7 +387,7 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     return nums.length ? `${label}（${nums.join(' / ')}）` : label;
   }
 
-  function addItemRow(): void {
+  function addItemRow(preset?: ItemRow): void {
     const rowsEl = document.getElementById('items-rows');
     if (!rowsEl) return;
 
@@ -401,6 +403,7 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     name.setAttribute('list', 'items-known');
     name.placeholder = known.length ? `道具名（如 ${known[0].n}）` : '道具名';
     name.autocomplete = 'off';
+    if (preset?.n) name.value = String(preset.n);
 
     const cd = document.createElement('input');
     cd.dataset.k = 'cd';
@@ -409,6 +412,11 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     cd.max = '3600';
     cd.step = '0.5';
     cd.placeholder = '冷却秒';
+    /* 表里存的是「60 秒」/「—」这种展示值：能取出数字就预填，取不出就留空（留空 = 这一项不动） */
+    if (preset?.c) {
+      const m = /(\d+(?:\.\d+)?)/.exec(String(preset.c));
+      if (m) cd.value = m[1];
+    }
 
     const uses = document.createElement('input');
     uses.dataset.k = 'uses';
@@ -416,6 +424,7 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     uses.min = '0';
     uses.max = '99';
     uses.placeholder = '次数';
+    if (preset?.u && /^\d+$/.test(String(preset.u).trim())) uses.value = String(preset.u).trim();
 
     const del = document.createElement('button');
     del.type = 'button';
@@ -431,8 +440,16 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
 
     const note = document.createElement('input');
     note.dataset.k = 'note';
-    note.placeholder = '说明（选填）：例如「只在第四关出现」';
+    note.placeholder = '备注（选填）：我们服和原表的差别，如「只在第四关出现」';
     note.className = 'ir-note';
+
+    /* 神器表「说明」列的一句话介绍 —— 这件神器是干嘛的（长文走「攻略 / 神器讲解」字段） */
+    const intro = document.createElement('input');
+    intro.dataset.k = 'intro';
+    intro.maxLength = 200;
+    intro.placeholder = '说明（选填）：这件神器是干嘛的，一句话';
+    intro.className = 'ir-intro';
+    if (preset?.i) intro.value = String(preset.i);
 
     const missingWrap = document.createElement('label');
     missingWrap.className = 'ir-missing';
@@ -441,7 +458,7 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     missing.dataset.k = 'missing';
     missingWrap.append(missing, document.createTextNode('本图没有这件'));
 
-    line2.append(note, missingWrap);
+    line2.append(note, intro, missingWrap);
 
     const status = document.createElement('p');
     status.className = 'form-hint ir-status';
@@ -456,7 +473,7 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
         return;
       }
       if (hit) {
-        status.textContent = `表里已有：${describeItemRow(hit)} → 你填的冷却 / 次数会改成新的，原值留在备注里`;
+        status.textContent = `表里已有：${describeItemRow(hit)}${hit.i ? ` · 说明：${hit.i}` : ''} → 你填的冷却 / 次数 / 说明会改成新的，原值留在备注里`;
       } else if (name.value.trim()) {
         status.textContent = '表里没有这件 → 会作为新增（社区补充）加进表里';
       } else {
@@ -485,10 +502,11 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
       const cdRaw = val('cd');
       const usesRaw = val('uses');
       const note = val('note');
-      if (!name && !cdRaw && !usesRaw && !note) continue;
+      const intro = val('intro');
+      if (!name && !cdRaw && !usesRaw && !note && !intro) continue;
       /* 动作由名字决定（见 updateStatus）：勾了「本图没有」→ remove，表里有 → update，否则 add */
       const action = box?.checked ? 'remove' : knownItemRow(name) ? 'update' : 'add';
-      out.push({ action, name, cd: cdRaw, uses: usesRaw, note });
+      out.push({ action, name, cd: cdRaw, uses: usesRaw, note, intro });
     }
     return out;
   }
@@ -512,9 +530,28 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
       }
     }
     if (curEl) {
-      curEl.textContent = rows.length
-        ? rows.map(describeItemRow).join('、')
-        : '（本站还没有这张图的神器表 —— 你填的会成为第一张）';
+      curEl.textContent = '';
+      if (!rows.length) {
+        const p = document.createElement('p');
+        p.className = 'form-hint';
+        p.textContent = '本站还没有这张图的神器表 —— 你填的会成为第一张。';
+        curEl.append(p);
+      } else {
+        const p = document.createElement('p');
+        p.className = 'form-hint';
+        p.textContent = `本站这张图现在的表（${rows.length} 件，点一件就能改它的冷却 / 次数 / 说明）：`;
+        const box = document.createElement('div');
+        box.className = 'field-chips items-current-chips';
+        for (const r of rows) {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.textContent = String(r.n ?? '');
+          b.title = `${describeItemRow(r)}${r.i ? ` · 说明：${r.i}` : ''} —— 点一下带进下面的表单`;
+          b.addEventListener('click', () => addItemRow(r));
+          box.append(b);
+        }
+        curEl.append(p, box);
+      }
     }
     addItemRow();
   }

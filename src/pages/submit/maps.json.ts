@@ -92,16 +92,41 @@ export const GET: APIRoute = async () => {
     const docRows = docItemRows(researchBySlug.get(m.id)?.document ?? '');
 
     const byKey = new Map<string, Record<string, unknown>>();
+    /* 说明（神器表那一列）：原稿 relicIntros 打底，社区投稿的 intro 盖上 —— 与生成器的规则一致 */
+    const researchIntros = new Map<string, string>();
+    const ri = researchBySlug.get(m.id)?.relicIntros;
+    if (ri && typeof ri === 'object') {
+      for (const [k, v] of Object.entries(ri)) {
+        const text = String(v ?? '').trim();
+        if (text) researchIntros.set(itemKey(k), text);
+      }
+    }
+    const communityIntros = new Map<string, string>();
+    for (const r of community?.items ?? []) {
+      const text = String(r?.intro ?? '').trim();
+      if (r?.name && text) communityIntros.set(itemKey(r.name), text);
+    }
+    const introOf = (name: unknown) => communityIntros.get(itemKey(name)) ?? researchIntros.get(itemKey(name)) ?? '';
+
     for (const r of docRows) {
+      const intro = introOf(r.name);
       byKey.set(itemKey(r.name), {
         n: r.name,
         k: 'doc',
         ...(r.label ? { l: r.label } : {}),
         ...(r.cd === null ? {} : { c: cdText(r.cd) }),
+        ...(intro ? { i: intro } : {}),
       });
     }
     for (const r of merged.rows) {
-      byKey.set(itemKey(r.name), { n: r.name, c: cdText(r.cd), u: usesText(r.uses), k: r.kind });
+      const intro = introOf(r.name);
+      byKey.set(itemKey(r.name), {
+        n: r.name,
+        c: cdText(r.cd),
+        u: usesText(r.uses),
+        k: r.kind,
+        ...(intro ? { i: intro } : {}),
+      });
     }
     if (byKey.size) row.items = [...byKey.values()];
     return row;

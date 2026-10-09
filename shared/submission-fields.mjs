@@ -65,13 +65,16 @@ export const FIELD_RULES = {
     kind: 'itemlist',
     label: '神器 / 道具',
     hint:
-      '一行填一件。名字直接填条目页表里的写法（有联想可选），本站表里已有的会「更正」它、表里没有的会「新增」——' +
-      '不用你自己选。例：表里写着 Fire、冷却 —，你在服里看到是 60 秒，就填 Fire + 60 秒提交。' +
-      '冷却 / 次数留空 = 这一项不动；如果表里那件在本图其实没有，勾「本图没有这件」。',
+      '一行填一件。上面列着本站这张图现在的表 —— 点一件就能改它（名字、冷却、次数、说明都会带出来）；' +
+      '要加表里没有的，点「＋ 再加一行」手填。动作不用你选：名字对得上表里已有的算「更正」，对不上算「新增」。' +
+      '「说明」是神器表那一列的一句话介绍（这件神器是干嘛的，最多 200 字，长文请投「攻略 / 神器讲解」）；' +
+      '「备注」写的是我们服和原表的差别（例如「第四关才刷」）。冷却 / 次数留空 = 这一项不动；' +
+      '如果表里那件在本图其实没有，勾「本图没有这件」。',
     /* 上限：一次能交的行数、单个字段长度、以及整表文本总量（防巨型投稿） */
     maxRows: 40,
     nameMaxLen: 60,
     noteMaxLen: 200,
+    introMaxLen: 200,
     cdMax: 3600,
     usesMax: 99,
     textBudget: 6000,
@@ -264,22 +267,30 @@ export function validateValue(field, raw) {
         const note = String(row.note ?? '')
           .replace(/\s+/g, ' ')
           .trim();
-        if (note.length > rule.noteMaxLen) return { ok: false, error: `${at}的说明最多 ${rule.noteMaxLen} 个字` };
-        if (/[<>{}|]/.test(note)) return { ok: false, error: `${at}的说明里有不支持的字符（< > { } |）` };
+        if (note.length > rule.noteMaxLen) return { ok: false, error: `${at}的备注最多 ${rule.noteMaxLen} 个字` };
+        if (/[<>{}|]/.test(note)) return { ok: false, error: `${at}的备注里有不支持的字符（< > { } |）` };
+
+        /* intro = 神器表「说明」列的一句话介绍（和备注不是一回事：
+           备注写「我们服里改了哪一项」，说明写「这件神器是干嘛的」） */
+        const intro = String(row.intro ?? '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (intro.length > rule.introMaxLen) return { ok: false, error: `${at}的说明最多 ${rule.introMaxLen} 个字（长文请投「攻略 / 神器讲解」）` };
+        if (/[<>{}|]/.test(intro)) return { ok: false, error: `${at}的说明里有不支持的字符（< > { } |）` };
 
         /* 删除只认名字；其它动作得说清改了什么，否则审核员只能猜 */
-        if (action !== 'remove' && cd === null && uses === null && !note) {
-          return { ok: false, error: `${at}什么都没改：冷却、次数、说明至少填一项` };
+        if (action !== 'remove' && cd === null && uses === null && !note && !intro) {
+          return { ok: false, error: `${at}什么都没改：冷却、次数、说明、备注至少填一项` };
         }
 
         const key = name.toLowerCase();
         if (seen.has(key)) return { ok: false, error: `「${name}」写了两行，请合并成一行` };
         seen.add(key);
 
-        budget += name.length + note.length;
+        budget += name.length + note.length + intro.length;
         if (budget > rule.textBudget) return { ok: false, error: '整表内容太长，请分几次提交' };
 
-        out.push({ action, name, cd, uses, note });
+        out.push({ action, name, cd, uses, note, ...(intro ? { intro } : {}) });
       }
       return { ok: true, value: out };
     }

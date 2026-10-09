@@ -672,12 +672,17 @@ function renderEntry(rec, research, wsRec, gfl) {
     (g) => g && typeof g.title === 'string' && g.title.trim() && typeof g.body === 'string' && g.body.trim()
   );
   const guideAnchors = guideAnchorsFor(guides, merged.rows);
-  /* 一句话说明（神器名 → 说明），大小写与首尾空格不敏感 */
+  /* 一句话说明（神器名 → 说明），大小写与首尾空格不敏感。
+     两层：原稿 relicIntros 打底，社区投稿（items[].intro）逐行盖上 —— 和神器表其它列的合并规则一致。 */
   const relicIntros = new Map(
     Object.entries(research?.relicIntros && typeof research.relicIntros === 'object' ? research.relicIntros : {})
       .map(([k, v]) => [String(k).trim().toLowerCase(), String(v ?? '').trim()])
       .filter(([, v]) => v)
   );
+  for (const r of merged.rows) {
+    const text = String(r?.intro ?? '').trim();
+    if (r?.name && text) relicIntros.set(String(r.name).trim().toLowerCase(), text);
+  }
 
   if (merged.rows.length) {
     /* 备注列只在真的有社区行时出现：没有社区投稿的图，表格保持三列，
