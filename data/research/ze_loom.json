@@ -1,6 +1,7 @@
 {
   "slug": "ze_loom",
   "title": "城市掠夺者",
+  "author": "easter",
   "summary": "《城市掠夺者》（ze_loom）是 2024 年 4 月上架的 CS2 僵尸逃跑图。工坊说明极简，正文只有一行「townscaper」；配乐则列得清楚——Epic Mountain 的《Loneliness》、Celeste 的《Resurrections》与《Mirror Temple》、《Minecraft: Caves & Cliffs》的 otherside、《来自深渊》的 Old Stories，GFL 的音乐配置与之一致。中文社区对这张图的叫法并不统一：资料站与多数录播写作《城市掠夺者》，B 站也有 up 主叫它「恐惧若现」「恐惧隐现」，还有人按克苏鲁题材自行命名成「克苏鲁：错乱」。工坊上传者的个人资料页解析不出昵称（只回显 SteamID），作者身份未能查证。\n\n关卡结构是 3 关，社区通关录像按「第一关／第二关／第三关」分 P，萌新视角也按 Stage 1-3 录（第一关在 FYS、二三关在 EXG 录）。神器两件——Tesla（45 秒冷却、3 次使用）和 Firework（30 秒冷却、3 次），僵尸道具是 Zombie Smoke，带 Invisibility（30 秒）和 Cloud（45 秒）两个子技能。第 2 关的逃亡路上有「离光球太远就会扣血」的机制，第 3 关是雷雨场景，结尾要等水位上涨；工坊评论指出第 3 关僵尸能绕到最后那栋建筑超车，也有人报告第 3 关开局有人会在第 1 关复活、第 2 关的人类伤害判定不生效。\n\n地图里有一套雷击机制，会周期性劈死玩家，玩家普遍认为它兼作反贴门（anti-doorhug）用途；评论区有人追问「为什么每回合都是同一批人被劈死，防守方也会被劈，是不是脚本出问题」，也有人说自己当僵尸时同样被劈。其它反馈包括 AG2 更新后有神器损坏、第 3 关用的 Minecraft BGM 与雷雨氛围不搭、希望加入 de_train 的特效等，正面留言则有「perfect map！！！」和「celeste is goated amazing music」。录播者的评价是「三关关卡图，难度中等」，同一份简介也提到第 3 关结尾火力不足容易守不住。",
   "difficulty": "困难",
   "tags": [

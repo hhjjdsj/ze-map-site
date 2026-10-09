@@ -151,6 +151,9 @@ data/research/_*/
 # 入库的只有这份几 KB 的清单；页面靠它渲染「图片集」。
 # ⚠️ 上面那条 data/* 会连它一起忽略，所以这行不能删（community 踩过同一个坑）。
 !data/gallery/
+# 地图体积（MB，详情页侧栏那行「体积 ~194 MB」），由 npm run data:sizes 从 s2ze 的公开数据抓来。
+# 必须入库：构建不联网（第三方接口挂掉不该让整站构建变红），运行时只读这份文件。
+!data/map-sizes.json
 
 # Astro 生成的类型与缓存（不要入库）
 .astro/

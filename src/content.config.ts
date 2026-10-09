@@ -26,6 +26,9 @@ const maps = defineCollection({
     players: z.string().optional(),
     duration: z.string().optional(),
     stages: z.number(),
+    /* 下载体积（MB）。来源是 data/map-sizes.json（s2ze 公开数据，npm run data:sizes），
+       没有这张图的数据就没有这个字段，页面侧栏不显示「体积」那一行。 */
+    size: z.number().optional(),
     tags: z.array(z.string()),
     cover: z.string().optional(),
     workshopUrl: z.string().url().optional(),

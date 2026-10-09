@@ -36,6 +36,7 @@
     "gfl:parse": "node scripts/content/parse-gfl-configs.mjs",
     "gfl:link": "node scripts/content/link-gfl-configs.mjs",
     "content:links": "node scripts/content/check-links.mjs",
+    "data:sizes": "node scripts/content/fetch-map-sizes.mjs",
     "deploy:check": "node scripts/ops/check-deploy.mjs"
   },
   "dependencies": {

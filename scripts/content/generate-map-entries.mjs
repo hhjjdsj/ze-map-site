@@ -369,6 +369,19 @@ function sectionsToBody(sections, slug, coverRel) {
 
 
 /* ---------------- 生成一个条目的 MDX ---------------- */
+/*
+ * 地图体积（MB）：data/map-sizes.json，由 `npm run data:sizes` 从 s2ze 的公开数据抓来
+ * （见 docs/data-sources.md）。**读不到就当没有** —— 体积是锦上添花的数据，
+ * 不能因为少个文件就让整站构建失败。
+ */
+const MAP_SIZES = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(ROOT, 'data/map-sizes.json'), 'utf8')).sizes ?? {};
+  } catch {
+    return {};
+  }
+})();
+
 function renderEntry(rec, research, wsRec, gfl) {
   /*
    * pageSlug = 页面文件名（= data/research / data/gallery / data/community 的键、投稿链接里的 map 参数）。
@@ -376,6 +389,7 @@ function renderEntry(rec, research, wsRec, gfl) {
    * —— 这种差异由 research 的 `maps` 字段声明（见文件开头 entityAlias）。
    */
   const pageSlug = rec.pageSlug || rec.m;
+  const sizeMb = MAP_SIZES[pageSlug];
   const wsUrl = `https://steamcommunity.com/sharedfiles/filedetails/?id=${rec.f}`;
   const groups = Object.fromEntries((catalog.groups || []).map((g) => [g.id, g]));
   const baked = rec.source === BAKED_SOURCE;
@@ -455,6 +469,9 @@ function renderEntry(rec, research, wsRec, gfl) {
     research?.players ? `players: ${JSON.stringify(research.players)}` : null,
     research?.duration ? `duration: ${JSON.stringify(research.duration)}` : null,
     `stages: ${rec.st || 0}`,
+    /* 体积（MB）：data/map-sizes.json（s2ze 的公开数据，npm run data:sizes 刷新）。
+       没这张图的数据就不写这一行，页面侧栏自然不显示「体积」。 */
+    typeof sizeMb === 'number' && sizeMb > 0 ? `size: ${sizeMb}` : null,
     /* featured：首页「精选」那一排卡片就是按这个字段筛的（见 pages/index.astro） */
     research?.featured ? `featured: true` : null,
     `tags: [${tags.map((x) => JSON.stringify(x)).join(', ')}]`,

@@ -48,6 +48,7 @@ const {
   players,
   duration,
   stages,
+  size,
   sources,
   videoUrls,
   stub,
@@ -58,6 +59,15 @@ const {
 } = entry.data;
 
 const hasCommunity = communityPeople.length > 0 || communityNotes.length > 0;
+/*
+ * 体积（MB → 人话）：数值来自 data/map-sizes.json（s2ze/Ruby Bot 的公开地图数据，
+ * 见 docs/data-sources.md），带「~」是因为那是工坊分包的体积、和实际下载量可能略有出入。
+ */
+const sizeText = typeof size === 'number' && size > 0
+  ? size >= 1024
+    ? `~${(size / 1024).toFixed(2)} GB`
+    : `~${Math.round(size)} MB`
+  : null;
 /* 社区正文按投稿字段分块：背景故事单独一块，其余进「社区补充」 */
 const storyNotes = communityNotes.filter((n: { field?: string | null }) => n.field === 'story');
 const otherNotes = communityNotes.filter((n: { field?: string | null }) => n.field !== 'story');
@@ -263,6 +273,7 @@ const related = all
           {players && <><dt>人数</dt><dd>{players}</dd></>}
           {duration && <><dt>时长</dt><dd>{duration}</dd></>}
           {stages ? <><dt>关卡</dt><dd>{stages}</dd></> : null}
+          {sizeText ? <><dt>体积</dt><dd title="地图文件的下载体积（数据来自 s2ze.com / Ruby Bot），可能与你实际下载的大小略有出入">{sizeText}</dd></> : null}
           {entityCount ? <><dt>实体数</dt><dd>{entityCount.toLocaleString('en-US')}</dd></> : null}
           {workshopSubs ? <><dt>工坊订阅</dt><dd>{workshopSubs.toLocaleString('en-US')}</dd></> : null}
           {workshopViews ? <><dt>工坊浏览</dt><dd>{workshopViews.toLocaleString('en-US')}</dd></> : null}
