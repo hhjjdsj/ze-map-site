@@ -2566,6 +2566,28 @@ img { max-width: 100%; display: block; }
 .s-field { margin-bottom: 4px; }
 .s-cur { margin-top: 8px; }
 .cur-val { color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+/* 列表类字段（标签 / 视频 / 来源）的「现在的值」逐条列出来，不要挤成一行 */
+.cur-list { margin: 6px 0 0; padding-left: 18px; color: var(--text); font-size: 12.5px; line-height: 1.8; overflow-wrap: anywhere; }
+
+/* ---- 右侧「这张图现在的内容」对照面板 ---- */
+.ref-body { font-size: 12.5px; line-height: 1.7; }
+.ref-row { margin: 0 0 6px; color: var(--text); overflow-wrap: anywhere; }
+.ref-row b { color: var(--muted); font-weight: 600; margin-right: 6px; }
+.ref-h {
+  margin: 12px 0 4px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+}
+.ref-items,
+.ref-list { margin: 0; padding-left: 18px; color: var(--text); line-height: 1.8; overflow-wrap: anywhere; }
+.ref-items li { margin-bottom: 2px; }
+.ref-list a { color: var(--accent-2); text-decoration: none; }
+.ref-list a:hover { text-decoration: underline; }
+.ref-open { display: inline-block; margin-top: 12px; font-size: 12.5px; color: var(--accent-2); text-decoration: none; }
+.ref-open:hover { text-decoration: underline; }
 
 /* ---- 字段快捷按钮 ---- */
 .form-row.has-chips > select { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }

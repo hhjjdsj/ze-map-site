@@ -262,6 +262,18 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
         内容纯静态，不参与提交逻辑。
       */}
       <aside class="submit-aside">
+        {/*
+          「这张图现在的内容」对照面板：投稿人的核心困难是**看不到现状**——
+          要改难度、补神器、换封面，都得先知道现在写的是什么。这个卡片跟着滚动（sticky），
+          表单在左边改、右边随时对照，不用来回切页面。内容由脚本按 mapInfo 填。
+        */}
+        <div class="s-aside-card" id="ref-card" hidden>
+          <h3>这张图现在的内容</h3>
+          <div id="ref-body" class="ref-body"></div>
+          <a class="ref-open" id="ref-open" href="#" target="_blank" rel="noopener">
+            在地图页打开对照 ↗
+          </a>
+        </div>
         <div class="s-aside-card">
           <h3>提交之后</h3>
           <ol class="s-timeline">
@@ -567,13 +579,108 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     hintEl.textContent = rules[key]?.hint ?? '';
   }
 
+  /* ===== 「这张图现在的内容」对照面板（右侧 sticky） =====
+     只读摘要：基本信息 + 神器表 + 攻略视频 + 资料来源 + 图片集张数。
+     数据来自 /submit/maps.json（构建期把服务器配置、手写正文、已通过的社区更正合成好的那份），
+     所以它跟条目页上看到的是一致的，不会出现「表单说 A、页面说 B」。 */
+  function renderRefPanel(): void {
+    const card = document.getElementById('ref-card');
+    const body = document.getElementById('ref-body');
+    const open = document.getElementById('ref-open') as HTMLAnchorElement | null;
+    if (!card || !body) return;
+    if (!mapInfo) {
+      card.hidden = true;
+      return;
+    }
+    card.hidden = false;
+    if (open) open.href = `/maps/${mapInfo.slug}/`;
+    body.textContent = '';
+
+    const row = (label: string, value: unknown) => {
+      const text = Array.isArray(value) ? value.join('、') : String(value ?? '');
+      /* 空值不显示；「0」也当没有（关卡数 0 是「没填」，摆出来只是噪音）。
+         「未知难度」要留着 —— 那正是一条「这里还缺资料」的提示。 */
+      if (!text || text === '—' || text === 'undefined' || text === '0') return;
+      const p = document.createElement('p');
+      p.className = 'ref-row';
+      const b = document.createElement('b');
+      b.textContent = label;
+      p.append(b, document.createTextNode(text));
+      body.append(p);
+    };
+    row('难度', mapInfo.difficulty);
+    if (Array.isArray(mapInfo.tags) && mapInfo.tags.length) row('标签', mapInfo.tags);
+    row('作者', mapInfo.author);
+    row('版本', mapInfo.version);
+    row('人数', mapInfo.players);
+    row('时长', mapInfo.duration);
+    row('关卡', mapInfo.stages);
+    if (typeof mapInfo.galleryCount === 'number') row('图片集', `${mapInfo.galleryCount} 张`);
+
+    const info = mapInfo as Record<string, unknown>;
+    const items = currentItemRows();
+    const head = document.createElement('p');
+    head.className = 'ref-h';
+    head.textContent = items.length ? `神器 / 道具（${items.length} 件）` : '神器 / 道具（本站还没有这张图的表）';
+    body.append(head);
+    if (items.length) {
+      const ul = document.createElement('ul');
+      ul.className = 'ref-items';
+      for (const r of items) {
+        const li = document.createElement('li');
+        li.textContent = `${r.n ?? ''}${r.c ? ` · ${r.c}` : ''}${r.u ? ` · ${r.u}` : ''}${r.i ? ` —— ${r.i}` : ''}`;
+        ul.append(li);
+      }
+      body.append(ul);
+    }
+    for (const [label, key] of [
+      ['攻略视频', 'videoUrls'],
+      ['资料来源', 'sources'],
+    ] as const) {
+      const list = info[key];
+      if (!Array.isArray(list) || !list.length) continue;
+      const h = document.createElement('p');
+      h.className = 'ref-h';
+      h.textContent = `${label}（${list.length}）`;
+      const ul = document.createElement('ul');
+      ul.className = 'ref-list';
+      for (const url of list) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = String(url);
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = String(url).replace(/^https?:\/\/(www\.)?/, '');
+        li.append(a);
+        ul.append(li);
+      }
+      body.append(h, ul);
+    }
+  }
+
   function prefill(key: string) {
     const input = document.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
       `[data-input="${key}"]`
     );
     const curEl = document.querySelector<HTMLElement>(`[data-current="${key}"]`);
     const cur = mapInfo?.[key];
-    if (curEl) curEl.textContent = formatValue(cur);
+    /* 列表类字段（标签 / 视频 / 来源）以前挤成一行「a、b、c」，改的时候根本对不上号；
+       现在逐条列出来，投稿人能看到「已经有哪几条」，再决定追加还是替换。 */
+    if (curEl) {
+      if (Array.isArray(cur) && cur.length) {
+        curEl.textContent = '';
+        const ul = document.createElement('ul');
+        ul.className = 'cur-list';
+        for (const item of cur) {
+          const li = document.createElement('li');
+          li.textContent = String(item);
+          ul.append(li);
+        }
+        curEl.append(ul);
+      } else {
+        curEl.textContent = formatValue(cur);
+      }
+    }
 
     /* 神器 / 道具：没有「一个值」可以预填，改成列出现有的表 + 一行空行等投稿人填 */
     if (rules[key]?.kind === 'itemlist') {
@@ -661,6 +768,7 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
 
       form.hidden = false;
       showField(fieldSel.value);
+      renderRefPanel();
       prefill(fieldSel.value);
     })
     .catch(() => {

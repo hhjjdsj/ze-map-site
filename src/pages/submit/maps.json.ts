@@ -89,7 +89,18 @@ export const GET: APIRoute = async () => {
     const gfl = gflByName.get(aliases[mapName] ?? mapName) ?? null;
     const community = communityBySlug.has(m.id) ? normalizeDoc(m.id, communityBySlug.get(m.id)) : null;
     const merged = mergeItems(gfl?.items ?? [], community?.items ?? []);
-    const docRows = docItemRows(researchBySlug.get(m.id)?.document ?? '');
+    /*
+     * 手写正文里的神器表：早期是 `document`（一整篇 HTML），2026-10-08 起改成 `sections[]`
+     * （结构化小节，魔晄炉 / 米纳斯 / 黑珍珠号那三张）。两种都要认 ——
+     * 只认 document 的话，这三张图在投稿页会显示「本站还没有这张图的神器表」，
+     * 而页面上明明摆着一张表（对照面板、神器行编辑器也跟着一起错）。
+     */
+    const research = researchBySlug.get(m.id);
+    const legacyDoc = String(research?.document ?? '');
+    const sectionsDoc = Array.isArray(research?.sections)
+      ? research.sections.map((s: { title?: string; body?: string }) => `## ${s?.title ?? ''}\n\n${s?.body ?? ''}`).join('\n\n')
+      : '';
+    const docRows = docItemRows(legacyDoc || sectionsDoc);
 
     const byKey = new Map<string, Record<string, unknown>>();
     /* 说明（神器表那一列）：原稿 relicIntros 打底，社区投稿的 intro 盖上 —— 与生成器的规则一致 */
