@@ -2115,6 +2115,14 @@ img { max-width: 100%; display: block; }
   color: var(--muted);
 }
 
+/* 难度来源标注（详情页侧栏「难度 困难 · 源于 FYS」）—— 已获 FYS 社区同意标注 */
+.diff-src {
+  margin-left: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+  cursor: help;
+}
+
 /* ===== 加入 QQ 群（页脚 / 关于页 / 投稿页共用，见 components/QqGroup.astro） ===== */
 .qq-group { white-space: nowrap; }
 .qq-group b { color: var(--text); letter-spacing: 0.02em; }

@@ -191,7 +191,7 @@ const related = all
       <h1>{title}</h1>
       <p class="subtitle">{titleEn}</p>
       <div class="hero-tags">
-        <span class={`badge ${diffClass}`}>{difficulty}</span>
+        <span class={`badge ${diffClass}`} title="难度分档与取值参考 FYS（风云社）的服务器地图列表">{difficulty}</span>
         <span class="badge">{game}</span>
         {tags.map((t: string) => <span class="badge">{t}</span>)}
       </div>
@@ -340,7 +340,7 @@ const related = all
           {!author && uploader && <><dt>工坊上传者</dt><dd>{uploader}</dd></>}
           {version && <><dt>版本</dt><dd>{version}</dd></>}
           <dt>游戏</dt><dd>{game}</dd>
-          <dt>难度</dt><dd><span class={`badge ${diffClass}`}>{difficulty}</span></dd>
+          <dt>难度</dt><dd><span class={`badge ${diffClass}`}>{difficulty}</span>{difficulty !== '未知' && <span class="diff-src" title="难度分档与取值参考 FYS（风云社）的服务器地图列表；不同服务器的口径可能不同">源于 FYS</span>}</dd>
           {players && <><dt>人数</dt><dd>{players}</dd></>}
           {duration && <><dt>时长</dt><dd>{duration}</dd></>}
           {stages ? <><dt>关卡</dt><dd>{stages}</dd></> : null}
