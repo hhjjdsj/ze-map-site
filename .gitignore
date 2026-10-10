@@ -159,6 +159,10 @@ data/research/_*/
 # 本机有文件、仓库里没有，Cloudflare 构建挂在 [UNRESOLVED_IMPORT]，
 # 所以现在 npm run build 第一步会跑 scripts/content/check-build-inputs.mjs 拦这类错误。
 !data/entity-status.json
+# 本站整理资料的逐条改动记录（哪张图的哪一部分改过），由
+# scripts/content/build-research-changes.mjs 从 git 历史生成，首页底部「最近改动」用。
+# 必须入库：理由同 map-dates.json（线上浅克隆读不到历史，只能沿用这份）。
+!data/research-changes.json
 
 # Astro 生成的类型与缓存（不要入库）
 .astro/

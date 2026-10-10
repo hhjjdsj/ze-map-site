@@ -1,0 +1,211 @@
+---
+/**
+ * 「最近改动」逐条记录（首页底部 / 更新页共用）。
+ *
+ * 数据来自 src/lib/update-feed.ts：社区投稿那层读 data/community 里各文件的 log[]，
+ * 本站整理的资料那层读 data/research-changes.json（git 生成）。
+ *
+ * 交互：首屏渲染前 pageSize 条（静态 HTML，没开 JS 也能看），点「加载更多」
+ * 才去拉一次 /updates/feed.json，之后按页追加 —— 一次请求翻到底。
+ *
+ * 为什么整块加 data-pagefind-ignore：这是一份「谁改了什么」的流水账，
+ * 里面全是地图名与字段名。不忽略的话，搜任何一张图，首页都会因为这块而命中，
+ * 把真正的条目页挤下去（MapCard 当初就踩过这个坑）。
+ */
+import type { FeedItem } from '../lib/update-feed';
+
+interface Props {
+  /** 全部条目（页面自己 getUpdateFeed() 拿到的完整结果） */
+  items: FeedItem[];
+  /** 首屏显示几条，也是每次「加载更多」追加的条数 */
+  pageSize?: number;
+  heading?: string;
+  /** 一句话说明口径，放在标题下面 */
+  lede?: string;
+  /** 锚点 id，页面里可以直链 */
+  id?: string;
+}
+
+const { items, pageSize = 8, heading = '最近改动', lede = '', id = 'changes' } = Astro.props;
+const first = items.slice(0, pageSize);
+const total = items.length;
+const rest = Math.max(0, total - first.length);
+
+/** 日期显示成 10-09（年份在 title 里） */
+const mmdd = (at: string) => at.slice(5, 10);
+const fullTime = (at: string) => at.replace('T', ' ').slice(0, 16);
+---
+
+<section class="uf-sec" id={id} data-pagefind-ignore>
+  <div class="section-head">
+    <h2>{heading}</h2>
+    <a href="/updates/">全部改动 →</a>
+  </div>
+  {lede && <p class="uf-lede">{lede}</p>}
+
+  <ol
+    class="uf-list"
+    data-uf
+    data-uf-total={total}
+    data-uf-size={pageSize}
+    data-uf-shown={first.length}
+  >
+    {
+      first.map((it) => (
+        <li class="uf-item">
+          <time class="uf-day" datetime={it.at} title={fullTime(it.at)}>
+            {mmdd(it.at)}
+          </time>
+          <span class="uf-ago" data-ts={it.at} />
+          <span class="uf-main">
+            {it.slug ? (
+              <a class="uf-map" href={`/maps/${it.slug}/`}>
+                {it.title ?? it.slug}
+              </a>
+            ) : (
+              <span class="uf-map uf-map-many">{it.what}</span>
+            )}
+            {it.slug && <span class="uf-what">{it.what}</span>}
+            {it.by && <span class="uf-by">{it.by}</span>}
+            <span class={`uf-src${it.src === '社区投稿' ? ' is-community' : ''}`}>{it.src}</span>
+          </span>
+          {it.extra && it.extra.length > 0 && (
+            <details class="uf-extra">
+              <summary>{it.extra.length} 张图的清单</summary>
+              <ul>
+                {it.extra.map((e) => (
+                  <li>
+                    <a href={`/maps/${e.slug}/`}>{e.title ?? e.slug}</a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+
+  {
+    total === 0 && (
+      <p class="uf-empty">
+        这里还没有记录。等有人补充资料或投稿之后，改动会逐条列在这里（也可以在{' '}
+        <a href="/contribute/">投稿页</a> 亲手写下第一条）。
+      </p>
+    )
+  }
+
+  <button class="btn uf-more" type="button" data-uf-more hidden={rest === 0}>
+    {rest > 0 ? `加载更多（还有 ${rest} 条）` : '加载更多'}
+  </button>
+
+  <script>
+    /*
+     * 「加载更多」：点第一次才去拉 /updates/feed.json（整份，一次请求），
+     * 之后从内存里按页追加。HTML 结构与上面的 Astro 模板保持一致 ——
+     * 改这里的标签结构时，上面那一段也要一起改。
+     */
+    const PAGE = (sec: HTMLElement) => Number(sec.querySelector('[data-uf]')?.getAttribute('data-uf-size') ?? 8);
+
+    let feedPromise: Promise<any[]> | null = null;
+    const loadFeed = () => {
+      if (!feedPromise) {
+        feedPromise = fetch('/updates/feed.json')
+          .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+          .then((j) => (Array.isArray(j?.items) ? j.items : []))
+          .catch(() => []);
+      }
+      return feedPromise;
+    };
+
+    const el = (tag: string, cls?: string, text?: string) => {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text !== undefined) n.textContent = text;
+      return n;
+    };
+
+    /** 渲染一条（与 Astro 模板同构；textContent 赋值，天然免疫注入） */
+    const row = (it: any) => {
+      const li = el('li', 'uf-item');
+      const t = el('time', 'uf-day', String(it.day ?? '').slice(5)) as HTMLTimeElement;
+      t.dateTime = String(it.at ?? '');
+      t.title = String(it.at ?? '').replace('T', ' ').slice(0, 16);
+      const ago = el('span', 'uf-ago');
+      ago.dataset.ts = String(it.at ?? '');
+      const main = el('span', 'uf-main');
+      if (it.slug) {
+        const a = el('a', 'uf-map', String(it.title ?? it.slug)) as HTMLAnchorElement;
+        a.href = `/maps/${it.slug}/`;
+        main.append(a, el('span', 'uf-what', String(it.what ?? '')));
+      } else {
+        main.append(el('span', 'uf-map uf-map-many', String(it.what ?? '')));
+      }
+      if (it.by) main.append(el('span', 'uf-by', String(it.by)));
+      main.append(el('span', `uf-src${it.src === '社区投稿' ? ' is-community' : ''}`, String(it.src ?? '')));
+      li.append(t, ago, main);
+      if (Array.isArray(it.extra) && it.extra.length) {
+        const d = el('details', 'uf-extra');
+        d.append(el('summary', undefined, `${it.extra.length} 张图的清单`));
+        const ul = document.createElement('ul');
+        for (const e of it.extra) {
+          const li2 = document.createElement('li');
+          const a = el('a', undefined, String(e.title ?? e.slug)) as HTMLAnchorElement;
+          a.href = `/maps/${e.slug}/`;
+          li2.append(a);
+          ul.append(li2);
+        }
+        d.append(ul);
+        li.append(d);
+      }
+      return li;
+    };
+
+    /** 相对时间（今天 / 3 天前）按**访问者本机时间**算：站点是静态的，构建期算出来会过期 */
+    const fillAgo = (root: ParentNode) => {
+      const now = Date.now();
+      for (const s of root.querySelectorAll<HTMLElement>('.uf-ago[data-ts]')) {
+        const ts = Date.parse(s.dataset.ts ?? '');
+        if (Number.isNaN(ts)) continue;
+        const days = Math.floor((now - ts) / 86400000);
+        s.textContent = days <= 0 ? '今天' : days === 1 ? '昨天' : days < 30 ? `${days} 天前` : '';
+      }
+    };
+
+    for (const sec of document.querySelectorAll<HTMLElement>('.uf-sec')) {
+      const list = sec.querySelector<HTMLOListElement>('[data-uf]');
+      const btn = sec.querySelector<HTMLButtonElement>('[data-uf-more]');
+      if (!list || !btn) continue;
+      const size = PAGE(sec);
+      const total = Number(list.dataset.ufTotal ?? 0);
+      let shown = Number(list.dataset.ufShown ?? 0);
+      let busy = false;
+
+      btn.addEventListener('click', async () => {
+        if (busy) return;
+        busy = true;
+        const label = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '加载中…';
+        const items = await loadFeed();
+        const next = items.slice(shown, shown + size);
+        for (const it of next) list.append(row(it));
+        shown += next.length;
+        list.dataset.ufShown = String(shown);
+        fillAgo(list);
+        btn.disabled = false;
+        busy = false;
+        const left = Math.max(0, Math.min(total, items.length || total) - shown);
+        if (left > 0) {
+          btn.hidden = false;
+          btn.textContent = `加载更多（还有 ${left} 条）`;
+        } else {
+          btn.hidden = true;
+          btn.textContent = label ?? '加载更多';
+        }
+      });
+    }
+
+    fillAgo(document);
+  </script>
+</section>

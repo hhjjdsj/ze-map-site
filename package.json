@@ -7,9 +7,10 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "node scripts/content/check-build-inputs.mjs && node scripts/entity-data/build-catalog.mjs && node scripts/content/build-map-dates.mjs && node scripts/content/generate-map-entries.mjs && astro build && node scripts/content/build-search.mjs",
+    "build": "node scripts/content/check-build-inputs.mjs && node scripts/entity-data/build-catalog.mjs && node scripts/content/build-map-dates.mjs && node scripts/content/build-research-changes.mjs && node scripts/content/generate-map-entries.mjs && astro build && node scripts/content/build-search.mjs",
     "build:site": "astro build",
     "build:inputs": "node scripts/content/check-build-inputs.mjs",
+    "changes:build": "node scripts/content/build-research-changes.mjs",
     "data:catalog": "node scripts/entity-data/build-catalog.mjs",
     "search:index": "pagefind --site dist",
     "preview": "astro preview",

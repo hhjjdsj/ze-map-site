@@ -1,12 +1,16 @@
 ---
 import { getMaps } from '../lib/maps';
 import { getNewMaps, getUpdatedMaps, getHotMaps } from '../lib/map-dates';
+import { getUpdateFeed } from '../lib/update-feed';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import MapCard from '../components/MapCard.astro';
 import MapListRow from '../components/MapListRow.astro';
 import ListExpiry from '../components/ListExpiry.astro';
+import UpdateFeed from '../components/UpdateFeed.astro';
 
 const maps = await getMaps();
+/* 最近改动：全量拿回来，组件只渲染前 8 条，剩下的靠「加载更多」按需拉 */
+const feed = await getUpdateFeed();
 
 const featured = maps.filter((m) => m.data.featured);
 
@@ -165,6 +169,19 @@ const hotTags = Object.entries(tagCount)
         <p>还没有地图。去 <code>src/content/maps/</code> 里添加第一张吧。</p>
       </div>
     )}
+
+    {/*
+      最近改动（逐条）：哪张图的哪一部分被改过 —— 社区投稿来自 data/community 的 log，
+      本站整理的资料来自 git 历史（见 src/lib/update-feed.ts）。
+      放最后一块（页脚之上）：它是「流水账」，来看地图的人不必先翻过它。
+      「加载更多」按需拉 /updates/feed.json，不占首屏体积。
+    */}
+    <UpdateFeed
+      items={feed}
+      pageSize={8}
+      heading="最近改动"
+      lede="哪张图的哪一部分被改过：社区投稿逐条署名，本站整理的资料按 git 历史列出。改完要等下一次构建上线（通常几分钟）。"
+    />
   </div>
 
   <script>

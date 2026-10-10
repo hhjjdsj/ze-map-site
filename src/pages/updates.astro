@@ -3,7 +3,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import MapListTabs from '../components/MapListTabs.astro';
 import MapListRow from '../components/MapListRow.astro';
 import ListExpiry from '../components/ListExpiry.astro';
+import UpdateFeed from '../components/UpdateFeed.astro';
 import { getUpdatedMaps, WINDOW_DAYS } from '../lib/map-dates';
+import { getUpdateFeed } from '../lib/update-feed';
 
 /*
  * 最新更新 = 本站资料最近被改过的图，日期来自 git 历史（data/map-dates.json）。
@@ -17,6 +19,7 @@ import { getUpdatedMaps, WINDOW_DAYS } from '../lib/map-dates';
  *     否则一次改版就会让所有地图在这里挂 30 天
  */
 const items = await getUpdatedMaps();
+const feed = await getUpdateFeed();
 const countTpl = `最近 ${WINDOW_DAYS} 天共 {n} 张资料有变动`;
 ---
 
@@ -63,7 +66,24 @@ const countTpl = `最近 ${WINDOW_DAYS} 天共 {n} 张资料有变动`;
         <li>· 不算：工坊作者自己更新了地图（那属于工坊，见「新增地图」页）</li>
         <li>· 不算：整批导入 / 生成器改版那种一次动几百个文件的提交</li>
       </ul>
+      <p class="sidebar-hint" style="margin-top: 10px">
+        上面是按图归并的（一张图只出现一次）；下面这份是<b>逐条</b>的 —— 哪张图的哪一部分、
+        什么时候、谁改的。首页底部放的就是它的前几条。
+      </p>
     </div>
+
+    {/*
+      逐条改动：与首页底部同一份数据、同一个组件，只是首屏多给几条（20）。
+      放在地图列表**之后**：这一页的主身份还是「最近哪些图有变动」，
+      逐条流水账是往里再钻一层。
+    */}
+    <UpdateFeed
+      items={feed}
+      pageSize={20}
+      id="changes"
+      heading="逐条改动"
+      lede="社区投稿逐条署名；本站整理的资料按 git 历史列出（字段级）。封面这类批量改动聚合成一天一条。"
+    />
   </div>
 
   <ListExpiry />
