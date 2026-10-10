@@ -77,6 +77,25 @@ const guideNotes = communityNotes.filter((n: { field?: string | null }) => n.fie
 const storyNotes = communityNotes.filter((n: { field?: string | null }) => n.field === 'story');
 const otherNotes = communityNotes.filter((n: { field?: string | null }) => n.field !== 'story');
 /*
+ * 一条社区正文的署名。
+ * 被修订过的要写清「谁写的、谁改的、什么时候改的」—— 只保留原作者会让人以为
+ * 后一次的改动也是他做的；只写修订者又抹掉了原作者（2026-10-10 加的修订功能）。
+ */
+type NoteMeta = {
+  by: string;
+  at: string | null;
+  revisedBy?: string | null;
+  revisedAt?: string | null;
+  revision?: number;
+};
+const noteBy = (n: NoteMeta) => {
+  const base = `由 ${n.by} 投稿${n.at ? ` · ${n.at.slice(0, 10)}` : ''}`;
+  if (!n.revisedBy) return base;
+  const when = n.revisedAt ? `（${n.revisedAt.slice(0, 10)}）` : '';
+  const times = n.revision && n.revision > 1 ? `，第 ${n.revision} 版` : '';
+  return `${base} · ${n.revisedBy} 修订${when}${times}`;
+};
+/*
  * 手写条目（那三张富内容图）的正文里自带「视频攻略」一节，页面就别再渲染一遍 ——
  * 否则同一页会出现两块视频。判定只看正文里有没有二级标题含"视频"。
  */
@@ -259,12 +278,10 @@ const related = all
       {guideNotes.length > 0 && (
         <section class="community-block">
           <h2>攻略 / 神器讲解（社区投稿）</h2>
-          {guideNotes.map((n: { text: string; by: string; at: string | null }) => (
+          {guideNotes.map((n: NoteMeta & { text: string }) => (
             <div class="community-note">
               <GuideNote slug={entry.id} text={n.text} />
-              <p class="community-note-by">
-                由 {n.by} 补充{n.at ? ` · ${n.at.slice(0, 10)}` : ''}
-              </p>
+              <p class="community-note-by">{noteBy(n)}</p>
             </div>
           ))}
         </section>
@@ -273,12 +290,10 @@ const related = all
       {storyNotes.length > 0 && (
         <section class="community-block">
           <h2>背景故事（社区投稿）</h2>
-          {storyNotes.map((n: { text: string; by: string; at: string | null }) => (
+          {storyNotes.map((n: NoteMeta & { text: string }) => (
             <div class="community-note">
               <GuideNote slug={entry.id} text={n.text} />
-              <p class="community-note-by">
-                由 {n.by} 补充{n.at ? ` · ${n.at.slice(0, 10)}` : ''}
-              </p>
+              <p class="community-note-by">{noteBy(n)}</p>
             </div>
           ))}
         </section>
@@ -287,12 +302,10 @@ const related = all
       {otherNotes.length > 0 && (
         <section class="community-block">
           <h2>社区补充</h2>
-          {otherNotes.map((n: { text: string; by: string; at: string | null }) => (
+          {otherNotes.map((n: NoteMeta & { text: string }) => (
             <div class="community-note">
               <GuideNote slug={entry.id} text={n.text} />
-              <p class="community-note-by">
-                由 {n.by} 补充{n.at ? ` · ${n.at.slice(0, 10)}` : ''}
-              </p>
+              <p class="community-note-by">{noteBy(n)}</p>
             </div>
           ))}
         </section>

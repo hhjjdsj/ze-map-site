@@ -9,7 +9,15 @@
  *   push 触发 Cloudflare 重建 → 页面出现社区内容
  */
 
-import { applySubmission, isItemField, isNoteField, touch } from '../shared/community-doc.mjs';
+import {
+  applySubmission,
+  findNoteIndex,
+  isItemField,
+  isNoteField,
+  isReviseId,
+  notePayload,
+  touch,
+} from '../shared/community-doc.mjs';
 import { FIELD_RULES, LIMITS, isField, validateValue } from '../shared/submission-fields.mjs';
 import {
   GitError,
@@ -158,6 +166,15 @@ export async function handleSubmit(
   const note = optString(b.note, LIMITS.note, '理由');
   if (!note.ok) return fail(note.error);
 
+  /*
+   * 修订：投稿人要改的是**已经通过的那一条**（背景故事 / 攻略 / 补充说明这类 note 字段）。
+   * 值仍然存在 submissions.value 里，但换成 { text, reviseOf } —— 为一个可选字段动 D1 表结构
+   * （要写迁移、要多一次全表变更）不值得，value 本来就是 JSON 一列。
+   * 非 note 字段带上 reviseOf 直接忽略：那些字段是覆盖式的，本来就等于修订。
+   */
+  const reviseOf = isReviseId(b.reviseOf) ? String(b.reviseOf).trim() : '';
+  const stored = isNoteField(field) && reviseOf ? { text: checked.value, reviseOf } : checked.value;
+
   if (await isBanned(env, ipHash)) return fail('该来源已被禁止投稿', 403);
 
   if (env.TURNSTILE_SECRET && !(await verifyTurnstile(env, b.turnstileToken, rawIp))) {
@@ -171,7 +188,7 @@ export async function handleSubmit(
     `INSERT INTO submissions (map_slug, field, value, note, submitter, contact, ip_hash, status, created_at)
      VALUES (?1,?2,?3,?4,?5,?6,?7,'pending',?8) RETURNING id`
   )
-    .bind(slug, field, JSON.stringify(checked.value), note.value, submitter.value, contact.value, ipHash, Date.now())
+    .bind(slug, field, JSON.stringify(stored), note.value, submitter.value, contact.value, ipHash, Date.now())
     .first<{ id: number }>();
 
   return json({
@@ -473,19 +490,13 @@ export async function handleAdminQueue(request: Request, env: Env, url: URL): Pr
   const cache = new Map<string, CommunityFile | null>();
   const items = [];
   for (const row of results ?? []) {
-    let current: unknown = null;
+    /* 读不到（没配 GITHUB_TOKEN、网络抽风）不算错误 —— 队列照样要能看，每张图只读一次 */
     try {
       if (!cache.has(row.map_slug)) cache.set(row.map_slug, await readCommunityDoc(env, row.map_slug));
-      const doc = cache.get(row.map_slug)?.doc;
-      /* 神器 / 道具的「现值」是社区文档里已有的行，不是 fields 里的某个值 */
-      current = isItemField(row.field)
-        ? (doc?.items ?? [])
-        : isNoteField(row.field)
-          ? null
-          : (doc?.fields?.[row.field]?.v ?? null);
     } catch {
       cache.set(row.map_slug, null as never);
     }
+    const doc = cache.get(row.map_slug)?.doc ?? null;
 
     let value: unknown = null;
     try {
@@ -493,7 +504,33 @@ export async function handleAdminQueue(request: Request, env: Env, url: URL): Pr
     } catch {
       value = null;
     }
-    items.push({ ...row, value, current });
+
+    let current: unknown = null;
+    if (isItemField(row.field)) {
+      /* 神器 / 道具的「现值」是社区文档里已有的行，不是 fields 里的某个值 */
+      current = doc?.items ?? [];
+    } else if (isNoteField(row.field)) {
+      /*
+       * 正文类字段是追加 / 修订 note，没有「一个现值」。
+       * 修订时把**目标那一条的原文**当成现值，审核台就能看到正常的 diff
+       * （不然只是一条孤零零的新文本，判断不了它改的是哪一段）。
+       */
+      const reviseId = notePayload(value).reviseOf;
+      const notes: Array<{ text?: string }> = doc?.notes ?? [];
+      const ni = reviseId ? findNoteIndex(notes, reviseId) : -1;
+      current = ni >= 0 ? (notes[ni].text ?? null) : null;
+    } else {
+      current = doc?.fields?.[row.field]?.v ?? null;
+    }
+
+    /* note 字段的修订包拆开：审核台看到的就是「新正文 + 修订目标」两件事 */
+    const payload = isNoteField(row.field) ? notePayload(value) : null;
+    items.push({
+      ...row,
+      value: payload ? payload.text : value,
+      ...(payload?.reviseOf ? { reviseOf: payload.reviseOf } : {}),
+      current,
+    });
   }
 
   return json({
@@ -806,14 +843,19 @@ export async function handleAdminFlush(request: Request, env: Env): Promise<Resp
           });
           touched = true;
         } else {
+          /* note 字段的修订包（{ text, reviseOf }）在这里拆开；普通投稿 notePayload
+             直接返回原文，所以两条路径共用一句 —— 拆包规则只有 shared 那一份。 */
+          const payload = isNoteField(row.field) ? notePayload(value) : null;
           const change = applySubmission(doc, {
             id: row.id,
             field: row.field,
-            value,
+            value: payload ? payload.text : value,
+            reviseOf: payload?.reviseOf ?? '',
             submitter: row.submitter,
             reviewedAt: row.reviewed_at ?? Date.now(),
           });
-          isItemField(change.field) ? fieldSummary.add(`${slug} 神器/道具`) : fieldSummary.add(`${slug} ${change.field}`);
+          const label = isItemField(change.field) ? `${slug} 神器/道具` : `${slug} ${change.field}`;
+          fieldSummary.add(change.revised ? `${label} 修订` : label);
           touched = true;
         }
         if (row.submitter) authors.add(row.submitter);

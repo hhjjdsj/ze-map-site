@@ -10,7 +10,7 @@
  */
 import { getMaps } from '../../lib/maps';
 import { galleryFor } from '../../lib/gallery';
-import { normalizeDoc } from '../../../shared/community-doc.mjs';
+import { normalizeDoc, notePublicId } from '../../../shared/community-doc.mjs';
 import { cdText, docItemRows, itemKey, mergeItems, usesText } from '../../../shared/items.mjs';
 import type { APIRoute } from 'astro';
 
@@ -101,6 +101,49 @@ export const GET: APIRoute = async () => {
       ? research.sections.map((s: { title?: string; body?: string }) => `## ${s?.title ?? ''}\n\n${s?.body ?? ''}`).join('\n\n')
       : '';
     const docRows = docItemRows(legacyDoc || sectionsDoc);
+
+    /*
+     * 本站正文（背景故事等）：投稿人要能看见「现在写的是什么」才谈得上修改，
+     * 否则只能盲着追加一条社区投稿（2026-10-10 的反馈）。
+     * 两个来源都带上：
+     *   story   = 人工整理稿 sections 里的「背景故事」整节（目前 3 张富内容图）
+     *   summary = 条目的简介段落（107 张）
+     */
+    const storySection = Array.isArray(research?.sections)
+      ? research.sections.find((s: { title?: string }) => /背景|剧情|故事/.test(String(s?.title ?? '')))
+      : null;
+    const siteStory = String(storySection?.body ?? '').trim();
+    if (siteStory) row.story = siteStory;
+    const siteSummary = String(research?.summary ?? '').trim();
+    if (siteSummary) row.summary = siteSummary;
+    /*
+     * 已通过的社区投稿（data/community/<slug>.json 的 notes）：
+     * 带 id / 字段 / 作者，投稿表单据此提供「修订这一条」——
+     * 以前只能追加，改不了已经发出去的内容。
+     */
+    const docNotes = (community?.notes ?? [])
+      .map(
+        (
+          n: {
+            text?: string;
+            by?: string;
+            at?: string | null;
+            field?: string | null;
+            submission?: number | null;
+            revisedBy?: string | null;
+          },
+          i: number
+        ) => ({
+          id: notePublicId(n, i),
+          field: String(n?.field ?? 'body'),
+          text: String(n?.text ?? ''),
+          by: String(n?.by ?? ''),
+          at: n?.at ? String(n.at) : '',
+          ...(n?.revisedBy ? { revisedBy: String(n.revisedBy) } : {}),
+        })
+      )
+      .filter((n: { text: string }) => n.text);
+    if (docNotes.length) row.notes = docNotes;
 
     const byKey = new Map<string, Record<string, unknown>>();
     /* 说明（神器表那一列）：原稿 relicIntros 打底，社区投稿的 intro 盖上 —— 与生成器的规则一致 */

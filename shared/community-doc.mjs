@@ -27,6 +27,8 @@
  * **不进 fields**，而是作为一条 note 追加到 notes 里（note 上带 field，标明投的是哪个字段），
  * 地图页再按字段分块显示：story → 「背景故事（社区投稿）」，body → 「社区补充」。
  * 判断走 isNoteField()，从字段表派生 —— 别再写死字段名。
+ * 已通过的 note 可以被**修订**（投稿带 reviseOf = note 的 id）：正文替换、署名保留
+ * 原作者、另记 revisedBy/revisedAt。见下面 notePublicId / findNoteIndex 的说明。
  *
  * 神器 / 道具（kind=itemlist）**也不进 fields**：它是一行行的增量（更正 / 新增 / 删除），
  * 整表替换说不清来源，所以单独放 items[]，由生成器用 mergeItems() 合并进正文的表格。
@@ -50,6 +52,56 @@ export const isItemField = (field) => FIELD_RULES?.[field]?.kind === 'itemlist';
 /** 新建一个空文档 */
 export function emptyDoc(slug) {
   return { v: DOC_VERSION, slug, updatedAt: null, fields: {}, notes: [], items: [], log: [] };
+}
+
+/* ===== 修订（改一条已经通过的社区投稿） =====
+ *
+ * 背景：notes 原本是**只能追加**的 —— 投稿人发现错别字或想补一句，只能再投一条，
+ * 页面上就出现两条几乎一样的段落（2026-10-10 的反馈）。现在允许「修订某一条」：
+ * 投稿时带上 reviseOf（那条 note 的 id），审核通过后**替换它的正文**，
+ * 原作者保留，另记 revisedBy / revisedAt —— 署名不能因为别人改了字就换人。
+ *
+ * id 从哪来：note 上的 submission（= 投稿编号，老数据可能没有），
+ * 没有编号的老 note 用它在数组里的位置 `i<下标>` 兜底。
+ * 两边都靠 notePublicId() 算，别各写一份。
+ */
+
+/** 这条 note 对外暴露的 id（投稿页「修订这条」传的就是它） */
+export function notePublicId(note, index) {
+  const s = note && note.submission !== undefined && note.submission !== null ? note.submission : null;
+  return s === null ? `i${index}` : String(s);
+}
+
+/** 修订目标 id 是否合法（投稿编号的数字，或 `i<下标>`） */
+export function isReviseId(raw) {
+  return typeof raw === 'string' && /^(?:\d{1,12}|i\d{1,5})$/.test(raw.trim());
+}
+
+/**
+ * 在 notes 里找 reviseOf 指向的那一条。
+ * @returns {number} 下标，找不到返回 -1
+ */
+export function findNoteIndex(notes, reviseId) {
+  const list = Array.isArray(notes) ? notes : [];
+  const id = String(reviseId ?? '').trim();
+  if (!isReviseId(id)) return -1;
+  for (let i = 0; i < list.length; i++) {
+    if (notePublicId(list[i], i) === id) return i;
+  }
+  return -1;
+}
+
+/**
+ * 投稿的 value 在 note 字段上的两种形态：
+ *   普通投稿 → 直接是字符串；修订 → { text, reviseOf }（D1 的 value 是 JSON 一列，
+ *   不想为了一个可选字段动表结构，所以塞在同一格里）。
+ * 这里统一拆成 { text, reviseOf }，调用方不必关心是哪种。
+ */
+export function notePayload(value) {
+  if (value && typeof value === 'object' && !Array.isArray(value) && typeof value.text === 'string') {
+    return { text: value.text, reviseOf: isReviseId(value.reviseOf) ? String(value.reviseOf).trim() : '' };
+  }
+  return { text: typeof value === 'string' ? value : String(value ?? ''), reviseOf: '' };
 }
 
 /**
@@ -84,6 +136,11 @@ export function normalizeDoc(slug, raw) {
         /* 投的是哪个字段（story / body / 以后新增的长文本字段）。
            老文件没有这一项 → null，页面按「社区补充」显示。 */
         field: typeof n.field === 'string' && n.field ? n.field : null,
+        /* 被修订过才有：最后改这条的人与时间。署名（by）保持原作者不动，
+           页面显示成「由 A 投稿（B 于 … 修订）」—— 谁写的、谁改的要分得清。 */
+        revisedBy: typeof n.revisedBy === 'string' && n.revisedBy ? n.revisedBy : null,
+        revisedAt: typeof n.revisedAt === 'string' && n.revisedAt ? n.revisedAt : null,
+        revision: Number.isInteger(n.revision) && n.revision > 0 ? n.revision : 0,
       })),
     log: Array.isArray(d.log) ? d.log : [],
     items: (Array.isArray(d.items) ? d.items : [])
@@ -101,6 +158,42 @@ export function applySubmission(doc, sub) {
   const by = sub.submitter || '匿名';
 
   if (isNoteField(sub.field)) {
+    /* 修订：把目标那条的正文换掉（署名仍然是原作者，另记是谁在什么时候改的）。
+       找不到目标（投稿人提交后这一条被别人删了 / 文件被手改过）就**降级为追加**：
+       内容不能丢，log 里写明原因，审核台看到的是「新增」而不是静默失败。 */
+    const reviseId = isReviseId(sub.reviseOf) ? String(sub.reviseOf).trim() : '';
+    if (reviseId) {
+      const i = findNoteIndex(doc.notes, reviseId);
+      if (i >= 0) {
+        const prev = doc.notes[i];
+        doc.notes[i] = {
+          ...prev,
+          text: sub.value,
+          revisedBy: by,
+          revisedAt: at,
+          revision: (Number.isInteger(prev.revision) ? prev.revision : 0) + 1,
+        };
+        doc.log.push({
+          field: sub.field,
+          from: prev.text,
+          to: sub.value,
+          by,
+          at,
+          submission: sub.id ?? null,
+          reviseOf: reviseId,
+        });
+        return { field: sub.field, from: prev.text, to: sub.value, revised: true };
+      }
+      doc.log.push({
+        field: sub.field,
+        from: null,
+        to: null,
+        by,
+        at,
+        submission: sub.id ?? null,
+        note: `修订目标 ${reviseId} 已不在，按新增处理`,
+      });
+    }
     /* note 里记下**它原本投的是哪个字段**（story / body）：
        页面据此分块显示 —— 投「背景故事」的内容如果出现在「社区补充」里，
        投稿人会以为稿子丢了（2026-09-28 的反馈）。log 里本来也有这个信息，

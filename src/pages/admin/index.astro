@@ -183,6 +183,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     commit_sha: string | null;
     error: string | null;
     reject_note: string | null;
+    /** 正文类字段的修订稿：要替换的那条社区投稿的 id（服务端已把 { text, reviseOf } 拆开） */
+    reviseOf?: string;
   }
 
   /** 建节点用 textContent 赋值 —— 天然免疫 HTML 注入 */
@@ -307,6 +309,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     head.append(
       el('span', 'queue-map', `《${item.map_slug}》`),
       el('span', 'queue-field', rules[item.field]?.label ?? item.field),
+      /* 修订稿一眼可辨：待审列表里「新增一段」和「改掉别人已上线的一段」份量不一样 */
+      ...(item.reviseOf ? [el('span', 'queue-badge', `修订 #${item.reviseOf}`)] : []),
       el('span', 'queue-meta', new Date(item.created_at).toLocaleString('zh-CN'))
     );
     box.append(head);
@@ -390,6 +394,26 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     } else if (rules[item.field]?.kind === 'tags') {
       /* 标签：标出「这张图新增 / 去掉 / 全站新词」，比一行 diff 好审 */
       box.append(tagsBlock(item));
+    } else if (item.reviseOf) {
+      /*
+       * 正文类字段的修订稿：通过后**替换**目标那一条的正文，不是新增。
+       * 上面已经把目标那条的原文当成 current 取回来了，所以照常显示 diff；
+       * 但要写清「这会改掉别人已经上线的一段」——审核时下手会不一样。
+       */
+      box.append(
+        el(
+          'p',
+          'queue-note',
+          `✏️ 修订稿：通过后替换社区投稿 #${item.reviseOf} 那一条的正文（署名保持原作者，页面另标是谁修订的）`
+        )
+      );
+      const diff = el('p', 'queue-diff');
+      diff.append(
+        el('del', undefined, fmt(item.current)),
+        el('span', undefined, ' → '),
+        el('ins', undefined, fmt(item.value))
+      );
+      box.append(diff);
     } else {
       const diff = el('p', 'queue-diff');
       diff.append(

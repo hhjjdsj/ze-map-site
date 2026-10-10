@@ -2311,6 +2311,15 @@ img { max-width: 100%; display: block; }
 .queue-map { font-weight: 700; }
 .queue-field { font-size: 12.5px; color: var(--accent-2); }
 .queue-meta { font-size: 12px; color: var(--muted); margin-left: auto; }
+/* 修订稿的标记（审核台）：与普通新增投稿区分开 */
+.queue-badge {
+  padding: 1px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
 .queue-diff { font-size: 14px; line-height: 1.8; margin: 0 0 10px; overflow-wrap: anywhere; }
 .queue-diff del { color: var(--muted); }
 .queue-diff ins { color: #4ade80; text-decoration: none; }
@@ -2588,6 +2597,62 @@ img { max-width: 100%; display: block; }
 .ref-list a:hover { text-decoration: underline; }
 .ref-open { display: inline-block; margin-top: 12px; font-size: 12.5px; color: var(--accent-2); text-decoration: none; }
 .ref-open:hover { text-decoration: underline; }
+/*
+ * 对照面板里的正文块（本站正文 / 已通过的社区投稿）。
+ * 正文可能四千字，全摊开会把面板撑成一面墙，所以给一个能滚的小窗 ——
+ * 投稿人要的是「现在写的是什么」，扫一眼就够，不用读完全文。
+ */
+.ref-text {
+  margin: 0 0 6px;
+  max-height: 9.5em;
+  overflow: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ref-note { margin: 0 0 10px; padding-left: 9px; border-left: 2px solid var(--border-2); }
+.ref-note-meta { margin: 0 0 4px; color: var(--muted); font-size: 11.5px; }
+.ref-note.is-target { border-left-color: var(--accent); }
+.ref-revise {
+  margin: 6px 0 0;
+  padding: 3px 10px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent-2);
+  font-size: 12px;
+  cursor: pointer;
+}
+.ref-revise:hover { border-color: var(--accent); color: var(--accent); }
+.ref-revise[disabled] { opacity: 0.5; cursor: default; }
+
+/* ---- 修订条：正在改某一条已通过的社区投稿时挂在正文框上方 ---- */
+.revise-bar {
+  margin: 0 0 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.revise-bar button {
+  margin-left: 8px;
+  padding: 2px 10px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent-2);
+  font-size: 12px;
+  cursor: pointer;
+}
 
 /* ---- 标签选择器（全站词表勾选 + 新建标签） ---- */
 .tag-picker { margin-top: 4px; }

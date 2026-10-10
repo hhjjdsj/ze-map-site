@@ -77,6 +77,13 @@ const maps = defineCollection({
           at: z.string().nullable().default(null),
           /** 原本投的是哪个字段（story / body …）；null = 老数据，按「社区补充」显示 */
           field: z.string().nullable().default(null),
+          /**
+           * 被修订过才有（谁最后改的、什么时候、改过几次）。
+           * by 始终是原作者 —— 别人帮忙改个错别字不该把署名换掉。
+           */
+          revisedBy: z.string().nullable().default(null),
+          revisedAt: z.string().nullable().default(null),
+          revision: z.number().default(0),
         })
       )
       .default([]),

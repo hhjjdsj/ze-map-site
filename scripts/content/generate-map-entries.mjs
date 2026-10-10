@@ -582,13 +582,22 @@ function renderEntry(rec, research, wsRec, gfl) {
    * 只调整**段落顺序**，每一段的内容与来源说明一个字都没改 —— 改资料仍然只改 data/research/*.json。
    *
    * 另一条分支：research 写了 `sections`（魔晄炉 / 米纳斯 / 黑珍珠号这三张人工整理的图）
-   * 就**只渲染这些小节**，不再叠加自动生成的 gameplay/meta —— 那三页自己就带着
+   * 就**以这些小节为主**，不再叠加自动生成的 gameplay/meta —— 那三页自己就带着
    * 版本历史 / 关卡流程 / 神器表 / 策略 / 常见问题，再叠一份只会重复。
-   * 2026-10-08 之前这三页走的是「document 整篇照抄」的特殊路径，现在和普通图同一条流程。
+   * 2026-10-08 之前这三页走的是「document 整篇照抄」的特殊路径，现在和普通图同一条流程；
+   * 2026-10-10 起再补上人工稿里确实没有的四节（工坊自述 / 实体构成 / 实体预览 / 数据说明，
+   * 见下面的 manualTail）—— 之前整块跳过，那三页连「打开实体预览」的站内入口都没有。
    */
   const intro = [];
   const gameplay = [];
   const meta = [];
+
+  /*
+   * 关卡数是不是人工写的（research.stages 优先于「按实体命名推断」，见主流程）。
+   * 影响三处措辞：数据概况那一行、`## 关卡` 的说明、数据说明最后一条 ——
+   * 明明是人写的却标成「按实体命名推断」是错的（目前只有魔晄炉 / 米纳斯 / 皇家港写了 stages）。
+   */
+  const manualStages = Number.isFinite(research?.stages);
 
   /* 摘要只有普通图才有；手写小节的图（sections）开头直接就是「背景故事」那一节 */
   if (research?.summary) {
@@ -596,8 +605,23 @@ function renderEntry(rec, research, wsRec, gfl) {
   }
   // 数据条目的「资料待补充」提示由详情页统一渲染（stub 字段），正文里不再重复
 
+  /*
+   * 「资料性」的几节先各自攒着，最后再按固定顺序拼进 meta。
+   * 为什么要拆开：手写小节的图（sections，魔晄炉 / 米纳斯 / 黑珍珠号）也要用到其中几节 ——
+   * 它们的人工稿里有基本信息 / 关卡流程 / 神器表 / 策略，但没有工坊自述、实体构成、
+   * 实体预览、数据说明。以前一律整块跳过，于是那三页连「实体预览」这个站内入口都没有
+   * （只有侧栏那个按钮）。现在挑**不重复**的补在人工内容之后，重复的（数据概况、关卡、
+   * 神器表、BOSS、音乐）仍然以人工稿为准 —— 见下面 manualTail。
+   */
+  const shopDesc = []; // 工坊页面自述
+  const overview = []; // 数据概况
+  const composition = []; // 实体构成
+  const previewBlock = []; // 实体预览
+  const sourceBlock = []; // 资料来源
+  const dataNotes = []; // 数据说明
+
   if (desc) {
-    meta.push(
+    shopDesc.push(
       '## 工坊页面自述',
       '',
       '> ' + mdSafe(excerpt(desc)).split('\n').filter(Boolean).join('\n> '),
@@ -606,7 +630,7 @@ function renderEntry(rec, research, wsRec, gfl) {
       ''
     );
   } else if (wsRec && wsRec.result !== 1) {
-    meta.push(
+    shopDesc.push(
       noEntity
         ? '> 该地图的工坊条目在 Steam 上已**查无此项**（可能是作者删除或设为隐藏），地图文件无法再获取，因此本站也没有它的实体与地形数据。'
         : '> 该地图的工坊条目在 Steam 上已**查无此项**（可能是作者删除或设为隐藏），下方实体数据仍保留在本站分片中。',
@@ -614,7 +638,7 @@ function renderEntry(rec, research, wsRec, gfl) {
     );
   }
 
-  meta.push(
+  overview.push(
     '## 数据概况',
     '',
     '| 项目 | 内容 |',
@@ -629,12 +653,12 @@ function renderEntry(rec, research, wsRec, gfl) {
     wsRec?.views ? `| 工坊浏览量 | ${n(wsRec.views)} |` : null,
     noEntity ? null : `| 实体总数 | ${n(rec.n)} |`,
     noEntity ? null : `| 分片点位 | ${n(rec.k2)} |`,
-    noEntity ? null : `| 关卡数 | ${rec.st || 0}${rec.st ? '（按实体命名推断）' : ''} |`,
+    noEntity ? null : `| 关卡数 | ${rec.st || 0}${rec.st ? (manualStages ? '（据本站人工整理）' : '（按实体命名推断）') : ''} |`,
     ''
   );
 
   if (!noEntity) {
-    meta.push(
+    composition.push(
       '## 实体构成',
       '',
       `本图共记录 ${n(rec.n)} 个实体，分片包含 ${n(rec.k2)} 个实体点位：`,
@@ -654,7 +678,9 @@ function renderEntry(rec, research, wsRec, gfl) {
     gameplay.push(
       '## 关卡',
       '',
-      `按实体命名（\`lvl2\` / \`stage3\` 之类）推断，本图共 **${rec.st}** 个关卡。`,
+      manualStages
+        ? `本图共 **${rec.st}** 个关卡（据本站人工整理）。`
+        : `按实体命名（\`lvl2\` / \`stage3\` 之类）推断，本图共 **${rec.st}** 个关卡。`,
       '在实体预览里可以按关卡分层查看，切换关卡时镜头会自动飞到该关范围。',
       ''
     );
@@ -722,7 +748,7 @@ function renderEntry(rec, research, wsRec, gfl) {
   }
 
   if (!noEntity) {
-    meta.push(
+    previewBlock.push(
       '## 实体预览',
       '',
       `[打开《${rec.cn || rec.m}》的实体预览 →](/preview/?map=${rec.s})`,
@@ -733,10 +759,10 @@ function renderEntry(rec, research, wsRec, gfl) {
   }
 
   if (research?.sources?.length) {
-    meta.push('## 资料来源', '', ...research.sources.map((s) => `- ${s}`), '');
+    sourceBlock.push('## 资料来源', '', ...research.sources.map((s) => `- ${s}`), '');
   }
 
-  meta.push(
+  dataNotes.push(
     '## 数据说明',
     '',
     `- 实体数据来源：${provenance}。`,
@@ -749,16 +775,30 @@ function renderEntry(rec, research, wsRec, gfl) {
     communityCount
       ? '- 神器 / 道具表里标注「社区更正 / 社区补充」的行来自社区投稿（投稿页提交、人工审核）；原值保留在备注里，未标注的行仍是服务器配置原值。'
       : null,
-    '- 关卡数由实体命名（lvl2 / stage3 等）推断，未命名的按就近标注推断，可能与服务器配置或实际流程略有出入。',
+    manualStages
+      ? '- 关卡数取自本站人工整理，与服务器配置或实际流程可能仍有出入。'
+      : '- 关卡数由实体命名（lvl2 / stage3 等）推断，未命名的按就近标注推断，可能与服务器配置或实际流程略有出入。',
     ''
   );
 
+  /* 顺序沿用 2026-09-30 那次信息层级重排：自述 → 数据概况 → 实体构成 → 实体预览 → 来源 → 说明 */
+  meta.push(...shopDesc, ...overview, ...composition, ...previewBlock, ...sourceBlock, ...dataNotes);
+
   /*
    * 手写小节的图（research.sections）：正文 = 开头摘要 + 人工小节（图片集标记插在
-   * 「背景故事」之后），社区投稿的神器更正追加在最后单独一节 —— 它们没有自动生成的
-   * 神器表，所以投稿只能这样显式补出来，不能让投稿石沉大海。
+   * 「背景故事」之后）+ 教程 + 社区投稿的神器更正（它们没有自动生成的神器表，
+   * 所以投稿只能这样显式补出来，不能让投稿石沉大海）+ 上面那份补缺小节。
    */
   const hasSections = Array.isArray(research?.sections) && research.sections.length > 0;
+
+  /*
+   * 手写小节图的「补缺」部分：人工稿里有基本信息 / 版本历史 / 关卡流程 / 神器表 / 策略 /
+   * 常见问题，所以**数据概况**（重复基本信息表）、**关卡**、**神器表**、**BOSS**、**音乐**
+   * 一律不加；但工坊自述、实体构成、实体预览、数据说明这四节人工稿里没有 —— 不补的话，
+   * 这三页连「打开实体预览」这个站内入口都缺（2026-10-10 站长的疑问：这三张为什么和别的图不一样）。
+   * 人工「来源」小节已覆盖资料来源，所以 sourceBlock 也不加。
+   */
+  const manualTail = hasSections ? [...shopDesc, ...composition, ...previewBlock, ...dataNotes] : [];
   /* 教程小节：两条路径都要有 —— 手写整篇的图（sections）也常需要补神器讲解 */
   const guideBody = guides.length ? ['', ...guidesToBody(guides, pageSlug)] : [];
   const body = hasSections
@@ -783,6 +823,7 @@ function renderEntry(rec, research, wsRec, gfl) {
               ]
             : [];
         })(),
+        ...manualTail,
       ]
     : [...intro, galleryMarker(pageSlug, coverRel), '', ...gameplay, ...guideBody, ...meta];
   /*

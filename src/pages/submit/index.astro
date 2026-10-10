@@ -189,7 +189,16 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
                   </button>
                 </div>
               ) : f.kind === 'longtext' ? (
-                <textarea id={`f-in-${f.key}`} data-input={f.key} rows="8" />
+                /*
+                  正文类字段（背景故事 / 攻略讲解 / 补充说明）：既能新写一条，
+                  也能**改已经通过的那一条** —— 点右侧面板里那条的「修订这条」，
+                  正文会带进这个框，上面的修订条说明「改的是谁的稿」。
+                  没有这条提示的话，投稿人会以为自己的修改是新增（2026-10-10 反馈）。
+                */
+                <div class="revise-wrap">
+                  <p class="revise-bar" id={`revise-${f.key}`} hidden />
+                  <textarea id={`f-in-${f.key}`} data-input={f.key} rows="8" />
+                </div>
               ) : f.kind === 'tags' ? (
                 /*
                   标签：列出**全站所有标签**让他勾（默认勾上这张图现有的那些），
@@ -233,7 +242,14 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
                   type={f.kind === 'int' ? 'number' : 'text'}
                 />
               )}
-              {f.kind === 'itemlist' || f.kind === 'gallery' || f.kind === 'tags' ? null : (
+              {f.kind === 'itemlist' || f.kind === 'gallery' || f.kind === 'tags' ? null : f.kind ===
+                'longtext' ? (
+                /* 正文没有「一个现值」可显示：本站正文与已有的社区投稿都在右侧面板里 */
+                <p class="form-hint s-cur">
+                  这张图现有的正文与已经通过的投稿都列在右侧「这张图现在的内容」里 ——
+                  想改哪一条，点那条的「修订这条」。
+                </p>
+              ) : (
                 <p class="form-hint s-cur">
                   条目现在的值：<span class="cur-val" data-current={f.key}>—</span>
                 </p>
@@ -610,6 +626,70 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     hintEl.textContent = rules[key]?.hint ?? '';
   }
 
+  /* ===== 修订一条已通过的社区投稿 =====
+     以前正文只能**追加**：发现自己写错了，只能在下面再补一段，条目页就出现两条
+     几乎一样的段落，越改越乱（2026-10-10 的反馈）。
+     现在点右侧面板里那条的「修订这条」→ 正文带进左侧表单 → 提交时带上 reviseOf（那条的 id）。
+     审核通过后是**替换**它的正文，署名仍是原作者，条目页另标「谁在什么时候修订的」。 */
+  type ReviseTarget = { field: string; id: string; by: string; text: string };
+  let reviseTarget: ReviseTarget | null = null;
+
+  /** 正文类字段的中文名（story → 背景故事）；从字段表取，不另写一份 */
+  const fieldLabel = (key: string) => rules[key]?.label ?? '社区补充';
+
+  function renderReviseBar(): void {
+    for (const key of Object.keys(rules)) {
+      const bar = document.getElementById(`revise-${key}`);
+      if (!bar) continue;
+      const on = reviseTarget?.field === key;
+      bar.hidden = !on;
+      bar.textContent = '';
+      if (!on || !reviseTarget) continue;
+      const who = reviseTarget.by || '匿名';
+      const b = document.createElement('b');
+      b.textContent = `正在修订 ${who} 的投稿`;
+      bar.append(
+        b,
+        document.createTextNode(
+          `（编号 ${reviseTarget.id}）：提交后是替换这一条，不是新增；署名仍是 ${who}，条目页会标注由你修订。`
+        )
+      );
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.textContent = '取消修订';
+      cancel.addEventListener('click', () => cancelRevise());
+      bar.append(cancel);
+    }
+    /* 面板里高亮正在改的那一条 —— 滚回去还能对上号 */
+    for (const el of document.querySelectorAll<HTMLElement>('.ref-note')) {
+      el.classList.toggle('is-target', Boolean(reviseTarget) && el.dataset.noteId === reviseTarget?.id);
+    }
+  }
+
+  function startRevise(t: ReviseTarget): void {
+    /* 字段名不对（老数据 field 为 null）时落到「补充说明 / 纠错」—— 与条目页的分块规则一致 */
+    const field = Object.prototype.hasOwnProperty.call(rules, t.field) ? t.field : 'body';
+    reviseTarget = { ...t, field };
+    fieldSel.value = field;
+    showField(field);
+    prefill(field);
+    const input = document.querySelector<HTMLTextAreaElement>(`[data-input="${field}"]`);
+    if (input) {
+      input.value = t.text;
+      input.focus();
+    }
+    renderReviseBar();
+    errEl.hidden = true;
+  }
+
+  function cancelRevise(): void {
+    if (!reviseTarget) return;
+    reviseTarget = null;
+    renderReviseBar();
+    /* 清空正文框：取消修订后回到「新写一条」，别把别人的稿子留在框里当自己的投出去 */
+    prefill(fieldSel.value);
+  }
+
   /* ===== 「这张图现在的内容」对照面板（右侧 sticky） =====
      只读摘要：基本信息 + 神器表 + 攻略视频 + 资料来源 + 图片集张数。
      数据来自 /submit/maps.json（构建期把服务器配置、手写正文、已通过的社区更正合成好的那份），
@@ -626,6 +706,56 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     card.hidden = false;
     if (open) open.href = `/maps/${mapInfo.slug}/`;
     body.textContent = '';
+
+    /*
+     * 一小段正文（本站整理的 / 社区投稿的）。
+     * 正文可以到四千字，全摊开会把面板撑成一面墙 —— 给个能滚的小窗，
+     * 投稿人要的是「现在写的是什么」，扫一眼就够。
+     */
+    const refText = (label: string, text: string) => {
+      const wrap = document.createElement('div');
+      const cap = document.createElement('p');
+      cap.className = 'ref-note-meta';
+      cap.textContent = label;
+      const box = document.createElement('div');
+      box.className = 'ref-text';
+      box.textContent = text;
+      wrap.append(cap, box);
+      return wrap;
+    };
+
+    /*
+     * 一条已通过的社区投稿：投的是哪个字段 + 谁写的 + 什么时候 + 正文 + 「修订这条」。
+     * 修订按钮把这条的正文带进左侧表单（见 startRevise）—— 这是「能改」的入口，
+     * 光把正文列出来还是只能追加。
+     */
+    const refNote = (n: Record<string, unknown>) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'ref-note';
+      const id = String(n.id ?? '');
+      wrap.dataset.noteId = id;
+      const who = String(n.by ?? '') || '匿名';
+      const when = String(n.at ?? '').slice(0, 10);
+      const field = String(n.field ?? '');
+      const meta = document.createElement('p');
+      meta.className = 'ref-note-meta';
+      meta.textContent =
+        `${fieldLabel(field)} · ${who}${when ? ` · ${when}` : ''}` +
+        (n.revisedBy ? ` · ${String(n.revisedBy)} 修订过` : '');
+      const box = document.createElement('div');
+      box.className = 'ref-text';
+      box.textContent = String(n.text ?? '');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ref-revise';
+      btn.textContent = '修订这条';
+      btn.title = `把这条正文带进左侧表单改（署名仍是 ${who}）`;
+      btn.addEventListener('click', () =>
+        startRevise({ field, id, by: who, text: String(n.text ?? '') })
+      );
+      wrap.append(meta, box, btn);
+      return wrap;
+    };
 
     const row = (label: string, value: unknown) => {
       const text = Array.isArray(value) ? value.join('、') : String(value ?? '');
@@ -649,6 +779,43 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     if (typeof mapInfo.galleryCount === 'number') row('图片集', `${mapInfo.galleryCount} 张`);
 
     const info = mapInfo as Record<string, unknown>;
+
+    /*
+     * 本站正文：story = 人工整理稿里的「背景故事」整节（目前是魔晄炉 / 米纳斯 / 黑珍珠号那三张），
+     * summary = 条目的简介段落（107 张有）。
+     * 以前面板里完全没有正文 —— 投「背景故事」的人看不到已经写了什么，只能盲着追加一条。
+     */
+    const siteStory = typeof info.story === 'string' ? info.story : '';
+    const siteSummary = typeof info.summary === 'string' ? info.summary : '';
+    if (siteStory || siteSummary) {
+      const h = document.createElement('p');
+      h.className = 'ref-h';
+      h.textContent = '本站正文';
+      body.append(h);
+      if (siteStory) body.append(refText('背景故事（本站整理）', siteStory));
+      if (siteSummary) body.append(refText('简介（本站整理）', siteSummary));
+    }
+
+    /*
+     * 已通过的社区投稿：列出来 + 每条一个「修订这条」。
+     * 这是 2026-10-10 的反馈重点：以前只能新增，写错了改不了，页面上会出现两条几乎一样的段落。
+     */
+    const notes = (Array.isArray(info.notes) ? info.notes : []) as Array<Record<string, unknown>>;
+    const nh = document.createElement('p');
+    nh.className = 'ref-h';
+    nh.textContent = notes.length ? `已通过的社区投稿（${notes.length} 条，可修订）` : '已通过的社区投稿';
+    body.append(nh);
+    if (!notes.length) {
+      const p = document.createElement('p');
+      p.className = 'form-hint';
+      p.textContent =
+        '还没有人投过正文 —— 你写的会成为第一条（通过后在条目页单独成块显示，署你的昵称，不会覆盖本站正文）。';
+      body.append(p);
+    } else {
+      for (const n of notes) {
+        body.append(refNote(n));
+      }
+    }
     const items = currentItemRows();
     const head = document.createElement('p');
     head.className = 'ref-h';
@@ -1311,17 +1478,40 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     const checked = validateValue(field, value);
     if (!checked.ok) return showError(checked.error);
 
+    /* 正在修订某一条已通过的社区投稿（点过「修订这条」）：带上它的 id，
+       审核通过后是替换那一条的正文，而不是再加一条。 */
+    const reviseOf = reviseTarget && reviseTarget.field === field ? reviseTarget.id : '';
+
     submitBtn.disabled = true;
     submitBtn.textContent = '提交中…';
     try {
       const res = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ map: slug, field, value: checked.value, note, submitter, contact }),
+        body: JSON.stringify({
+          map: slug,
+          field,
+          value: checked.value,
+          note,
+          submitter,
+          contact,
+          ...(reviseOf ? { reviseOf } : {}),
+        }),
       });
       const data = (await res.json()) as { ok?: boolean; id?: number; error?: string };
       if (!data.ok) throw new Error(data.error || '提交失败');
-      showSuccess(Number(data.id), backLink);
+      if (reviseOf) {
+        /* 修订稿也进了队列，但面板上的正文要等审核通过、重建后才变 ——
+           这里先退出修订状态，免得投稿人接着改同一条又投一遍。 */
+        reviseTarget = null;
+        renderReviseBar();
+      }
+      showSuccess(
+        Number(data.id),
+        reviseOf
+          ? `这是一条<b>修订</b>稿：审核通过后会替换原来的那一条（署名不变）。${backLink}`
+          : backLink
+      );
     } catch (err) {
       showError(err instanceof Error && err.message ? err.message : '提交失败，请稍后再试');
     } finally {
