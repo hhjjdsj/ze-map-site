@@ -99,8 +99,10 @@ export const FIELD_RULES = {
     kind: 'urlList',
     label: '攻略视频',
     hint:
-      '每行一个，https 开头。B 站和 YouTube 会用「官方播放器嵌入」（点击才加载，本站不转存、不下载、不剪辑），' +
-      '其它站会显示成链接。只投公开视频 —— 付费、未公开、或者你不确定能不能公开的请别提交；' +
+      '每行一个 **B 站**视频链接（bilibili.com/video/BV… 或 b23.tv 短链）。' +
+      '会用「官方播放器嵌入」（点击才加载，本站不转存、不下载、不剪辑）。' +
+      '**只收 B 站**：YouTube 等其它站点一律不收（站长 2026-10-11 明确要求站上只放 B 站视频）。' +
+      '只投公开视频 —— 付费、未公开、或者你不确定能不能公开的请别提交；' +
       '不是自己拍的，请把作者 / 来源一并写在下面的「理由」里。版权归原 UP 主，' +
       '作者说不想被收录我们会立刻撤下（「关于」页的版权一节写了规则）。',
     /* 上限 12：站内已有 10 张图的视频超过 5 个（最多 9 个），
@@ -108,6 +110,8 @@ export const FIELD_RULES = {
     max: 12,
     /* 社区补的按「追加 + 去重」合并，不替换 —— 否则补 1 个会把原有的全顶掉 */
     append: true,
+    /* 只收 B 站：校验时按域名过滤（见 validateValue 的 urlList 分支） */
+    onlyHosts: ['bilibili.com', 'b23.tv'],
   },
   sources: {
     kind: 'urlList',
@@ -369,6 +373,26 @@ export function validateValue(field, raw) {
         if (!s) continue;
         const bad = checkUrl(s);
         if (bad) return { ok: false, error: `${bad}：${s.slice(0, 60)}` };
+        /*
+         * 只看指定站点的字段（目前只有 videoUrls：站长要求站上只放 B 站视频）。
+         * 域名后缀匹配，`www.bilibili.com` / `m.bilibili.com` / `b23.tv` 都算；
+         * 故意不放行 `bilibili.com.evil.com` 这种 —— 所以必须比对「等于」或「以 .域名 结尾」。
+         */
+        if (Array.isArray(rule.onlyHosts) && rule.onlyHosts.length) {
+          let host = '';
+          try {
+            host = new URL(s).hostname.toLowerCase();
+          } catch {
+            /* checkUrl 已经确认是合法 URL，这里只是兜底 */
+          }
+          const okHost = rule.onlyHosts.some((h) => host === h || host.endsWith(`.${h}`));
+          if (!okHost) {
+            return {
+              ok: false,
+              error: `只收 ${rule.onlyHosts.join(' / ')} 的链接（本站只放 B 站视频）：${s.slice(0, 60)}`,
+            };
+          }
+        }
         if (!out.includes(s)) out.push(s);
       }
       if (out.length === 0) return { ok: false, error: '至少要有一个链接' };

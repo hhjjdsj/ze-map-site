@@ -30,7 +30,13 @@ const { url, title = '' } = Astro.props;
 let embedUrl: string | null = null;
 let platform = 'other';
 
-if (url.includes('bilibili.com')) {
+/*
+ * ⚠️ **只嵌 B 站**（站长 2026-10-11 明确要求：站上只放 B 站视频）。
+ * 其它站点（YouTube 等）不再生成播放器，一律退化成一张可点链接卡 ——
+ * 投稿校验也同步收紧了（shared/submission-fields.mjs 的 videoUrls.onlyHosts），
+ * 所以正常路径不会再有非 B 站链接；这里再挡一道，防手写原稿时漏进来。
+ */
+if (/bilibili\.com|b23\.tv/.test(url)) {
   platform = 'bilibili';
   const bvMatch = url.match(/BV[\w]+/);
   const avMatch = url.match(/av(\d+)/i);
@@ -39,17 +45,11 @@ if (url.includes('bilibili.com')) {
   } else if (avMatch) {
     embedUrl = `https://player.bilibili.com/player.html?aid=${avMatch[1]}&high_quality=1&danmaku=0`;
   }
-} else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-  platform = 'youtube';
-  const idMatch = url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);
-  if (idMatch) {
-    embedUrl = `https://www.youtube.com/embed/${idMatch[1]}`;
-  }
 }
 
-/* 拿不到播放器地址就退化成链接（例如 B 站短链、或别的视频站） */
+/* 拿不到播放器地址就退化成链接（B 站短链、非 B 站链接） */
 const canEmbed = Boolean(embedUrl);
-const platformLabel = platform === 'bilibili' ? 'bilibili' : platform === 'youtube' ? 'YouTube' : '外部站点';
+const platformLabel = platform === 'bilibili' ? 'bilibili' : '外部站点';
 const label = title || '视频';
 /*
  * 视频编号：交给页面上那段脚本去 /api/video-meta 换标题与 UP 主名。
@@ -60,7 +60,6 @@ const vid = (() => {
   if (platform === 'bilibili') {
     return url.match(/BV[\w]+/)?.[0] ?? (url.match(/av(\d+)/i) ? `av${url.match(/av(\d+)/i)![1]}` : '');
   }
-  if (platform === 'youtube') return url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/)?.[1] ?? '';
   return '';
 })();
 ---
@@ -154,7 +153,14 @@ const vid = (() => {
   if (figures.length) {
     const ids = [...new Set(figures.map((f) => f.dataset.vid).filter(Boolean))];
     if (ids.length) {
-      fetch(`/api/video-meta?bvs=${encodeURIComponent(ids.join(','))}`)
+      /*
+       * ⚠️ `v=` 是缓存版本号，**改动接口返回格式或修好数据后要加一**。
+       * 为什么需要：接口响应带 `cache-control: max-age=3600`，浏览器会缓存一小时 ——
+       * 2026-10-11 修好服务端后，很多人看到的还是之前那份空的缓存响应，以为没修。
+       * 换个 version 值 = 换一个 URL，旧的缓存立刻作废。
+       */
+      const META_V = '2';
+      fetch(`/api/video-meta?bvs=${encodeURIComponent(ids.join(','))}&v=${META_V}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((data: { items?: Record<string, { t?: string; u?: string; m?: string }> } | null) => {
           const items = data?.items;

@@ -16,8 +16,7 @@
   "videoUrls": [
     "https://www.bilibili.com/video/BV1yZ4y1p7cY",
     "https://www.bilibili.com/video/BV1YN4y1A7zY",
-    "https://www.bilibili.com/video/BV1JM4m1m7Gu",
-    "https://www.youtube.com/watch?v=krkAbFWbkzc"
+    "https://www.bilibili.com/video/BV1JM4m1m7Gu"
   ],
   "sources": [
     "https://steamcommunity.com/sharedfiles/filedetails/?id=3267382742",
@@ -25,7 +24,6 @@
     "https://s2ze.com/maps/3267382742",
     "https://www.bilibili.com/video/BV1yZ4y1p7cY",
     "https://www.bilibili.com/video/BV1JM4m1m7Gu",
-    "https://www.youtube.com/watch?v=krkAbFWbkzc",
     "https://github.com/Mazelri/Zombie-Escape-Configs/blob/main/csgo/stripper/ze_silent_hill_blackblood_f6.cfg",
     "https://zegraph.xyz/servers/colateam/maps/ze_silent_hill_blackblood/"
   ],
