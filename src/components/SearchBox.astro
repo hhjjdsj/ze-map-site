@@ -32,7 +32,7 @@
       class="sbox-input"
       type="search"
       name="q"
-      placeholder="搜索地图 / 标签…"
+      placeholder="搜索地图 / 标签 / 作者…"
       autocomplete="off"
       spellcheck="false"
       aria-label="站内搜索（回车查看全部结果）"
@@ -51,7 +51,7 @@
 </div>
 
 <script>
-  type MapRow = { s: string; t: string; e: string; d: string; g?: string[] };
+  type MapRow = { s: string; t: string; e: string; d: string; g?: string[]; a?: string; u?: string };
   type TagRow = { n: string; c: number };
   type Index = { maps: MapRow[]; tags: TagRow[] };
 
@@ -122,20 +122,29 @@
      * 为什么不用加权总分：单值打分很容易倒挂 —— 试过「标签完全相同 60 分」vs
      * 「标题包含 52 分」，结果搜「后室」时「池塘」（只是打了 后室 标签）排在
      * 「逃离后室」（标题里就写着）前面（2026-10-07 截图里就是这个顺序，用户直接看出来了）。
-     * 层级排序的规则一句话说得清：**中文名 > 英文名 > 标签**，同一层里 完全相同 > 开头 > 包含。
+     * 层级排序的规则一句话说得清：**中文名 > 英文名 > 作者 > 上传者 > 标签**，
+     * 同一层里 完全相同 > 开头 > 包含。
+     *
+     * 作者排在前面的理由：搜「Waffel」的人想找的是**他的图**，不是「正文里提过 Waffel」
+     * 的页面 —— 上传者（工坊条目上传人，常是搬运/移植者）放作者后面。
      */
-    function hitRank(m: MapRow, q: string): { rank: number; match: number; tag?: string } | null {
-      let best: { rank: number; match: number; tag?: string } | null = null;
-      const consider = (rank: number, value: string, tag?: string) => {
+    function hitRank(
+      m: MapRow,
+      q: string
+    ): { rank: number; match: number; tag?: string; by?: 'author' | 'uploader' } | null {
+      let best: { rank: number; match: number; tag?: string; by?: 'author' | 'uploader' } | null = null;
+      const consider = (rank: number, value: string, extra?: { tag?: string; by?: 'author' | 'uploader' }) => {
         const match = scoreOf(value, q);
         if (match <= 0) return;
         if (!best || rank > best.rank || (rank === best.rank && match > best.match)) {
-          best = { rank, match, ...(tag ? { tag } : {}) };
+          best = { rank, match, ...(extra ?? {}) };
         }
       };
-      consider(3, norm(m.t));
-      consider(2, norm(m.e));
-      for (const g of m.g ?? []) consider(1, norm(g), g);
+      consider(5, norm(m.t));
+      consider(4, norm(m.e));
+      if (m.a) consider(3, norm(m.a), { by: 'author' });
+      if (m.u) consider(2, norm(m.u), { by: 'uploader' });
+      for (const g of m.g ?? []) consider(1, norm(g), { tag: g });
       return best;
     }
 
@@ -143,8 +152,8 @@
       const out: HTMLElement[] = [];
       if (!index) return out;
 
-      /* --- 地图：中文名 / 英文名 / 标签，三处都只认连续子串 --- */
-      const maps: Array<{ m: MapRow; rank: number; match: number; tag?: string }> = [];
+      /* --- 地图：中文名 / 英文名 / 作者 / 上传者 / 标签，都只认连续子串 --- */
+      const maps: Array<{ m: MapRow; rank: number; match: number; tag?: string; by?: 'author' | 'uploader' }> = [];
       for (const m of index.maps) {
         const hit = hitRank(m, q);
         if (hit) maps.push({ m, ...hit });
@@ -154,7 +163,7 @@
           b.rank - a.rank || b.match - a.match || String(a.m.t).localeCompare(String(b.m.t), 'zh')
       );
 
-      for (const { m, tag } of maps.slice(0, MAX_MAPS)) {
+      for (const { m, tag, by } of maps.slice(0, MAX_MAPS)) {
         const a = document.createElement('a');
         a.className = 'sbox-row';
         a.href = `/maps/${m.s}/`;
@@ -167,11 +176,17 @@
 
         const sub = document.createElement('span');
         sub.className = 'sbox-row-sub';
-        sub.textContent = m.e;
+        /* 按作者搜出来的结果，副标题显示作者名（并把命中段标出来）——
+           否则一列图名看完也不知道凭什么是这几张 */
+        if (by === 'author' && m.a) markInto(sub, m.a, q);
+        else if (by === 'uploader' && m.u) markInto(sub, m.u, q);
+        else sub.textContent = m.e;
         a.append(sub);
 
         a.append(badge(m.d, 'diff'));
         if (tag) a.append(badge(`#${tag}`, 'tag'));
+        if (by === 'author') a.append(badge('作者', 'by'));
+        else if (by === 'uploader') a.append(badge('上传者', 'by'));
         out.push(a);
       }
 

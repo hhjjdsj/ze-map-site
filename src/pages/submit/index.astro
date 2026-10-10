@@ -244,11 +244,20 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
               )}
               {f.kind === 'itemlist' || f.kind === 'gallery' || f.kind === 'tags' ? null : f.kind ===
                 'longtext' ? (
-                /* 正文没有「一个现值」可显示：本站正文与已有的社区投稿都在右侧面板里 */
-                <p class="form-hint s-cur">
-                  这张图现有的正文与已经通过的投稿都列在右侧「这张图现在的内容」里 ——
-                  想改哪一条，点那条的「修订这条」。
-                </p>
+                f.key === 'summary' ? (
+                  /*
+                    简介特殊：本站有没有简介决定「你能不能投」——
+                    没有 → 你写的就是开头那段；有 → 不接受覆盖，得改投别的字段。
+                    静态 hint 说不了这种「看情况」，所以这里留一个容器由脚本填。
+                  */
+                  <p class="form-hint s-cur" id="summary-status" />
+                ) : (
+                  /* 其余正文没有「一个现值」可显示：本站正文与已有的社区投稿都在右侧面板里 */
+                  <p class="form-hint s-cur">
+                    这张图现有的正文与已经通过的投稿都列在右侧「这张图现在的内容」里 ——
+                    想改哪一条，点那条的「修订这条」。
+                  </p>
+                )
               ) : (
                 <p class="form-hint s-cur">
                   条目现在的值：<span class="cur-val" data-current={f.key}>—</span>
@@ -1025,6 +1034,24 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
       return;
     }
 
+    /*
+     * 简介：静态 hint 说不清「这一项到底能不能投」，得看这张图现在有没有简介。
+     * 有 → 明说投不了并指路（不然稿子写完了才发现白写）；
+     * 没有 → 告诉他这段会出现在条目开头，顺带再强调一次跟「背景故事」的区别。
+     */
+    if (key === 'summary') {
+      const st = document.getElementById('summary-status');
+      if (st) {
+        const has = String(mapInfo?.summary ?? '').trim().length > 0;
+        st.textContent = has
+          ? '这张图已经有本站整理的简介（右侧「本站正文」里就能看到）—— 简介不接受覆盖，这一项投不了。' +
+            '想补充内容请改投「背景故事」（剧情设定）或「补充说明 / 纠错」。'
+          : '这张图还没有简介 —— 你写的会成为它正文开头那段导语，署你的昵称。' +
+            '只写总览（什么题材、大致怎么玩、有什么特别），剧情设定请投「背景故事」。';
+        st.classList.toggle('is-warn', has);
+      }
+    }
+
     /* 标签：勾选器，默认勾上这张图现有的标签（避免整组替换把原有的写丢） */
     if (rules[key]?.kind === 'tags') {
       prefillTags();
@@ -1475,6 +1502,16 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     }
 
     const value = collect(field);
+    /*
+     * 简介：本站已经有简介的图**不接受**社区简介（页面上根本不会渲染，投了等于白投）。
+     * 本地拦一道并指路到能投的字段 —— 服务端拦不了（Worker 读不到仓库里的原稿），
+     * 但审核台照样能看到这类稿子，站长可以驳回。
+     */
+    if (field === 'summary' && String(mapInfo?.summary ?? '').trim()) {
+      return showError(
+        '这张图已经有本站整理的简介，简介不支持覆盖 —— 想补充内容请改投「背景故事」或「补充说明 / 纠错」。'
+      );
+    }
     const checked = validateValue(field, value);
     if (!checked.ok) return showError(checked.error);
 

@@ -348,6 +348,9 @@ img { max-width: 100%; display: block; }
   color: var(--muted);
 }
 
+/* 「作者」「上传者」命中标记：和难度徽章区分开，让人一眼知道凭什么命中 */
+.sbox-badge.by { border-color: var(--accent-2); color: var(--accent-2); }
+
 .sbox-row-tag .sbox-row-main { font-weight: 500; }
 
 .sbox-row-all {
@@ -2115,6 +2118,30 @@ img { max-width: 100%; display: block; }
   color: var(--muted);
 }
 
+/*
+ * 「简介（社区投稿）」这一块：它是**正文开头那段导语**的位置（本站还没写简介的图上），
+ * 所以别让它看起来像页尾的补充说明 —— 去掉外框、字号贴近正文，只留一条细的标记线。
+ */
+.community-block.is-lead {
+  margin-bottom: 22px;
+}
+.community-block.is-lead h2 {
+  margin-bottom: 6px;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.community-block.is-lead .community-note {
+  margin-top: 0;
+  padding: 2px 0 2px 14px;
+  border: 0;
+  border-left: 2px solid var(--accent-2);
+  border-radius: 0;
+  background: none;
+  font-size: 15.5px;
+  line-height: 1.85;
+}
+
 /* 难度来源标注（详情页侧栏「难度 困难 · 源于 FYS」）—— 已获 FYS 社区同意标注 */
 .diff-src {
   margin-left: 8px;
@@ -2574,6 +2601,8 @@ img { max-width: 100%; display: block; }
 .submit-page .form-row > label { font-size: 13px; letter-spacing: 0.02em; }
 .s-field { margin-bottom: 4px; }
 .s-cur { margin-top: 8px; }
+/* 提示里的「这一项投不了」：用警示色，别让投稿人写完一整段才发现白写 */
+.form-hint.is-warn { color: var(--accent); }
 .cur-val { color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
 /* 列表类字段（标签 / 视频 / 来源）的「现在的值」逐条列出来，不要挤成一行 */
 .cur-list { margin: 6px 0 0; padding-left: 18px; color: var(--text); font-size: 12.5px; line-height: 1.8; overflow-wrap: anywhere; }
@@ -2699,8 +2728,7 @@ a.uf-map:hover { color: var(--accent-2); text-decoration: underline; }
 .uf-extra a { color: var(--accent-2); text-decoration: none; }
 .uf-extra a:hover { text-decoration: underline; }
 .uf-empty { color: var(--muted); font-size: 13.5px; }
-.uf-more { margin-top: 14px; }
-@media (max-width: 560px) {
+.uf-more { margin-top: 14px; }@media (max-width: 560px) {
   .uf-item { grid-template-columns: 44px minmax(0, 1fr); }
   .uf-ago { grid-column: 2; grid-row: 1; text-align: right; }
   .uf-main { grid-column: 1 / -1; }

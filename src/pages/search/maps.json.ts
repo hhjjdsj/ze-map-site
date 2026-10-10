@@ -14,11 +14,17 @@
  *    子串匹配，正好补上这一块。
  *
  * 结构（键名刻意短，这份文件每次搜索都要拉）：
- *   maps[]: s=slug  t=中文名  e=英文名  d=难度  g=标签[]
+ *   maps[]: s=slug  t=中文名  e=英文名  d=难度  g=标签[]  a=作者  u=工坊上传者
  *   tags[]: n=标签名  c=该标签的地图数
  *
  * 页头搜索框只在这些字段里做**连续子串**匹配，所以「后室」不会命中「后…室」。
  * 比 /submit/maps.json 小得多（那个要预填表单字段）。
+ *
+ * `a` / `u` 是 2026-10-10 加的：以前搜作者只能靠 Pagefind 全文（侧栏的「作者」
+ * 恰好被索引了），页头联想完全不认作者 —— 输入 Hannibal 只有一条「在站内搜索 →」。
+ * 覆盖情况：954 张里 author 190 张、uploader 536 张（其余是纯数据条目，作者本就未知），
+ * 两个字段只加约 25 KB，而且这份文件只在第一次搜索时才拉。
+ * 中英混排 / 多作者（「Waffel、kondik」）都原样放进来，匹配走连续子串，不切分。
  */
 import { getMaps } from '../../lib/maps';
 import type { APIRoute } from 'astro';
@@ -38,6 +44,11 @@ export const GET: APIRoute = async () => {
     };
     /* 只有非空才带上，文件能小一点（多数图有标签，但空数组没必要占位置） */
     if (tags.length) row.g = tags;
+    /* 作者 / 工坊上传者：community 覆盖后的值（getMaps 已合并），和页面上显示的一致 */
+    const author = String(m.data.author ?? '').trim();
+    if (author) row.a = author;
+    const uploader = String(m.data.uploader ?? '').trim();
+    if (uploader) row.u = uploader;
     return row;
   });
 

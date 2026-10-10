@@ -566,6 +566,13 @@ function renderEntry(rec, research, wsRec, gfl) {
     research?.videoUrls?.length ? `videoUrls: [${research.videoUrls.map((x) => JSON.stringify(x)).join(', ')}]` : null,
     research?.sources?.length ? `sources: [${research.sources.map((x) => JSON.stringify(x)).join(', ')}]` : null,
     `stub: ${hasEditorial ? 'false' : 'true'}`,
+    /*
+     * 本站有没有人工整理的简介（正文开头那段导语）。
+     * 社区投稿的「地图简介」只在**没有**本站简介的图上渲染（页面据此决定），
+     * 而简介是烤进正文里的、页面读不到 data/research —— 所以这个信号必须进 frontmatter。
+     * 只在有简介时写这一行：那 840 多张没简介的图，MDX 输出一个字节都不变。
+     */
+    research?.summary ? 'hasSummary: true' : null,
     '---',
     '',
     `{/* ${MARK} · 实体数据：${provenance} · 工坊数据：Steam Web API */}`,
@@ -906,6 +913,73 @@ for (const [slug, research] of researchFiles) {
 
 const existing = new Map(fs.readdirSync(MAPS_DIR).filter((f) => f.endsWith('.mdx')).map((f) => [f.replace(/\.mdx$/, ''), fs.readFileSync(path.join(MAPS_DIR, f), 'utf8')]));
 
+/*
+ * 同一内部名有两条工坊分片时，页面只能属于其中一个。
+ *
+ * 以前没有这一步：主循环里 `slug = rec.m`，两条记录算出同一个 slug，而 `existing`
+ * 是循环开始前读的（已经有了这个页面）→ `if (!prev && usedSlugs.has(slug))` 不成立 →
+ * **后一条把前一条的页面覆盖掉**。于是「这张页显示哪次上传」取决于 catalog 里谁排在后面，
+ * 而 catalog 是每次构建重新生成的（顺序会变）—— 2026-10-10 实遇：`ze_minecraft_sakura`
+ * 悄悄换成了订阅 258 的 `ze_minecraft_sakura_test`，12974 订阅和「热门」标签一起消失。
+ * 全站共 5 组重名（ardenweald / minecraft_sakura / necromanteion_p /
+ * obj_ouroboros_aurora_v2 / undersea_temple）。
+ *
+ * 现在显式挑一条，选法固定（越靠前越优先）：
+ *   1. 被某份原稿声明为 `maps[0]` 的 —— 那是人工指定的归属，最高优先；
+ *   2. 工坊条目还在（`result === 1`）的 —— 下架的排后面；
+ *   3. 订阅数多的 —— 同一张图的不同上传，活跃的那个才是读者要找的；
+ *   4. 实体数多的 —— 数据更全的那份；
+ *   5. 工坊 ID 大的 —— 纯兜底，保证结果确定（不随 catalog 顺序漂）。
+ * 落选的记录不再出页（它们是同一张图的另一次上传），并在构建日志里列出来备查。
+ *
+ * 2026-10-10 起 catalog 自己就带了 `alt` 标记（build-catalog.mjs 用同一套优先级打），
+ * 所以这一段现在多半是**兜底**：catalog 没标（或标错）时它照样能保证页面归属确定。
+ */
+const pageMaps = [];
+/** catalog 里标了 alt（同一内部名的另一次上传）而被跳过的条数 —— 只用于构建日志 */
+let skippedAlt = 0;
+{
+  const groups = new Map();
+  for (const rec of zeMaps) {
+    /* catalog 已经把「同一内部名的另一次上传」标成 alt（见 scripts/entity-data/build-catalog.mjs，
+       选法两处一致）—— 默认照它走。唯一例外：某份原稿用 `maps[0]` 明确指定了这一条，
+       那是人工归属，优先级最高。 */
+    if (rec.alt && !entityAlias.has(rec.m)) {
+      skippedAlt++;
+      continue;
+    }
+    const k = String(rec.m).toLowerCase();
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(rec);
+  }
+  const dropped = [];
+  for (const [, group] of groups) {
+    if (group.length === 1) {
+      pageMaps.push(group[0]);
+      continue;
+    }
+    const subsOf = (rec) => {
+      const w = loadWorkshop(rec.f);
+      return w?.result === 1 ? Number(w?.subscriptions ?? 0) : -1;
+    };
+    const ranked = [...group].sort(
+      (a, b) =>
+        Number(entityAlias.has(b.m)) - Number(entityAlias.has(a.m)) ||
+        subsOf(b) - subsOf(a) ||
+        (b.n ?? 0) - (a.n ?? 0) ||
+        Number(b.f) - Number(a.f)
+    );
+    pageMaps.push(ranked[0]);
+    for (const r of ranked.slice(1)) {
+      dropped.push(`${r.m}：选了 ${ranked[0].f}（订阅 ${subsOf(ranked[0])}、实体 ${ranked[0].n}），放弃 ${r.f}（订阅 ${subsOf(r)}、实体 ${r.n}）`);
+    }
+  }
+  if (dropped.length) {
+    console.log('同名分片：每组只出一条页面（选法见脚本注释）');
+    for (const d of dropped) console.log(`  ${d}`);
+  }
+}
+
 /* 收集标签写法：资料文件里的标签就是规范写法的候选 */
 async function writeEntry(file, text) {
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -937,7 +1011,7 @@ const stageFix = [];
 /** 主循环用掉了哪些原稿 —— 第二轮靠它找出「有原稿、没分片」的图 */
 const usedResearch = new Set();
 
-for (const rec of zeMaps) {
+for (const rec of pageMaps) {
   /* 被别人的 maps 声明的实体版本：不单独出页（例如 mako 的 v5_3 并进 ze_ffvii_mako_reactor） */
   if (claimedEntities.has(rec.m)) continue;
   let slug = entityAlias.get(rec.m) ?? rec.m;
@@ -1018,7 +1092,10 @@ for (const research of new Set(researchFiles.values())) {
 }
 
 
-console.log(`ZE 地图 ${zeMaps.length} 张`);
+console.log(
+  `ZE 地图 ${pageMaps.length} 张` +
+    (skippedAlt ? `（catalog ${zeMaps.length} 条：${skippedAlt} 条是同一内部名的另一次上传，已跳过）` : '')
+);
 console.log(`  ${DRY ? '将生成' : '新建'} ${created} · ${DRY ? '将更新' : '更新'} ${updated}`);
 /* 注意：这是**本次写出**的条数，不是总数 —— 已经有页面、内容也没变的不会重复写 */
 console.log(`  其中没有实体分片（已下架 / 还没烘到）、只出资料页的：${noEntityCreated} 张`);

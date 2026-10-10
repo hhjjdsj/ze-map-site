@@ -17,7 +17,7 @@ const entities = maps.reduce((a, m) => a + (m.data.entityCount ?? 0), 0);
 // 不要改成 fs.readFile('public/...')——相对路径依赖 cwd，Cloudflare 适配器预渲染时
 // cwd 变成 /bundle，会直接构建失败（2026-09-23 线上部署失败的根因）。
 const allMaps = catalog.count;
-const bakedMaps = catalog.maps.filter((m) => m.source === BAKED_SOURCE).length;
+const bakedMaps = catalog.maps.filter((m) => m.source === BAKED_SOURCE && !m.alt).length;
 ---
 
 <BaseLayout title="关于 | ZE 地图资料站" description="ZE 地图资料站：僵尸逃跑地图中文资料库，数据来源与说明。">

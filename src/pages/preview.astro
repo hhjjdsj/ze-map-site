@@ -42,14 +42,24 @@ const ENTITY_BASE = import.meta.env.PUBLIC_ENTITY_BASE || '/entity';
  * 带真实碰撞地形的地图数。
  * 以前只数 public/terr 目录 —— 地形搬到 R2 之后那个目录就不在仓库里了，
  * 所以再留一条回落：烘焙收尾写出的 data/terr-manifest.json（见 docs/r2-migration.md）。
+ *
+ * ⚠️ 还要**去掉 alt**（同一内部名的另一次上传）：地形分包是按工坊 ID 命名的，
+ * 副本那份也算得进来，于是出现过「收录 848 张地图，其中 850 张带真实碰撞地形」
+ * 这种自相矛盾的描述（2026-10-10 加 alt 之后立刻暴露）。
  */
 const terrCount = (() => {
+  const known = new Set(catalog.maps.filter((m) => !m.alt).map((m) => String(m.f)));
+  const countKept = (ids: string[]) => ids.filter((id) => known.has(String(id))).length;
   try {
-    return fs.readdirSync('public/terr').filter((f) => f.endsWith('.bin')).length;
+    const ids = fs.readdirSync('public/terr').filter((f) => f.endsWith('.bin')).map((f) => f.replace(/\.bin$/, ''));
+    return countKept(ids);
   } catch {
     try {
       const manifest = JSON.parse(fs.readFileSync('data/terr-manifest.json', 'utf8'));
-      return Array.isArray(manifest.ids) ? manifest.ids.length : 0;
+      const ids: string[] = Array.isArray(manifest.ids)
+        ? manifest.ids.map(String)
+        : Object.keys(manifest.maps ?? {});
+      return countKept(ids);
     } catch {
       return 0;
     }

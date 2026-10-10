@@ -24,6 +24,16 @@ function workshopDate(root, id) {
   } catch { return undefined; }
 }
 
+/** 工坊订阅数（不在售返回 -1）—— 同一内部名有多条分片时用它排序 */
+function workshopSubs(root, id) {
+  const file = path.join(root, 'data/workshop', `${id}.json`);
+  if (!fs.existsSync(file)) return -1;
+  try {
+    const info = JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
+    return info.result === 1 ? Number(info.subscriptions ?? 0) : -1;
+  } catch { return -1; }
+}
+
 export function buildCatalog(root = ROOT) {
   const indexFile = path.join(root, 'public/entity/catalog.json');
   const dir = path.join(root, 'public/entity/data');
@@ -87,6 +97,41 @@ export function buildCatalog(root = ROOT) {
   // （索引本身是「已下线」的事实来源，只删分片的话下次构建会把它并回来）。
   maps.push(...previous.values());
   maps.sort((x, y) => x.a.localeCompare(y.a) || x.m.localeCompare(y.m) || x.f.localeCompare(y.f));
+
+  /*
+   * 同一内部名有多条分片：作者重传/换版本时 Steam 上是**两个工坊条目**，各烘了一份实体数据。
+   * 它们在地图页那边只能出一页（谁排后面谁覆盖前面 —— 2026-10-10 修的那个 bug），
+   * 在预览工具的列表里则会变成同一个名字出现两次，看着像重复收录。
+   *
+   * 这里给落选的那条打 `alt: true`（预览列表过滤掉它），选法固定：
+   *   工坊还在 > 订阅多 > 实体多 > 工坊 ID 大（越靠前越优先）。
+   * 地图页那个生成器用的是**同一套优先级**，另外还多一条「原稿 maps[0] 人工指定」的最高优先，
+   * 所以两边结论一致；改这里的规则时记得同步 scripts/content/generate-map-entries.mjs。
+   *
+   * `alt` 每条都先清掉再重算：catalog 是增量维护的（上面 `...(old || {})`），
+   * 不清的话重传被删掉之后旧标记会永远留着。
+   */
+  for (const m of maps) delete m.alt;
+  const dupGroups = new Map();
+  for (const m of maps) {
+    const key = `${m.a}/${String(m.m).toLowerCase()}`;
+    if (!dupGroups.has(key)) dupGroups.set(key, []);
+    dupGroups.get(key).push(m);
+  }
+  const dupReport = [];
+  for (const [, list] of dupGroups) {
+    if (list.length < 2) continue;
+    const ranked = [...list].sort(
+      (x, y) => workshopSubs(root, y.f) - workshopSubs(root, x.f) || y.k2 - x.k2 || Number(y.f) - Number(x.f)
+    );
+    for (const m of ranked.slice(1)) m.alt = true;
+    dupReport.push(
+      `${ranked[0].m}：保留 ${ranked[0].f}（订阅 ${workshopSubs(root, ranked[0].f)}、${ranked[0].k2} 实体），` +
+        `标 alt ${ranked.slice(1).map((m) => `${m.f}（订阅 ${workshopSubs(root, m.f)}、${m.k2} 实体）`).join('、')}`
+    );
+  }
+  const kept = maps.filter((m) => !m.alt);
+
   const legacySource = normalizeEntitySource(
     existing.meta.legacySource ||
       (existing.meta.source?.includes('MapTracking-CS2') ? existing.meta.source : LEGACY_SOURCE)
@@ -97,21 +142,33 @@ export function buildCatalog(root = ROOT) {
     legacyBuilt,
     legacySource,
     source: 'Steam Workshop VPK (Source2Viewer) / historical entity snapshot',
-    maps: maps.length,
-    entities_all: maps.reduce((n, m) => n + m.n, 0),
-    entities_kept: maps.reduce((n, m) => n + m.k2, 0),
+    maps: kept.length,
+    entities_all: kept.reduce((n, m) => n + m.n, 0),
+    entities_kept: kept.reduce((n, m) => n + m.k2, 0),
     bg_res: existing.meta.bg_res || 128,
-    radars: maps.filter((m) => m.rb).length,
-    bg_density: maps.filter((m) => m.bg).length,
+    radars: kept.filter((m) => m.rb).length,
+    bg_density: kept.filter((m) => m.bg).length,
     view3d: 1,
   };
-  const result = { meta, groups: existing.groups, count: maps.length, maps };
+  /* count / meta.* 一律只算「保留」的那些：alt 分片是同一张图的另一次上传，
+     算进来会让页面上的「N 张地图 / N 个实体」偏大（而列表里又看不到它们）。 */
+  const result = { meta, groups: existing.groups, count: kept.length, alts: maps.length - kept.length, maps };
   const output = JSON.stringify(result) + '\n';
   if (output !== fs.readFileSync(indexFile, 'utf8')) fs.writeFileSync(indexFile, output);
-  return { maps: maps.length, baked: maps.filter((m) => m.source === BAKED_SOURCE).length, added: maps.length - existing.maps.length };
+  return {
+    maps: kept.length,
+    alts: maps.length - kept.length,
+    baked: kept.filter((m) => m.source === BAKED_SOURCE).length,
+    added: maps.length - existing.maps.length,
+    dupReport,
+  };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const summary = buildCatalog();
-  console.log(`catalog: ${summary.maps} maps (${summary.baked} VPK, ${summary.added} added)`);
+  console.log(
+    `catalog: ${summary.maps} maps (${summary.baked} VPK, ${summary.added} added)` +
+      (summary.alts ? `，${summary.alts} 条同名的另一次上传标了 alt（列表里不显示）` : '')
+  );
+  for (const line of summary.dupReport) console.log(`  ${line}`);
 }

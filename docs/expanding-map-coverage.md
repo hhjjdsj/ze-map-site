@@ -134,3 +134,47 @@ npm run terr:upload       # 传 R2，顺带重写 data/terr-manifest.json（这�
 - **同名重传**：同一张图「下架旧版 + 在售新版」共用地图名，13 例（`ze_puritytest`、`ze_kz`、`ze_my_first_escape` …）。页面按名字只出一张，原稿的 slug 已改指**在售**的工坊 ID。
 - **12 张下架图的内部名无从考证**：s2ze 里存的是显示名（`ze_12の凑家`、`ze_fate/stay_night_ubw`、`ze_changing_room_version:cn` …），带中文/空格/标点，不能当 slug。要收就得人工定名。
 - 下架图普遍**没有封面**：s2ze 的 CDN 图会 404，没有实体数据也就没有渲染兜底。
+
+## 10. 同一内部名有两条分片时，页面归谁（2026-10-10 修）
+
+上面第 9 节说的「同名重传」在 catalog 里是**两条记录共用一个内部名**（`m` 字段相同），
+全站 5 组：`ze_ardenweald`、`ze_minecraft_sakura`、`ze_necromanteion_p`、
+`ze_obj_ouroboros_aurora_v2`、`ze_undersea_temple`。
+
+**以前的行为是错的**：生成器主循环里 `slug = rec.m`，两条记录算出同一个 slug，
+而 `existing` 是循环开始前读的（这个页面已经存在）→ `if (!prev && usedSlugs.has(slug))`
+不成立 → **后一条把前一条的页面覆盖掉**。于是「这张页显示哪次上传」取决于 catalog 里谁排在后面，
+而 catalog 每次构建都会重新生成 —— 2026-10-10 实遇：`ze_minecraft_sakura` 被换成了
+订阅 258 的 `ze_minecraft_sakura_test`，12974 订阅和「热门」标签一起消失，
+而下次构建可能又换回来（打印稿来回漂）。
+
+现在生成器显式挑一条，选法固定（`generate-map-entries.mjs` 里 `pageMaps` 那一段）：
+
+1. 被某份原稿声明为 `maps[0]` 的（人工指定的归属）；
+2. 工坊条目还在（`result === 1`）的；
+3. **订阅数多的**；
+4. 实体数多的；
+5. 工坊 ID 大的（纯兜底，保证结果确定）。
+
+落选的那条不再出页，构建日志里会逐条打印「选了哪个、放弃哪个、各自订阅/实体数」备查。
+按这个规则，5 组里 4 组与之前提交的页面一致，只有 `ze_ardenweald` 变了 ——
+从订阅 124 的 `ze_ardenweald_cs2` 换成订阅 1125 的 `ze_ardenweald`（同时拿到
+「传送门多」标签、关卡 4、以及它自己的实体分片）。
+
+### 预览列表的去重（同日补）
+
+`/preview/` 的地图列表直接读 `catalog.json`，所以上面那 5 组会让**同一个名字出现两行**
+（3 组连实体数都一样，根本分不出区别）。现在由 `build-catalog.mjs` 给落选的那条打
+`alt: true`（同一套优先级：工坊还在 > 订阅多 > 实体多 > ID 大），`public/preview/app.js`
+的列表过滤掉 alt 行，`catalog.count` / `meta.entities_*` 也只统计保留的那些 —— 于是
+「853 张地图」变成 **848 张**（关于页、预览页描述、预览工具顶部徽章都跟着变对了）。
+
+几个刻意的细节：
+
+- **数据没删**：alt 分片仍在 `public/entity/data/` 里，按分片名直链
+  （`/preview/?map=2001-ze_minecraft_sakura-3178196409`）照样能打开那一份；只有「按内部名 /
+  中文名找」时会跳过 alt，免得随机挑到副本。
+- **`alt` 每次重算时先全部清掉**：catalog 是增量维护的（`...(old || {})`），
+  不清的话哪天那条重传被删了，旧标记会永远留着。
+- 生成器里的那段合并逻辑保留为**兜底**（catalog 没标或标错时仍能保证页面归属确定），
+  但它现在第一步就是跳过 alt —— 两处规则要一起改。

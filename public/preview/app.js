@@ -1131,7 +1131,10 @@ function buildSide(){
   if(!CATALOG) return;
   const q = $('q').value.trim().toLowerCase();
   const lm = S.listMode;
-  let arr = CATALOG.maps.filter(m => !lm || m.a === lm);
+  /* alt = 同一内部名的另一次上传（作者重传/换版本）：catalog 里给它们打了标记，
+     列表不显示 —— 否则同一个名字会出现两行、数字还可能一样，看着像重复收录。
+     想单独看那份数据时仍可按 slug 直链（?map=<分片名>），数据本身没删。 */
+  let arr = CATALOG.maps.filter(m => !m.alt && (!lm || m.a === lm));
   if(q) arr = arr.filter(m => (m.m+' '+m.cn+' '+m.i).toLowerCase().includes(q));
   const sk = S.sort;
   arr.sort((a,b)=> sk==='m' ? (a.cn||a.m).localeCompare(b.cn||b.m, 'zh-Hans-CN') :
@@ -2646,15 +2649,18 @@ $('ltoggle').addEventListener('click', ()=>{ $('layers').style.display='flex'; $
   let entry = null;
   if(wantMap){
     const w = wantMap.toLowerCase();
+    /* 精确命中分片名（s）时**允许**落到 alt 上 —— 那是有人明确要那一份数据；
+       按内部名/中文名找时跳过 alt，免得随机挑到另一次上传的副本。 */
+    const named = CATALOG.maps.filter(m => !m.alt);
     entry = CATALOG.maps.find(m => m.s.toLowerCase() === w)
-         || CATALOG.maps.find(m => m.m.toLowerCase() === w)
-         || CATALOG.maps.find(m => m.m.toLowerCase().includes(w))
-         || CATALOG.maps.find(m => (m.cn||'').toLowerCase().includes(w));
+         || named.find(m => m.m.toLowerCase() === w)
+         || named.find(m => m.m.toLowerCase().includes(w))
+         || named.find(m => (m.cn||'').toLowerCase().includes(w));
   }
   if(!entry){
     let best = null;
     for(const m of CATALOG.maps){
-      if(m.a !== '2001') continue;
+      if(m.a !== '2001' || m.alt) continue;
       const c = m.c || {};
       const sc = (c.tele||0)*4 + (c.break||0)*3 + (c.hurt||0)*3 + Math.min(c.mech||0,300) + (c.path||0)*2 + (c.trig||0)
                + (m.bg?25000:0) + (m.rb?40000:0);

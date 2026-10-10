@@ -42,7 +42,8 @@ const canFill = (r: (typeof R)[string]) => {
   }
 };
 
-const mergeNote = (r: (typeof R)[string]) =>
+/* 合并规则的一句话说明。带 key：简介（summary）虽然是 longtext，口径却和其它正文不同 */
+const mergeNote = (key: string, r: (typeof R)[string]) =>
   r.append
     ? '追加合并，不会顶掉已有的'
     : r.kind === 'tags'
@@ -54,7 +55,9 @@ const mergeNote = (r: (typeof R)[string]) =>
           : r.kind === 'itemlist'
             ? '逐行合并：按道具名对上号，服务器配置的原值会保留在表格备注里'
             : r.kind === 'longtext'
-              ? '作为新的一条正文（署你的昵称），不覆盖本站整理的正文；投过一次之后可以在投稿页右侧点「修订这条」改它 —— 替换正文，署名仍记原作者'
+              ? key === 'summary'
+                ? '只补空白：本站还没写简介的图，你投的就是它正文开头那段；已经有本站简介的图不接受覆盖（投稿页会直接拦住，请改投「背景故事」或「补充说明」）'
+                : '作为新的一条正文（署你的昵称），不覆盖本站整理的正文；投过一次之后可以在投稿页右侧点「修订这条」改它 —— 替换正文，署名仍记原作者'
               : '';
 
 const fieldRows = Object.entries(R).map(([key, r]) => ({
@@ -62,7 +65,7 @@ const fieldRows = Object.entries(R).map(([key, r]) => ({
   label: r.label,
   can: canFill(r),
   hint: r.hint ?? '',
-  merge: mergeNote(r),
+  merge: mergeNote(key, r),
 }));
 ---
 

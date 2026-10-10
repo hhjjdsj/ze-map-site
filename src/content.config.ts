@@ -57,6 +57,13 @@ const maps = defineCollection({
     entityCount: z.number().optional(),
     /** 是否只有数据、正文待社区补充 */
     stub: z.boolean().default(false),
+    /**
+     * 本站是否已经有人工整理的简介（正文开头那段导语）。
+     * 由生成器在**有简介时**才写这一行（没简介的图连字段都不出现）。
+     * 用途：社区投稿的「地图简介」只在这张图为 false 时渲染到开头 ——
+     * 有本站简介的图不接受社区覆盖（见 docs/community-editing-plan.md）。
+     */
+    hasSummary: z.boolean().default(false),
     /** 资料出处链接 */
     sources: z.array(z.string()).optional(),
 

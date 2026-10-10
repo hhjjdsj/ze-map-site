@@ -26,7 +26,7 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
         <span class="gradient-text">站内</span>搜索
       </h1>
       <p class="hero-sub">
-        全文检索 {maps.length} 张地图条目（其中 {researched} 张含攻略资料）——地图名、剧情、神器、BOSS、关卡流程都能搜
+        全文检索 {maps.length} 张地图条目（其中 {researched} 张含攻略资料）——地图名、作者、剧情、神器、BOSS、关卡流程都能搜
       </p>
     </div>
   </section>
@@ -315,30 +315,36 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
     }
 
     /**
-     * 命中排名：**先看命中在哪个字段（中文名 3 > 英文名 2 > 标签 1），再看命中方式**
-     * （完全相同 3 > 开头 2 > 包含 1）。返回 null = 三处都没连续命中。
+     * 命中排名：**先看命中在哪个字段（中文名 5 > 英文名 4 > 作者 3 > 上传者 2 > 标签 1），
+     * 再看命中方式**（完全相同 3 > 开头 2 > 包含 1）。返回 null = 都没连续命中。
      *
      * 为什么用两层而不是加权总分：单值打分容易倒挂 —— 试过「标签完全相同 60 分」压过
      * 「标题包含 52 分」，于是搜「后室」时「池塘」（只是打了标签）排在「逃离后室」前面。
      * 层级的规则一句话说得清，也不会再出现这种意外。
+     *
+     * 作者 / 上传者是 2026-10-10 加的：以前搜作者只能靠 Pagefind 全文碰运气（侧栏的作者
+     * 恰好被索引了），结果与「正文里提过这个名字」的页面混在一起、也不标原因。
+     * 现在按作者搜会整组置顶并标「作者：xxx」。
      */
     function hitRank(m, q) {
       var best = null;
-      var consider = function (rank, value, tag) {
+      var consider = function (rank, value, tag, by) {
         var match = scoreOf(value, q);
         if (match <= 0) return;
         if (!best || rank > best.rank || (rank === best.rank && match > best.match)) {
-          best = { rank: rank, match: match, tag: tag || '' };
+          best = { rank: rank, match: match, tag: tag || '', by: by || '' };
         }
       };
-      consider(3, normalize(m.t));
-      consider(2, normalize(m.e));
+      consider(5, normalize(m.t));
+      consider(4, normalize(m.e));
+      if (m.a) consider(3, normalize(m.a), '', 'author');
+      if (m.u) consider(2, normalize(m.u), '', 'uploader');
       var g = m.g || [];
       for (var i = 0; i < g.length; i++) consider(1, normalize(g[i]), g[i]);
       return best;
     }
 
-    /** 在索引里找图名 / 标签命中（同样只认连续子串） */
+    /** 在索引里找图名 / 作者 / 上传者 / 标签命中（同样只认连续子串） */
     function indexHits(q) {
       var nq = normalize(q);
       var maps = [];
@@ -348,7 +354,7 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
       for (var i = 0; i < MAP_INDEX.length; i++) {
         var m = MAP_INDEX[i];
         var hit = hitRank(m, nq);
-        if (hit) maps.push({ m: m, rank: hit.rank, match: hit.match, tag: hit.tag });
+        if (hit) maps.push({ m: m, rank: hit.rank, match: hit.match, tag: hit.tag, by: hit.by });
       }
       maps.sort(function (a, b) {
         return (
@@ -372,7 +378,7 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
 
     var TAG_CHIPS = 12; // 标签行里最多列几张地图（更多的去标签页看）
 
-    /** 置顶那一行：数据来自索引，带「图名匹配」/「#标签」标记 */
+    /** 置顶那一行：数据来自索引，带「图名匹配」/「#标签」/「作者」标记 */
     function makeIndexRow(hit) {
       var it = hit.m;
       var url = '/maps/' + it.s + '/';
@@ -387,14 +393,23 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
 
       var path = document.createElement('div');
       path.className = 'pf-result-path';
-      path.textContent = url + (it.e ? '　·　' + it.e : '');
+      /* 命中作者 / 上传者时，把那行副标题换成命中的那个名字 —— 一列图名看完也知道凭什么 */
+      var sub = hit.by === 'author' && it.a ? it.a : hit.by === 'uploader' && it.u ? it.u : it.e;
+      path.textContent = url + (sub ? '　·　' + sub : '');
       row.appendChild(path);
 
       var badges = document.createElement('div');
       badges.className = 'pf-result-badges';
       var mark = document.createElement('span');
       mark.className = 'badge exact';
-      mark.textContent = hit.tag ? '标签「' + hit.tag + '」' : '图名匹配';
+      mark.textContent =
+        hit.by === 'author'
+          ? '作者：' + it.a
+          : hit.by === 'uploader'
+            ? '上传者：' + it.u
+            : hit.tag
+              ? '标签「' + hit.tag + '」'
+              : '图名匹配';
       badges.appendChild(mark);
       if (it.d) {
         var b = document.createElement('span');
@@ -540,7 +555,17 @@ const DATA_KINDS = ['已有攻略资料', '资料待补充'];
           } else {
             var bits = [];
             if (idxTags.length) bits.push('标签 ' + idxTags.length + ' 个');
-            if (idxMaps.length) bits.push('图名匹配 ' + idxMaps.length + ' 张');
+            /* 作者 / 上传者 / 图名分开报，搜作者的人一眼知道「这些都是他的图」 */
+            var byAuthor = 0, byUploader = 0, byName = 0;
+            for (var bi = 0; bi < idxMaps.length; bi++) {
+              var bb = idxMaps[bi].by;
+              if (bb === 'author') byAuthor++;
+              else if (bb === 'uploader') byUploader++;
+              else byName++;
+            }
+            if (byAuthor) bits.push('作者匹配 ' + byAuthor + ' 张');
+            if (byUploader) bits.push('上传者匹配 ' + byUploader + ' 张');
+            if (byName) bits.push('图名匹配 ' + byName + ' 张');
             bits.push('正文连续命中 ' + exactRows.length + ' 条');
             msg = '找到 ' + exactTotal + ' 条与「' + typed + '」相关的结果（' + bits.join(' · ') + '）';
             if (relaxedRows.length) msg += '　另有 ' + relaxedRows.length + ' 条只是字分别出现';
