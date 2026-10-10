@@ -54,7 +54,17 @@ export const LIMITS = {
  */
 export const FIELD_RULES = {
   difficulty: { kind: 'enum', label: '难度', hint: '必须从这几个里选', values: DIFFICULTIES },
-  tags: { kind: 'tags', label: '标签', hint: '整组替换，不是追加', max: 12, maxLen: 24 },
+  tags: {
+    kind: 'tags',
+    label: '标签',
+    hint:
+      '从全站已有标签里勾选（括号里是「全站多少张图用过」，方便挑常用的）；' +
+      '**这张图现有的标签已经帮你勾好了**，你只要加要加的、取消不要的即可（提交的是整组，不是追加）。' +
+      '列表里没有想要的，就在下面「新建标签」里输入 —— 新标签需要审核确认，通过后会进全站标签，' +
+      '以后任何人给任何图投稿都能选到。',
+    max: 12,
+    maxLen: 24,
+  },
   author: { kind: 'text', label: '作者', hint: '尽量与工坊署名一致', maxLen: 120 },
   authorNote: { kind: 'text', label: '署名详情', hint: '多作者 / 原作与移植的区分', maxLen: 300 },
   version: { kind: 'text', label: '版本', maxLen: 40 },
@@ -209,7 +219,12 @@ export function validateValue(field, raw) {
         const t = typeof item === 'string' ? item.trim().replace(/\s+/g, ' ') : '';
         if (!t) continue;
         if (t.length > rule.maxLen) return { ok: false, error: `单个标签最多 ${rule.maxLen} 个字` };
-        if (/[<>{}[\]|,]/.test(t)) return { ok: false, error: `标签「${t}」含不支持的字符` };
+        /*
+         * 禁掉的不只是 Markdown 里的保留字符，还有**路径敏感字符**：
+         * 标签会变成 /tags/<标签>/ 目录，`/` 会造出嵌套路由、`:` `*` `?` `"` `\` 在 Windows 上直接非法。
+         * 实测现有 254 个标签里一个都没有这类字符，所以收紧不会误伤历史数据。
+         */
+        if (/[<>{}[\]|,\\/:*?"]/.test(t)) return { ok: false, error: `标签「${t}」含不支持的字符（< > { } [ ] | , / \\ : * ? "）` };
         if (!out.includes(t)) out.push(t);
       }
       if (out.length === 0) return { ok: false, error: '至少要有一个标签' };

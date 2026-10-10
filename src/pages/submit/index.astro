@@ -190,12 +190,41 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
                 </div>
               ) : f.kind === 'longtext' ? (
                 <textarea id={`f-in-${f.key}`} data-input={f.key} rows="8" />
-              ) : f.kind === 'tags' || f.kind === 'urlList' ? (
+              ) : f.kind === 'tags' ? (
+                /*
+                  标签：列出**全站所有标签**让他勾（默认勾上这张图现有的那些），
+                  找不到再走下面的「新标签」入口。以前是自由文本框，看不到站内已有什么，
+                  同一个意思会分叉；而且 tags 是整组替换，只想加一个却常把原有的全写丢。
+                  词表来自 /submit/tags.json（构建期从全站数据算），所以审核通过的新标签
+                  下次构建就进词表 —— 以后谁给任何图投稿都能看到。
+                */
+                <div class="tag-picker" id="tag-picker">
+                  <input
+                    id="tag-search"
+                    class="tag-search"
+                    type="search"
+                    placeholder="搜标签（例如「神器」「恐怖」）…"
+                    autocomplete="off"
+                  />
+                  <div class="field-chips tag-chips" id="tag-chips" />
+                  <div class="tag-new-row">
+                    <input
+                      id="tag-new"
+                      class="tag-new"
+                      maxlength="24"
+                      placeholder="找不到想要的？输入一个新标签"
+                      autocomplete="off"
+                    />
+                    <button class="btn" type="button" id="tag-new-add">＋ 新建标签</button>
+                  </div>
+                  <p class="form-hint" id="tag-status">正在加载标签词表…</p>
+                </div>
+              ) : f.kind === 'urlList' ? (
                 <textarea
                   id={`f-in-${f.key}`}
                   data-input={f.key}
                   rows="3"
-                  placeholder={f.kind === 'tags' ? '每行一个标签' : '每行一个链接（https:// 开头）'}
+                  placeholder="每行一个链接（https:// 开头）"
                 />
               ) : (
                 <input
@@ -204,7 +233,7 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
                   type={f.kind === 'int' ? 'number' : 'text'}
                 />
               )}
-              {f.kind === 'itemlist' || f.kind === 'gallery' ? null : (
+              {f.kind === 'itemlist' || f.kind === 'gallery' || f.kind === 'tags' ? null : (
                 <p class="form-hint s-cur">
                   条目现在的值：<span class="cur-val" data-current={f.key}>—</span>
                 </p>
@@ -366,6 +395,8 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
       goPick();
     }
   });
+  /* 标签选择器的输入框/按钮（函数声明会提升，这里调用没问题） */
+  wireTagPicker();
 
   const rules = FIELD_RULES as Record<string, { kind: string; hint?: string }>;
 
@@ -658,6 +689,145 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     }
   }
 
+  /* ===== 标签选择器 =====
+     词表来自 /submit/tags.json（构建期从全站数据算出来的：每个标签挂多少张图）。
+     默认勾上「这张图现在有的标签」—— 这样投稿人想加一个标签时，不会把原有的整组写丢
+     （tags 是整组替换，这是以前最容易踩的坑）。 */
+  type TagRow = { n: string; c: number };
+  let tagVocab: TagRow[] | null = null;
+  let tagSelected: string[] = [];
+  let tagKeyword = '';
+
+  const tagChipsEl = () => document.getElementById('tag-chips');
+  const tagStatusEl = () => document.getElementById('tag-status');
+  const tagLimit = () => rules.tags?.max ?? 12;
+
+  function tagStateText(): string {
+    const inVocab = new Set((tagVocab ?? []).map((t) => t.n));
+    const fresh = tagSelected.filter((t) => !inVocab.has(t));
+    const parts = [`已选 ${tagSelected.length} / ${tagLimit()}`];
+    if (fresh.length) parts.push(`新标签 ${fresh.length} 个（${fresh.join('、')}）需审核确认`);
+    return parts.join(' · ');
+  }
+
+  function renderTagChips(): void {
+    const box = tagChipsEl();
+    if (!box) return;
+    box.textContent = '';
+    const kw = tagKeyword.trim().toLowerCase();
+    const selected = new Set(tagSelected);
+    const vocab = tagVocab ?? [];
+    /* 新标签（不在词表里的已选项）永远排在最前，免得搜索时看不到、以为没选上 */
+    const fresh = tagSelected.filter((t) => !vocab.some((v) => v.n === t));
+    for (const name of fresh) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'on is-new';
+      b.textContent = `${name} · 新`;
+      b.title = '新标签：审核通过后会进全站标签，之后任何人投稿都能选到';
+      b.addEventListener('click', () => toggleTag(name));
+      box.append(b);
+    }
+    const list = vocab.filter((t) => !kw || t.n.toLowerCase().includes(kw));
+    for (const t of list) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = t.c >= 5 ? `${t.n} (${t.c})` : t.n;
+      b.title = `全站 ${t.c} 张图用过这个标签`;
+      if (selected.has(t.n)) b.className = 'on';
+      b.addEventListener('click', () => toggleTag(t.n));
+      box.append(b);
+    }
+    if (!list.length && !fresh.length) {
+      const p = document.createElement('p');
+      p.className = 'form-hint';
+      p.textContent = tagVocab
+        ? kw
+          ? `词表里没有「${tagKeyword}」—— 用下面的「新建标签」加一个。`
+          : '词表是空的。'
+        : '标签词表加载中…';
+      box.append(p);
+    }
+    const st = tagStatusEl();
+    if (st) {
+      st.textContent = tagVocab ? tagStateText() : '标签词表没加载出来 —— 仍可用下面的「新建标签」手动加。';
+    }
+  }
+
+  function toggleTag(name: string): void {
+    const i = tagSelected.indexOf(name);
+    if (i >= 0) {
+      tagSelected.splice(i, 1);
+    } else {
+      if (tagSelected.length >= tagLimit()) {
+        const st = tagStatusEl();
+        if (st) st.textContent = `最多 ${tagLimit()} 个标签 —— 先取消一个再选。`;
+        return;
+      }
+      tagSelected.push(name);
+    }
+    renderTagChips();
+  }
+
+  function addNewTag(): void {
+    const input = document.getElementById('tag-new') as HTMLInputElement | null;
+    const raw = (input?.value ?? '').trim();
+    if (!raw) return;
+    /* 先用共用校验器过一遍（长度 / 字符 / 重复与服务端同一条规则），免得提交了才被拒 */
+    const checked = validateValue('tags', [...tagSelected, raw]);
+    if (!checked.ok) {
+      const st = tagStatusEl();
+      if (st) st.textContent = String((checked as { error?: string }).error ?? '这个标签不可用');
+      return;
+    }
+    /* 词表里已有同名（忽略大小写）就选它，别再建一个只差大小写的标签 */
+    const hit = (tagVocab ?? []).find((t) => t.n.toLowerCase() === raw.toLowerCase());
+    if (input) input.value = '';
+    if (hit) {
+      if (!tagSelected.includes(hit.n)) toggleTag(hit.n);
+      else renderTagChips();
+      return;
+    }
+    tagSelected.push(raw);
+    renderTagChips();
+  }
+
+  async function loadTagVocab(): Promise<void> {
+    if (tagVocab) return;
+    try {
+      const r = await fetch('/submit/tags.json');
+      const j = (await r.json()) as { tags?: TagRow[] };
+      tagVocab = Array.isArray(j.tags) ? j.tags : [];
+    } catch {
+      tagVocab = [];
+    }
+    renderTagChips();
+  }
+
+  /** 切到「标签」字段或选中地图时调用：勾上这张图现有的标签，并确保词表已加载 */
+  function prefillTags(): void {
+    tagSelected = [...(mapInfo?.tags ?? [])];
+    renderTagChips();
+    void loadTagVocab();
+  }
+
+  function wireTagPicker(): void {
+    const search = document.getElementById('tag-search') as HTMLInputElement | null;
+    search?.addEventListener('input', () => {
+      tagKeyword = search.value;
+      renderTagChips();
+    });
+    const add = document.getElementById('tag-new-add');
+    add?.addEventListener('click', addNewTag);
+    const input = document.getElementById('tag-new') as HTMLInputElement | null;
+    input?.addEventListener('keydown', (e) => {
+      if ((e as KeyboardEvent).key === 'Enter') {
+        e.preventDefault();
+        addNewTag();
+      }
+    });
+  }
+
   function prefill(key: string) {
     const input = document.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
       `[data-input="${key}"]`
@@ -685,6 +855,12 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
     /* 神器 / 道具：没有「一个值」可以预填，改成列出现有的表 + 一行空行等投稿人填 */
     if (rules[key]?.kind === 'itemlist') {
       prefillItems();
+      return;
+    }
+
+    /* 标签：勾选器，默认勾上这张图现有的标签（避免整组替换把原有的写丢） */
+    if (rules[key]?.kind === 'tags') {
+      prefillTags();
       return;
     }
 
@@ -716,6 +892,8 @@ const fields = Object.entries(FIELD_RULES).map(([key, rule]: [string, any]) => (
 
   function collect(key: string): unknown {
     if (rules[key]?.kind === 'itemlist') return collectItems();
+    /* 标签来自选择器（勾选 + 新建），不是文本框 */
+    if (rules[key]?.kind === 'tags') return [...tagSelected];
     const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
       `[data-input="${key}"]`
     );
