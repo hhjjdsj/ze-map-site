@@ -70,8 +70,8 @@ async function cachePut(kv: KVLike | undefined, id: string, value: VideoMeta | n
   }
 }
 
-/** B 站：标题 + UP 主名（+ UID，用于署名链接） */
-async function fetchBilibili(id: string): Promise<VideoMeta | null> {
+/** B 站：标题 + UP 主名（+ UID，用于署名链接）。note 只在 ?debug=1 时回给调用方 */
+async function fetchBilibili(id: string): Promise<{ meta: VideoMeta | null; note?: string }> {
   const api = AV_RE.test(id)
     ? `https://api.bilibili.com/x/web-interface/view?aid=${id.slice(2)}`
     : `https://api.bilibili.com/x/web-interface/view?bvid=${id}`;
@@ -79,35 +79,40 @@ async function fetchBilibili(id: string): Promise<VideoMeta | null> {
     headers: { 'user-agent': UA, referer: 'https://www.bilibili.com/' },
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
-  if (!res.ok) return null;
-  const j = (await res.json()) as {
-    code?: number;
-    data?: { title?: string; owner?: { name?: string; mid?: number } };
-  };
-  if (j.code !== 0 || !j.data) return null;
+  /* ⚠️ 实测（2026-10-10）：Cloudflare 的出口 IP 找 B 站接口**经常什么都拿不到**
+     （风控 / 412 / 空响应）。所以 KV 里的数据是**本地预先推上去**的（tools/video-kv-seed.mjs），
+     这条回源只是兜底；失败要把原因记下来，用 ?debug=1 能看到。 */
+  if (!res.ok) return { meta: null, note: `HTTP ${res.status}` };
+  let j: { code?: number; message?: string; data?: { title?: string; owner?: { name?: string; mid?: number } } };
+  try {
+    j = (await res.json()) as typeof j;
+  } catch {
+    return { meta: null, note: '返回不是 JSON（多半被风控页顶掉了）' };
+  }
+  if (j.code !== 0 || !j.data) return { meta: null, note: `code=${j.code ?? '?'} ${j.message ?? ''}`.trim() };
   const t = String(j.data.title ?? '').trim();
   const u = String(j.data.owner?.name ?? '').trim();
   const m = Number(j.data.owner?.mid ?? 0);
-  return t || u ? { t, u, ...(m > 0 ? { m: String(m) } : {}) } : null;
+  return { meta: t || u ? { t, u, ...(m > 0 ? { m: String(m) } : {}) } : null };
 }
 
 /** YouTube：oEmbed（不需要 key） */
-async function fetchYoutube(id: string): Promise<VideoMeta | null> {
+async function fetchYoutube(id: string): Promise<{ meta: VideoMeta | null; note?: string }> {
   const api = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}&format=json`;
   const res = await fetch(api, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(TIMEOUT_MS) });
-  if (!res.ok) return null;
+  if (!res.ok) return { meta: null, note: `HTTP ${res.status}` };
   const j = (await res.json()) as { title?: string; author_name?: string };
   const t = String(j.title ?? '').trim();
   const u = String(j.author_name ?? '').trim();
-  return t || u ? { t, u } : null;
+  return { meta: t || u ? { t, u } : null };
 }
 
-async function fetchMeta(id: string): Promise<VideoMeta | null> {
+async function fetchMeta(id: string): Promise<{ meta: VideoMeta | null; note?: string }> {
   try {
     return BV_RE.test(id) || AV_RE.test(id) ? await fetchBilibili(id) : await fetchYoutube(id);
-  } catch {
+  } catch (err) {
     /* 超时 / 网络错 / 被风控：这一条就当拿不到 */
-    return null;
+    return { meta: null, note: err instanceof Error ? err.message : String(err) };
   }
 }
 
