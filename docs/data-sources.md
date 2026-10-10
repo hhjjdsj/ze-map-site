@@ -42,17 +42,20 @@ s2ze 那份数据里还留着其中 16 张的**原工坊预览图地址**（图�
 
 ### 3.1 页面上的「视频标题 + UP 主」（2026-10-10 起，运行时取，不入库）
 
-条目页每个视频卡会显示**标题**和「UP 主：xxx」。这两个字段**不在仓库里**：
+条目页每个视频卡会显示**标题**和「UP 主：xxx」（点名字回他的 B 站主页）。这两个字段**不在仓库里**：
 
 - 站长要求 UP 主信息不进 GitHub，而线上构建不联网；B 站接口既没有 CORS 也不支持 JSONP
-  （实测 `jsonp=jsonp` / `callback=cb` 都只返回纯 JSON），所以浏览器没法直连取。
+  （实测 `jsonp=jsonp` / `callback=cb` 都只返回纯 JSON），浏览器没法直连取。
 - 做法：页面加载后向**我们自己的** `/api/video-meta?bvs=BV1,BV2,…` 发一次批量请求
-  （一页所有视频一次问完），Worker 去 B 站取、写 KV 缓存 30 天，再回给页面填上。
-  返回里还带 UP 主的 UID（`m`），页面把署名做成**回他 B 站主页的链接** ——
-  算是一种回礼：有人照着这条视频打通了图，点一下就能回到原作者那儿。
-- 因此它**不是构建期数据**：重建站点不会更新标题，也不需要更新（接口挂了就退回原来的样子，
-  只显示「bilibili · 播放器在点击后才加载」，不显示占位假数据）。
-- 实现见 `worker/videos.ts`；本地那份联系名单（`data/videos.json`）是另一条线，**从不入库**。
+  （一页所有视频一次问完），Worker 从 **R2 的 `video-meta/index.json`** 里查，回给页面填上。
+- **数据怎么进 R2**：本地 `node ../tools/video-meta-push.mjs`（先 `tools/video-meta.mjs` 抓一遍）。
+  为什么不用 KV：`.env.r2` 里那个 API token 只有 R2 权限，`wrangler kv bulk put` 报认证失败
+  （code 10000），而 R2 写是验证过可用的 —— 用现成权限，不折腾新 token。
+- 为什么不在 Worker 里**运行时抓 B 站**：线上实测 `/api/video-meta` 返回 `{"ok":true,"items":{}}`，
+  Cloudflare 的出口 IP 从 B 站接口取不到数据（风控 / 412；加 `?debug=1` 能看到上游原因）。
+  本机在国内容易取，所以数据本地抓好再推。回源只作为兜底（索引里没有的新视频试一把）。
+- 索引按 isolate 在内存里缓存 10 分钟；`terr.ze-map.cn/video-meta/index.json` 是公开可读的，
+  但页面只走同源 `/api/`（那条域在部分 CN 网络不可达）。
 
 ## 4. 与 s2ze / Ruby Bot 的关系
 

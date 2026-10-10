@@ -1,33 +1,38 @@
 /**
- * GET /api/video-meta?bvs=BV1xxx,BV2yyy —— 视频的标题与 UP 主名（给播放器门面补署名）。
+ * GET /api/video-meta?bvs=BV1xxx,BV2yyy[&debug=1] —— 视频的标题与 UP 主名 / UID。
  *
  * 为什么走 Worker 而不是写进仓库：
- *   站长要求 UP 主信息不进 GitHub（2026-10-10）。而线上构建不联网、B 站接口既没有 CORS
- *   也不支持 JSONP（实测 jsonp=jsonp / callback=cb 都只返回纯 JSON），所以「页面上显示
- *   UP 主名」只有一条干净的路 —— **运行时问我们自己的 Worker**，由它去 B 站取并缓存。
+ *   站长要求 UP 主信息不进 GitHub。而线上构建不联网、B 站接口既没有 CORS 也不支持
+ *   JSONP（实测 `jsonp=jsonp` / `callback=cb` 都只返回纯 JSON），所以「页面上显示 UP 主名」
+ *   只有一条干净的路 —— **运行时问我们自己的 Worker**。
  *
- * 设计要点：
- *   · **只读接口**，同源检查已在 index.ts 统一做过；批量化（一次最多 MAX_IDS 个），
- *     一页视频通常 1~9 条，正好一次请求搞定；
- *   · **KV 缓存 30 天**（UPLOADS 里 `vmeta:<id>`）：同一支视频全网只抓一次，
- *     既快又不会把 B 站惹毛；KV 没绑定时照样工作，只是每次都现抓；
- *   · **失败也缓存**（30 分钟）：防止有人拿随机 BV 号刷我们的出口 IP；
- *   · **取不到就不返回这一条** —— 前端保持现在的样子（「bilibili · 播放器在点击后才加载」），
- *     绝不显示占位假数据。
+ * 数据从哪来（2026-10-10 定稿）：
+ *   **R2 里的静态索引** `video-meta/index.json`（`{ "<BV号>": { t, u, m } }`，约 46 KB），
+ *   由本地 `tools/video-meta-push.mjs` 用 `wrangler r2 object put` 推上去。
+ *
+ *   为什么不是 KV、也不是运行时抓：
+ *     · **KV 写不了**：`.env.r2` 里那个 API token 只有 R2 权限，`wrangler kv bulk put` 直接
+ *       认证失败（code 10000）；而 R2 写是验证过可用的。用现成权限，不折腾新 token。
+ *     · **运行时抓 B 站拿不到**：部署后实测 `/api/video-meta` 返回 `{"ok":true,"items":{}}` ——
+ *       Cloudflare 的出口 IP 从 B 站接口取不到数据（风控 / 412，`?debug=1` 能看到原因）。
+ *       本机在国内容易取，所以数据本地抓好再推上去。
+ *   回源 B 站只作为**兜底**（索引里没有的新视频试一把，成不成看运气），失败就当没有。
+ *
+ * 性能：整份索引按 isolate 缓存在内存里（TTL 10 分钟），一次 R2 读取服务 N 个请求；
+ * 一页最多问 24 个编号，一次请求答完。
  */
 
-import { fail, type Env, type KVLike } from './http';
+import { fail, type Env, type R2Like } from './http';
 
 /** BV 号：BV + 10 位左右；av 号；YouTube 的 11 位 id */
 const BV_RE = /^BV[0-9A-Za-z]{8,12}$/;
 const AV_RE = /^av\d{1,12}$/i;
 const YT_RE = /^[A-Za-z0-9_-]{11}$/;
 
+const INDEX_KEY = 'video-meta/index.json';
 const MAX_IDS = 24;
-/** 元数据 30 天，失败 30 分钟 */
-const TTL_OK = 60 * 60 * 24 * 30;
-const TTL_FAIL = 60 * 30;
-/** 并发抓取上限：别一次给 B 站发 24 个请求 */
+/** 索引在内存里放多久（每个 isolate 自己算） */
+const INDEX_TTL_MS = 10 * 60 * 1000;
 const CONCURRENCY = 4;
 const TIMEOUT_MS = 6000;
 
@@ -39,38 +44,30 @@ export interface VideoMeta {
   t: string;
   /** UP 主 / 作者 */
   u: string;
-  /** B 站 UID：页面上把 UP 主名做成回他主页的链接（对方愿意被收录时，这也算把流量还给他） */
+  /** B 站 UID：页面上把 UP 主名做成回他主页的链接（署名也把流量还给他） */
   m?: string;
 }
 
-const keyOf = (id: string) => `vmeta:${id}`;
+/* ---------- R2 索引（每个 isolate 缓存一份） ---------- */
+let indexCache: { at: number; data: Record<string, VideoMeta> } | null = null;
 
-async function cacheGet(kv: KVLike | undefined, id: string): Promise<VideoMeta | null> {
-  if (!kv) return null;
+async function loadIndex(r2: R2Like | undefined, force = false): Promise<Record<string, VideoMeta>> {
+  if (!force && indexCache && Date.now() - indexCache.at < INDEX_TTL_MS) return indexCache.data;
+  if (!r2) return {};
   try {
-    const raw = await kv.get(keyOf(id), { type: 'text' });
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as VideoMeta | { miss: true };
-    if (parsed && typeof parsed === 'object' && 'miss' in parsed) return null;
-    if (parsed && typeof (parsed as VideoMeta).t === 'string') return parsed as VideoMeta;
+    const obj = await r2.get(INDEX_KEY);
+    if (!obj) return {};
+    const text = await new Response(obj.body).text();
+    const data = JSON.parse(text) as Record<string, VideoMeta>;
+    indexCache = { at: Date.now(), data };
+    return data;
   } catch {
-    /* 缓存读失败就当没有，继续去抓 */
-  }
-  return null;
-}
-
-async function cachePut(kv: KVLike | undefined, id: string, value: VideoMeta | null): Promise<void> {
-  if (!kv) return;
-  try {
-    await kv.put(keyOf(id), JSON.stringify(value ?? { miss: true }), {
-      expirationTtl: value ? TTL_OK : TTL_FAIL,
-    });
-  } catch {
-    /* 写缓存失败不影响返回 */
+    /* 读不到就当索引为空：走回源，最坏是与以前一样没有署名 */
+    return {};
   }
 }
 
-/** B 站：标题 + UP 主名（+ UID，用于署名链接）。note 只在 ?debug=1 时回给调用方 */
+/* ---------- 回源兜底（B 站 / YouTube），只在索引里没有时用 ---------- */
 async function fetchBilibili(id: string): Promise<{ meta: VideoMeta | null; note?: string }> {
   const api = AV_RE.test(id)
     ? `https://api.bilibili.com/x/web-interface/view?aid=${id.slice(2)}`
@@ -79,9 +76,6 @@ async function fetchBilibili(id: string): Promise<{ meta: VideoMeta | null; note
     headers: { 'user-agent': UA, referer: 'https://www.bilibili.com/' },
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
-  /* ⚠️ 实测（2026-10-10）：Cloudflare 的出口 IP 找 B 站接口**经常什么都拿不到**
-     （风控 / 412 / 空响应）。所以 KV 里的数据是**本地预先推上去**的（tools/video-kv-seed.mjs），
-     这条回源只是兜底；失败要把原因记下来，用 ?debug=1 能看到。 */
   if (!res.ok) return { meta: null, note: `HTTP ${res.status}` };
   let j: { code?: number; message?: string; data?: { title?: string; owner?: { name?: string; mid?: number } } };
   try {
@@ -96,7 +90,6 @@ async function fetchBilibili(id: string): Promise<{ meta: VideoMeta | null; note
   return { meta: t || u ? { t, u, ...(m > 0 ? { m: String(m) } : {}) } : null };
 }
 
-/** YouTube：oEmbed（不需要 key） */
 async function fetchYoutube(id: string): Promise<{ meta: VideoMeta | null; note?: string }> {
   const api = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}&format=json`;
   const res = await fetch(api, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(TIMEOUT_MS) });
@@ -111,7 +104,6 @@ async function fetchMeta(id: string): Promise<{ meta: VideoMeta | null; note?: s
   try {
     return BV_RE.test(id) || AV_RE.test(id) ? await fetchBilibili(id) : await fetchYoutube(id);
   } catch (err) {
-    /* 超时 / 网络错 / 被风控：这一条就当拿不到 */
     return { meta: null, note: err instanceof Error ? err.message : String(err) };
   }
 }
@@ -137,28 +129,43 @@ export async function handleVideoMeta(request: Request, env: Env, url: URL): Pro
   const bad = ids.find((id) => !(BV_RE.test(id) || AV_RE.test(id) || YT_RE.test(id)));
   if (bad) return fail(`不认识的视频编号：${bad.slice(0, 24)}`);
 
-  const kv = env.UPLOADS;
+  const debug = url.searchParams.get('debug') === '1';
+  const index = await loadIndex(env.TERR);
+
   const items: Record<string, VideoMeta> = {};
   const misses: string[] = [];
   for (const id of ids) {
-    const hit = await cacheGet(kv, id);
-    if (hit) items[id] = hit;
+    const hit = index[id];
+    if (hit && (hit.t || hit.u)) items[id] = hit;
     else misses.push(id);
   }
 
+  const diag: Record<string, string> = {};
   if (misses.length) {
     const got = await mapLimit(misses, CONCURRENCY, fetchMeta);
-    for (const [id, meta] of got) {
-      if (meta) items[id] = meta;
-      /* 失败的也写进缓存（短 TTL）：挡掉「拿随机编号刷接口」这种用法 */
-      await cachePut(kv, id, meta);
+    for (const [id, r] of got) {
+      if (r.meta) {
+        items[id] = r.meta;
+        /* 回源成功就顺手补进内存索引（不写回 R2：本地那份才是权威，避免线上悄悄分叉） */
+        if (indexCache) indexCache.data[id] = r.meta;
+      } else if (r.note) {
+        diag[id] = r.note;
+      }
     }
   }
 
-  return new Response(JSON.stringify({ ok: true, items }), {
+  const body: Record<string, unknown> = { ok: true, items };
+  if (debug) {
+    body.diag = {
+      indexed: Object.keys(index).length,
+      miss: misses.length,
+      ...(Object.keys(diag).length ? { upstream: diag } : {}),
+    };
+  }
+  return new Response(JSON.stringify(body), {
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      /* 浏览器侧也能缓存一小时：同一页来回翻不用反复问 */
+      /* 浏览器侧也缓存一小时：同一页来回翻不用反复问 */
       'cache-control': 'public, max-age=3600',
     },
   });

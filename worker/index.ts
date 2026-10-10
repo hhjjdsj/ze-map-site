@@ -4,7 +4,8 @@
  * 背景：站点原本是**纯静态资源** Worker，一行脚本都没有。现在它承担两件事：
  *   P1  社区难度投票（/api/vote /api/stats）
  *   P2  社区投稿 + 审核台（/api/submit /api/submission /api/admin/*）
- *   P3  视频署名（/api/video-meta）：标题与 UP 主名，运行时抓 + KV 缓存，
+ *   P3  视频署名（/api/video-meta）：标题与 UP 主名 / UID，读 R2 里的
+ *       `video-meta/index.json`（本地 tools/video-meta-push.mjs 推上去），
  *       这样 UP 主信息不必进 GitHub 仓库（见 worker/videos.ts 的说明）
  *
  * 性能：Cloudflare 官方路由规则是「静态资源优先命中，匹配不到才调用 Worker」，
