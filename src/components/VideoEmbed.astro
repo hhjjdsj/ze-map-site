@@ -51,11 +51,29 @@ if (url.includes('bilibili.com')) {
 const canEmbed = Boolean(embedUrl);
 const platformLabel = platform === 'bilibili' ? 'bilibili' : platform === 'youtube' ? 'YouTube' : '外部站点';
 const label = title || '视频';
+/*
+ * 视频编号：交给页面上那段脚本去 /api/video-meta 换标题与 UP 主名。
+ * 为什么不在构建期写死：UP 主信息按站长要求不进仓库（2026-10-10 的决定），
+ * 而线上构建不联网 —— 只能由浏览器问我们自己的 Worker（见 worker/videos.ts）。
+ */
+const vid = (() => {
+  if (platform === 'bilibili') {
+    return url.match(/BV[\w]+/)?.[0] ?? (url.match(/av(\d+)/i) ? `av${url.match(/av(\d+)/i)![1]}` : '');
+  }
+  if (platform === 'youtube') return url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/)?.[1] ?? '';
+  return '';
+})();
 ---
 
 {
   canEmbed ? (
-    <figure class="video-embed" data-platform={platform} data-embed={embedUrl} data-title={label}>
+    <figure
+      class="video-embed"
+      data-platform={platform}
+      data-embed={embedUrl}
+      data-title={label}
+      data-vid={vid || undefined}
+    >
       <div class="video-frame">
         <a class="video-play" href={url} target="_blank" rel="noopener" aria-label={`点击播放：${label}`}>
           <span class="vp-btn" aria-hidden="true">
@@ -65,9 +83,12 @@ const label = title || '视频';
           <span class="vp-meta">
             {platformLabel} · 播放器在点击后才加载
           </span>
+          {/* 加载成功后填「UP 主：xxx」；拿不到就一直是空的，不留占位 */}
+          <span class="vp-up" data-vp-up hidden />
         </a>
       </div>
-      {title && <figcaption>{title}</figcaption>}
+      {/* 手写资料给了标题就直接显示；没给的等接口回来填（填不上就空着） */}
+      <figcaption data-vp-title hidden={!title}>{title}</figcaption>
       <a class="video-source" href={url} target="_blank" rel="noopener">
         在原站打开 ↗
       </a>
@@ -116,6 +137,62 @@ const label = title || '视频';
     frame.replaceChildren(iframe);
     fig.classList.add('playing');
   });
+
+  /*
+   * ===== 补标题与 UP 主名 =====
+   *
+   * 数据来自我们自己的 Worker（/api/video-meta → B 站公开接口 + KV 缓存 30 天），
+   * 不是 B 站直连：B 站的接口没有 CORS 也不支持 JSONP，浏览器根本取不到；
+   * 走自己的域名还顺带避免了「看一眼页面就把你的 IP 交给 B 站」。
+   *
+   * 三条原则：
+   *   1. **一页只发一次请求**（把这一页所有视频编号拼起来），拿不到就静默保持现状；
+   *   2. 手写资料里已经写了标题的**不覆盖**；
+   *   3. 绝不显示占位假数据 —— 没拿到就什么都不填。
+   */
+  const figures = [...document.querySelectorAll<HTMLElement>('.video-embed[data-vid]')];
+  if (figures.length) {
+    const ids = [...new Set(figures.map((f) => f.dataset.vid).filter(Boolean))];
+    if (ids.length) {
+      fetch(`/api/video-meta?bvs=${encodeURIComponent(ids.join(','))}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: { items?: Record<string, { t?: string; u?: string; m?: string }> } | null) => {
+          const items = data?.items;
+          if (!items) return;
+          for (const fig of figures) {
+            const meta = items[fig.dataset.vid ?? ''];
+            if (!meta) continue;
+            const titleEl = fig.querySelector<HTMLElement>('[data-vp-title]');
+            const upEl = fig.querySelector<HTMLElement>('[data-vp-up]');
+            if (titleEl && !titleEl.textContent?.trim() && meta.t) {
+              titleEl.textContent = meta.t;
+              titleEl.hidden = false;
+              /* 无障碍与播放器标题也跟上（iframes 的 title 属性） */
+              fig.dataset.title = meta.t;
+            }
+            if (upEl && meta.u) {
+              /* 有 UID 就做成回他主页的链接：署名不只是写个名字，也把流量还给他 */
+              upEl.textContent = '';
+              const label = document.createTextNode(`UP 主：${meta.u}`);
+              if (meta.m) {
+                const a = document.createElement('a');
+                a.href = `https://space.bilibili.com/${meta.m}`;
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.textContent = meta.u;
+                upEl.append(document.createTextNode('UP 主：'), a);
+              } else {
+                upEl.append(label);
+              }
+              upEl.hidden = false;
+            }
+          }
+        })
+        .catch(() => {
+          /* 接口挂了 / 离线：保持原样，不打扰读者 */
+        });
+    }
+  }
 </script>
 
 <style>
@@ -207,6 +284,28 @@ const label = title || '视频';
     font-size: 12px;
     color: var(--muted);
     letter-spacing: 0.04em;
+  }
+
+  /* 「UP 主：xxx」：接口回来才有（拿不到就不显示，不留空行） */
+  .vp-up {
+    padding: 2px 10px;
+    border: 1px solid var(--border-2);
+    border-radius: 999px;
+    font-size: 12px;
+    color: #dde2ee;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  /* 署名做成回 UP 主主页的链接：点一下就把人送回他那儿 */
+  .vp-up a {
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.45);
+  }
+
+  .vp-up a:hover {
+    color: var(--accent-2);
+    border-bottom-color: var(--accent-2);
   }
 
   /* 兜底：万一脚本没走到 replaceChildren，也别让门面盖在播放器上 */

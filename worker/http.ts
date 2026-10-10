@@ -24,9 +24,11 @@ export interface D1 {
 export interface KVLike {
   put(
     key: string,
-    value: ArrayBuffer | Uint8Array,
+    value: ArrayBuffer | Uint8Array | string,
     options?: { expirationTtl?: number; metadata?: unknown }
   ): Promise<void>;
+  /** 取文本（视频元数据的 JSON）；图片走 getWithMetadata 的 arrayBuffer */
+  get(key: string, options?: { type?: 'text' }): Promise<string | null>;
   /** ⚠️ 线上必须用对象形式 `{ type: 'arrayBuffer' }`，字符串简写会被当成"没指定类型" */
   getWithMetadata(
     key: string,

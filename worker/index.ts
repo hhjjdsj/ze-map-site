@@ -4,6 +4,8 @@
  * 背景：站点原本是**纯静态资源** Worker，一行脚本都没有。现在它承担两件事：
  *   P1  社区难度投票（/api/vote /api/stats）
  *   P2  社区投稿 + 审核台（/api/submit /api/submission /api/admin/*）
+ *   P3  视频署名（/api/video-meta）：标题与 UP 主名，运行时抓 + KV 缓存，
+ *       这样 UP 主信息不必进 GitHub 仓库（见 worker/videos.ts 的说明）
  *
  * 性能：Cloudflare 官方路由规则是「静态资源优先命中，匹配不到才调用 Worker」，
  * 且 wrangler.jsonc 里 `run_worker_first` 只对 /api/* 生效。所以：
@@ -44,6 +46,7 @@ import {
 } from './submissions';
 import { handleStats, handleVote } from './votes';
 import { handleTerr } from './terr';
+import { handleVideoMeta } from './videos';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -108,6 +111,8 @@ export default {
     if (path === '/api/submit-cover') return handleSubmitCover(request, env, ipHash, clientIp(request));
     if (path === '/api/submit-gallery') return handleSubmitGallery(request, env, ipHash, clientIp(request));
     if (path === '/api/submission') return handleSubmissionStatus(request, env, url);
+    /* 视频标题 / UP 主名：只读、带 KV 缓存。不写 D1（见 videos.ts 顶部的取舍说明） */
+    if (path === '/api/video-meta') return handleVideoMeta(request, env, url);
 
     return fail('未知接口', 404);
   },
