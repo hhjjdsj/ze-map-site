@@ -79,11 +79,81 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <script>
-  import { FIELD_RULES } from '../../../shared/submission-fields.mjs';
+  import { FIELD_RULES, newTagsOf } from '../../../shared/submission-fields.mjs';
   import { ITEM_ACTIONS, cdText, usesText } from '../../../shared/items.mjs';
 
   const rules = FIELD_RULES as Record<string, { label: string; kind?: string }>;
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+  /*
+   * 全站标签词表（/submit/tags.json，构建期从全站数据算）：用来判断投稿里的标签
+   * 是不是**全站首次出现的新词**。加载失败就保持 null —— 那种情况下不标「新」，
+   * 免得把一堆老标签都标成新词误导审核。
+   */
+  let tagVocabulary: Set<string> | null = null;
+  let tagVocabularyLoaded = false;
+  async function loadTagVocabulary(): Promise<void> {
+    if (tagVocabularyLoaded) return;
+    tagVocabularyLoaded = true;
+    try {
+      const res = await fetch('/submit/tags.json');
+      const json = (await res.json()) as { tags?: Array<{ n?: string }> };
+      const names = (json.tags ?? []).map((t) => String(t?.n ?? '')).filter(Boolean);
+      tagVocabulary = names.length ? new Set(names) : null;
+    } catch {
+      tagVocabulary = null;
+    }
+  }
+
+  /** 标签投稿：逐项标出「这张图新增 / 取消 / 全站新词」，比一行 diff 好审得多 */
+  function tagsBlock(item: { value?: unknown; current?: unknown }): HTMLElement {
+    const next = Array.isArray(item.value) ? item.value.map((t) => String(t)) : [];
+    const prev = Array.isArray(item.current) ? item.current.map((t) => String(t)) : [];
+    const prevSet = new Set(prev);
+    const nextSet = new Set(next);
+    const added = next.filter((t) => !prevSet.has(t));
+    const removed = prev.filter((t) => !nextSet.has(t));
+    const fresh = newTagsOf(next, tagVocabulary);
+
+    const box = el('div');
+    const line = (text: string) => box.append(el('p', 'queue-note', text));
+    line(`本次提交 ${next.length} 个标签（整组替换，通过后覆盖这张图的标签）`);
+    if (added.length) line(`➕ 这张图新增 ${added.length} 个：${added.join('、')}`);
+    if (removed.length) line(`➖ 这张图去掉 ${removed.length} 个：${removed.join('、')}`);
+    if (!added.length && !removed.length) line('（和现在的标签一致，没有变化）');
+
+    if (!tagVocabulary) {
+      line('⚠ 全站标签词表没加载出来，这次无法判断有没有新词 —— 请自己确认一遍再通过。');
+    } else if (fresh.length) {
+      line(`🆕 全站首次出现的新标签 ${fresh.length} 个：${fresh.join('、')} —— 通过后会进全站标签，其它图以后也能选到。`);
+    } else {
+      line('全站标签：本次没有新词（都是已有标签）。');
+    }
+
+    const chips = el('div');
+    chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px';
+    for (const t of next) {
+      const isNewWord = tagVocabulary ? newTagsOf([t], tagVocabulary).length > 0 : false;
+      const isAdded = !prevSet.has(t);
+      const chip = el('span', undefined, isNewWord ? `${t} · 新词` : isAdded ? `${t} · 新增` : t);
+      chip.style.cssText = `padding:3px 10px;border-radius:999px;font-size:12.5px;border:1px solid var(--border-2);${
+        isNewWord
+          ? 'background:#a855f7;border-color:#a855f7;color:#fff;font-weight:700'
+          : isAdded
+            ? 'background:#0ea5e9;border-color:#0ea5e9;color:#04121a;font-weight:600'
+            : 'color:var(--muted)'
+      }`;
+      chips.append(chip);
+    }
+    for (const t of removed) {
+      const chip = el('span', undefined, `${t} · 去掉`);
+      chip.style.cssText =
+        'padding:3px 10px;border-radius:999px;font-size:12.5px;border:1px dashed var(--border-2);color:var(--muted);text-decoration:line-through';
+      chips.append(chip);
+    }
+    box.append(chips);
+    return box;
+  }
 
   const tokenEl = $<HTMLInputElement>('a-token');
   const reviewerEl = $<HTMLInputElement>('a-reviewer');
@@ -317,6 +387,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       box.append(itemsTable(rows, '（这次没有可应用的行）'));
       box.append(el('p', 'queue-note', `社区文档里已有的行 ${current.length} 条`));
       box.append(itemsTable(current, '（社区文档里还没有神器 / 道具行）'));
+    } else if (rules[item.field]?.kind === 'tags') {
+      /* 标签：标出「这张图新增 / 去掉 / 全站新词」，比一行 diff 好审 */
+      box.append(tagsBlock(item));
     } else {
       const diff = el('p', 'queue-diff');
       diff.append(
@@ -401,6 +474,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   async function load() {
     listEl.replaceChildren(el('p', 'form-hint', '加载中…'));
+    /* 先拿全站标签词表：审核标签投稿时要标出「全站首次出现的新词」。
+       加载失败不影响审核 —— tagsBlock 会退化成「自己确认一遍」。 */
+    await loadTagVocabulary();
     const { status, data } = await api(`/api/admin/queue?status=${currentStatus}`);
     if (status !== 200) {
       listEl.replaceChildren();

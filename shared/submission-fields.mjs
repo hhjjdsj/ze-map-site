@@ -62,7 +62,9 @@ export const FIELD_RULES = {
       '**这张图现有的标签已经帮你勾好了**，你只要加要加的、取消不要的即可（提交的是整组，不是追加）。' +
       '列表里没有想要的，就在下面「新建标签」里输入 —— 新标签需要审核确认，通过后会进全站标签，' +
       '以后任何人给任何图投稿都能选到。',
-    max: 12,
+    /* 上限 15（2026-10-09 由 12 放宽）：站内有 2 张图原本就有 13/14 个标签，
+       而标签是整组替换 —— 上限卡在 12 会让这两张图的标签**没法微调**（提交现况就被拒）。 */
+    max: 15,
     maxLen: 24,
   },
   author: { kind: 'text', label: '作者', hint: '尽量与工坊署名一致', maxLen: 120 },
@@ -374,4 +376,28 @@ export function displayValue(field, value) {
   }
   if (Array.isArray(value)) return value.join('、');
   return String(value ?? '');
+}
+
+/**
+ * 从一组标签里挑出**全站词表里还没有的**（= 这次投稿想新立的词）。
+ *
+ * 为什么单独一个函数：投稿页用它提示「新标签 N 个需审核确认」，审核台用它给新词打标记 ——
+ * 两边规则必须一模一样（忽略大小写、去空白）。写成共用的一份，改的时候不会漏一边。
+ *
+ * @param {unknown} tags 待检查的标签数组
+ * @param {Iterable<string>|null|undefined} vocabulary 全站已有标签（取自 /submit/tags.json）
+ * @returns {string[]} 词表里没有的标签（保持输入顺序、去重）。
+ *   词表传 null（还没加载出来 / 加载失败）时返回**空数组** —— 拿不到词表就别乱标「新」，
+ *   否则审核员会看到一堆假的新词，比不标还糟。
+ */
+export function newTagsOf(tags, vocabulary) {
+  if (!vocabulary) return [];
+  const known = new Set([...vocabulary].map((t) => String(t).trim().toLowerCase()));
+  const out = [];
+  for (const raw of Array.isArray(tags) ? tags : []) {
+    const t = String(raw ?? '').trim();
+    if (!t || known.has(t.toLowerCase()) || out.includes(t)) continue;
+    out.push(t);
+  }
+  return out;
 }
