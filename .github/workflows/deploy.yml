@@ -1,10 +1,15 @@
 name: Deploy to Cloudflare
 
 # 推送 main 后由 GitHub Actions 构建并部署（替代 Workers Builds 的 Git 集成）。
+# 另：工坊日期同步（Workshop dates）用 GITHUB_TOKEN 提交，不会触发 push 事件，
+#     所以额外挂 workflow_run，等它跑完再部署一次。
 # 需要的仓库 secret：CLOUDFLARE_API_TOKEN、CLOUDFLARE_ACCOUNT_ID
 on:
   push:
     branches: [main]
+  workflow_run:
+    workflows: ["Workshop dates"]
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
@@ -15,8 +20,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-node@v4
         with:
