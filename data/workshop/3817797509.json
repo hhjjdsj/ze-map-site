@@ -1,0 +1,17 @@
+{
+  "id": "3817797509",
+  "result": 1,
+  "title": "ze_collective",
+  "description": "Original map by Luffaren Port authorized by the original creator Some features of this map require CS2Fixes to function properly The map is currently in public beta testing. If you encounter any bugs, please feel free to report them to me on Discord: sky_93062 Server configs: Known issue: The map may get laggier the longer it runs due to an underlying CS2 engine issue. A server-side plugin fix is required to address this, see github PR",
+  "creator": "76561198375080326",
+  "timeCreated": "2026-10-11",
+  "timeUpdated": "2026-10-28",
+  "subscriptions": 113,
+  "views": 310,
+  "fileSize": "243358549",
+  "tags": [
+    "Cs2",
+    "Map"
+  ],
+  "filename": ""
+}

@@ -1,0 +1,14 @@
+{
+  "slug": "2001-ze_collective-3817797509",
+  "title": "ze_collective",
+  "titleEn": "ze_collective",
+  "difficulty": "未知",
+  "tags": [],
+  "summary": "Original map by Luffaren Port authorized by the original creator Some features of this map require CS2Fixes to function properly The map is currently in public beta testing. If you encounter any bugs, please feel free to report them to me on Discord: sky_93062 Server configs: Known issue: The map may get laggier the longer it runs due to an underlying CS2 engine issue. A server-side plugin fix is required to address this, see github PR\n\n> 新图自动收录，暂无实体数据与人工整理；欢迎在编辑页补充难度、标签、玩法与视频。",
+  "videoUrls": [],
+  "sources": [
+    "https://steamcommunity.com/sharedfiles/filedetails/?id=3817797509"
+  ],
+  "workshopId": "3817797509",
+  "confidence": "low"
+}

@@ -8,7 +8,7 @@ on:
   push:
     branches: [main]
   workflow_run:
-    workflows: ["Workshop dates"]
+    workflows: ["Workshop dates", "New maps"]
     types: [completed]
   workflow_dispatch:
 

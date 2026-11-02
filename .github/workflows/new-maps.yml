@@ -1,0 +1,60 @@
+name: New maps
+
+# 每周发现并收录新图：
+#   读 MapTracking-CS2 的 manifest（和日期同步同一份数据源），
+#   站内没有的工坊条目 → Steam 公开 API 拉详情 → 建「无实体」资料页。
+# 提交后由 deploy.yml 的 workflow_run 触发构建部署。
+on:
+  schedule:
+    # 每周一 04:10 UTC = 北京时间 12:10
+    - cron: '10 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: new-maps
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TRACK_REPO: https://github.com/fyscs/MapTracking-CS2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Sparse clone manifests
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse "$TRACK_REPO" _mt
+          git -C _mt sparse-checkout set --no-cone '2001/*/*/manifest.json'
+          echo "manifest: $(find _mt/2001 -name manifest.json | wc -l)"
+
+      - name: Sync new maps
+        run: node scripts/ops/sync-new-maps.mjs --repo _mt
+
+      - name: Build check
+        run: npm ci --no-audit --no-fund && npm run build
+
+      - name: Commit and push
+        run: |
+          set -e
+          if git diff --quiet -- data/research data/workshop && [ -z "$(git ls-files --others --exclude-standard data/research data/workshop)" ]; then
+            echo "没有新图，不提交"
+            exit 0
+          fi
+          mmdd="$(date -u +%m.%d)"
+          n=$(( $(git rev-list --count --since="$(date -u +%Y-%m-%d)T00:00:00Z" HEAD) + 1 ))
+          git config user.name "hhjjdsj"
+          git config user.email "hhjjdsj@users.noreply.github.com"
+          git add data/research data/workshop
+          git commit -m "update ${mmdd}.${n}"
+          git push
