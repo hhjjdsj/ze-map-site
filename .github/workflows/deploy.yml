@@ -60,3 +60,8 @@ jobs:
           test "$code" = "200" || { echo "站点返回 $code"; exit 1; }
           curl -s https://ze-map.cn/maps/ze_lotr_minas_tirith/ | grep -q "魔戒" || { echo "地图页内容异常"; exit 1; }
           echo "smoke ok"
+      - name: 失败提示
+        if: failure()
+        run: |
+          echo "## ❌ 工作流失败" >> "$GITHUB_STEP_SUMMARY"
+          echo "查看日志：${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"

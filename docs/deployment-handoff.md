@@ -12,7 +12,7 @@
 | KV | `UPLOADS` |
 | R2 | `ze-map-terr`（绑定 `TERR`） |
 | 域名 | `ze-map.cn`、`terr.ze-map.cn` |
-| 构建 | Workers Builds，源仓库 `hhjjdsj/ze-map-site` 的 `main` |
+| 构建 | GitHub Actions（`.github/workflows/deploy.yml`）→ `wrangler deploy`；Cloudflare 的 Git 构建已断开，见 [automation.md](automation.md) |
 
 默认 `wrangler.jsonc` 已经指向以上生产资源；仓库不携带个人测试 Cloudflare / GitHub 配置。
 

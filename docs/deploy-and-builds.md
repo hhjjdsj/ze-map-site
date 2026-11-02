@@ -1,3 +1,5 @@
+# ⚠️ 本文描述的 Cloudflare Workers Builds 流程已停用，现状见 [automation.md](automation.md)。
+
 # 部署链路：推送之后到底发生了什么（以及构建没触发怎么查）
 
 ## 链路

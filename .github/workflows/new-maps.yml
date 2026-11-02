@@ -58,3 +58,8 @@ jobs:
           git add data/research data/workshop
           git commit -m "update ${mmdd}.${n}"
           git push
+      - name: 失败提示
+        if: failure()
+        run: |
+          echo "## ❌ 工作流失败" >> "$GITHUB_STEP_SUMMARY"
+          echo "查看日志：${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"
