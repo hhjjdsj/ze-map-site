@@ -227,6 +227,11 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
   </div>
 </div>
 
+<dialog class="img-lightbox" id="img-lightbox" aria-label="查看大图">
+  <button type="button" class="img-lightbox-close" aria-label="关闭">×</button>
+  <img alt="" />
+</dialog>
+
 <style>
   /* 贴近源站：黑底 + 红色主 accent + 青色链接 + 固定网格 / 光晕 */
   .new-map-detail { --new-bg:transparent; --new-panel:var(--panel); --new-panel-2:var(--panel-2); --new-text:var(--text); --new-muted:var(--muted); --new-border:var(--border); --new-border-2:var(--border-2); --new-accent:var(--accent); --new-link:var(--accent-2); --doc-red:#ff7b72; --doc-orange:#ffa657; --doc-amber:#e3b341; --doc-green:#7ee787; --doc-teal:#56d4b5; --doc-cyan:#76e3ea; --doc-blue:#79c0ff; --doc-indigo:#a5b4fc; --doc-purple:#d2a8ff; --doc-pink:#ff9bce; --doc-gray:#b1bac4; --doc-brown:#d4a373; background:transparent; color:var(--new-text); position:relative; z-index:1; }
@@ -345,6 +350,12 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
   .new-prose-doc .doc-figure, .new-prose-doc .doc-figure-left, .new-prose-doc .doc-figure-right { float:none !important; max-width:100% !important; width:auto; margin:18px 0; text-align:center; }
   .new-prose-doc .doc-figure img { display:block; margin:0 auto; width:auto; max-width:100%; max-height:540px; height:auto; border-radius:8px; }
   .new-prose-doc p { max-width:100%; }
+
+  .img-lightbox { border: 0; padding: 0; background: transparent; max-width: 100vw; max-height: 100vh; }
+  .img-lightbox::backdrop { background: rgba(4, 6, 10, .92); }
+  .img-lightbox img { display: block; max-width: 92vw; max-height: 88vh; width: auto; height: auto; border-radius: 10px; margin: auto; }
+  .img-lightbox-close { position: fixed; top: 18px; right: 22px; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.55); color: #fff; font-size: 22px; line-height: 1; cursor: pointer; z-index: 2; }
+  .img-lightbox-close:hover { background: rgba(255,255,255,.16); }
 </style>
 
 {/* set:html 生成的节点没有 Astro 作用域属性，正文样式必须全局写，否则颜色 / 字号 / 对齐全部失效。 */}
@@ -400,4 +411,23 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initNewToc);
   else initNewToc();
+
+  function initImageLightbox() {
+    const dialog = document.getElementById('img-lightbox');
+    if (!dialog) return;
+    const img = dialog.querySelector('img');
+    document.addEventListener('click', (event) => {
+      const target = event.target.closest('.new-gallery img, .new-prose-doc .doc-figure img');
+      if (!target) return;
+      event.preventDefault();
+      img.src = target.currentSrc || target.src;
+      img.alt = target.alt || '';
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+    });
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog || event.target.closest('.img-lightbox-close')) dialog.close();
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initImageLightbox);
+  else initImageLightbox();
 </script>
