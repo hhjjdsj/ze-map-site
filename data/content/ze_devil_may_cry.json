@@ -9,6 +9,27 @@
         "type": "doc",
         "content": [
           {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "原版文档："
+              },
+              {
+                "type": "text",
+                "text": "查看原版文档（PDF，保留完整排版与配图）",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://ze-map.cn/guides/devil-may-cry/"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "type": "heading",
             "attrs": {
               "level": 4
