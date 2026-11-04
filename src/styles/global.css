@@ -5057,3 +5057,28 @@ a.uf-map:hover { color: var(--accent-2); text-decoration: underline; }
 @media (max-width: 900px) {
   .toc-rail-btn { display: none; }
 }
+
+/* 攻略文档（set:html 渲染）里的图片统一按块级大图显示，禁止浮动 */
+.new-prose-doc .doc-figure,
+.new-prose-doc .doc-figure-left,
+.new-prose-doc .doc-figure-right {
+  float: none !important;
+  display: block !important;
+  max-width: 100% !important;
+  width: auto !important;
+  margin: 20px 0 !important;
+  text-align: center;
+}
+.new-prose-doc .doc-figure img,
+.new-prose-doc .doc-figure-left img,
+.new-prose-doc .doc-figure-right img {
+  display: block;
+  margin: 0 auto;
+  width: auto;
+  max-width: 100%;
+  max-height: 540px;
+  height: auto;
+  border-radius: 8px;
+}
+.new-prose-doc h4 { font-size: clamp(16px, 1.8vw, 19px); margin: 26px 0 8px; color: var(--new-text, #eef3f9); }
+.new-prose-doc p { margin: 10px 0; line-height: 1.85; }
