@@ -229,7 +229,7 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
 
 <dialog class="img-lightbox" id="img-lightbox" aria-label="查看大图">
   <button type="button" class="img-lightbox-close" aria-label="关闭">×</button>
-  <img alt="" />
+  <img alt="" draggable="false" />
   <p class="img-lightbox-hint">滚轮缩放 · 拖动平移 · 双击还原</p>
 </dialog>
 
@@ -355,7 +355,7 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
   .img-lightbox { position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; overflow: hidden; }
   .img-lightbox[open] { display: flex; align-items: center; justify-content: center; }
   .img-lightbox::backdrop { background: rgba(4, 6, 10, .93); }
-  .img-lightbox img { display: block; width: auto; height: auto; max-width: 94vw; max-height: 90vh; object-fit: contain; transform-origin: center center; cursor: zoom-in; touch-action: none; user-select: none; }
+  .img-lightbox img { display: block; width: auto; height: auto; max-width: 94vw; max-height: 90vh; object-fit: contain; transform-origin: center center; cursor: zoom-in; touch-action: none; user-select: none; -webkit-user-drag: none; }
   .img-lightbox img.is-zoomed { cursor: grab; }
   .img-lightbox img.is-dragging { cursor: grabbing; }
   .img-lightbox-hint { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); margin: 0; padding: 5px 12px; border-radius: 999px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.16); color: rgba(255,255,255,.72); font-size: 11.5px; white-space: nowrap; }
@@ -463,13 +463,19 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
     }, { passive: false });
 
     img.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
       if (scale <= 1) return;
       dragging = true;
       startX = event.clientX - x;
       startY = event.clientY - y;
       img.classList.add('is-dragging');
-      img.setPointerCapture(event.pointerId);
+      try {
+        img.setPointerCapture(event.pointerId);
+      } catch {
+        /* 合成事件 / 已释放的 pointer：拖拽仍可用 */
+      }
     });
+    img.addEventListener('dragstart', (event) => event.preventDefault());
     img.addEventListener('pointermove', (event) => {
       if (!dragging) return;
       x = event.clientX - startX;
