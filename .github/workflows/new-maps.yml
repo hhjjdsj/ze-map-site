@@ -39,7 +39,7 @@ jobs:
           echo "manifest: $(find _mt/2001 -name manifest.json | wc -l)"
 
       - name: Sync new maps
-        run: node scripts/ops/sync-new-maps.mjs --repo _mt
+        run: node scripts/ops/sync-new-maps.mjs --repo _mt --s2ze-days 45
 
       - name: Build check
         run: npm ci --no-audit --no-fund && npm run build
