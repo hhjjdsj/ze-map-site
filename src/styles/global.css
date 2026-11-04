@@ -5058,7 +5058,7 @@ a.uf-map:hover { color: var(--accent-2); text-decoration: underline; }
   .toc-rail-btn { display: none; }
 }
 
-/* 攻略文档（set:html 渲染）里的图片统一按块级大图显示，禁止浮动 */
+/* 鏀荤暐鏂囨。锛坰et:html 娓叉煋锛夐噷鐨勫浘鐗囩粺涓�鎸夊潡绾уぇ鍥炬樉绀猴紝绂佹娴姩 */
 .new-prose-doc .doc-figure,
 .new-prose-doc .doc-figure-left,
 .new-prose-doc .doc-figure-right {
