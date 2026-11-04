@@ -1,0 +1,36 @@
+{
+  "slug": "ze_devil_may_cry",
+  "count": 6,
+  "images": [
+    {
+      "src": "/images/gallery/devil-may-cry/01-workshop.webp",
+      "kind": "workshop",
+      "caption": "工坊封面（作者上传）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/02-v-guide.webp",
+      "kind": "workshop",
+      "caption": "神秘人 V · 教学面板（作者文档配图）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/03-act3.webp",
+      "kind": "workshop",
+      "caption": "第三关 · 但丁（ACT III）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/04-items-boss.webp",
+      "kind": "workshop",
+      "caption": "神器分配与 BOSS 战（指挥视角）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/05-boss-arena.webp",
+      "kind": "workshop",
+      "caption": "BOSS 场地机制（红圈提示）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/06-boss-vergil.webp",
+      "kind": "workshop",
+      "caption": "BOSS 战 · 维吉尔（闪电阶段）"
+    }
+  ]
+}
