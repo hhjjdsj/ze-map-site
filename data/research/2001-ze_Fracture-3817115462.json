@@ -1,0 +1,14 @@
+{
+  "slug": "2001-ze_Fracture-3817115462",
+  "title": "ze_Fracture",
+  "titleEn": "ze_Fracture",
+  "difficulty": "未知",
+  "tags": [],
+  "summary": "version: v1.2.2 last update: 2026-10-22 ※Please let me know if there are any bugs. We can't fix what we don't know about. ================================================================== < for Server Manegers > This map changes the infection time. The default of 15 seconds is fine, but if it is set shorter than that and does not support commands, it may become unplayable. Please be careful. ================================================================== Respect to \"Touhou Project\" 2(+2) stages 5 Human / 2 Zombie Item Port from CS:GO * Need CS2Fixes * * Note * There may be bugs and glitches due to testing. If you find them, please let us know through comments on this page, DM, Discord (@kur4yam1), etc. ================================================================== * Changes from the CS:GO version * ・Remove the conditions for rtv stage\n\n> 新图自动收录，暂无实体数据与人工整理；欢迎在编辑页补充难度、标签、玩法与视频。",
+  "videoUrls": [],
+  "sources": [
+    "https://steamcommunity.com/sharedfiles/filedetails/?id=3817115462"
+  ],
+  "workshopId": "3817115462",
+  "confidence": "low"
+}

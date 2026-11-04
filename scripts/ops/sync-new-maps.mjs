@@ -24,6 +24,8 @@ const WORKSHOP = path.join(ROOT, 'data/workshop');
 const argv = process.argv.slice(2);
 const dry = argv.includes('--dry');
 const all = argv.includes('--all');
+const s2zeArg = argv.indexOf('--s2ze-days');
+const s2zeDays = s2zeArg >= 0 ? Number(argv[s2zeArg + 1]) || 45 : 0;
 const repoArg = argv.includes('--repo') ? argv[argv.indexOf('--repo') + 1] : process.env.MAPTRACK_DIR;
 if (!repoArg) {
   console.error('用法：node scripts/ops/sync-new-maps.mjs --repo _mt [--dry] [--all]');
@@ -77,8 +79,26 @@ for (const mapName of fs.readdirSync(modeDir)) {
       const id = String(m.publishFileId ?? '');
       if (!id || knownIds.has(id)) continue;
       if (!all && knownNames.has(String(mapName).toLowerCase())) continue;
-      if (!found.has(id)) found.set(id, { id, map: String(mapName), publishDate: String(m.publishDate ?? '').slice(0, 10) });
+      if (!found.has(id)) found.set(id, { id, map: String(mapName), publishDate: String(m.publishDate ?? '').slice(0, 10), src: 'manifest' });
     } catch {}
+  }
+}
+
+if (s2zeDays > 0) {
+  try {
+    const r = await fetch('https://api.s2ze.com/site/data/maps.json');
+    const j = await r.json();
+    const arr = Array.isArray(j) ? j : (j.maps || j.data || []);
+    for (const m of arr) {
+      const name = String(m.name || m.map || '');
+      const id = String(m.addon || m.id || '');
+      if (!/^ze[_-]/i.test(name) || !id || knownIds.has(id)) continue;
+      if (!all && knownNames.has(name.toLowerCase())) continue;
+      if (!found.has(id)) found.set(id, { id, map: name, publishDate: '', src: 's2ze' });
+    }
+    console.log('s2ze 候选并入后：' + found.size);
+  } catch (e) {
+    console.log('s2ze 拉取失败，跳过：' + String((e && e.message) || e));
   }
 }
 
@@ -107,6 +127,10 @@ for (const item of fresh) {
 
   const title = String(f.title ?? item.map).trim();
   const created = f.time_created ? new Date(Number(f.time_created) * 1000).toISOString().slice(0, 10) : item.publishDate || null;
+  if (item.src === 's2ze' && created) {
+    const age = (Date.now() - Date.parse(created)) / 86400000;
+    if (age > s2zeDays) { console.log('跳过（过旧）', title, created); continue; }
+  }
   const desc = clean(f.description);
 
   fs.writeFileSync(
