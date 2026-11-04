@@ -120,21 +120,17 @@
               {
                 "type": "text",
                 "text": "1.机械臂-投技（秒杀僵尸后就会毁损）（秒杀功能可以理解为后室黑闪）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "正面E：进入5秒的加速状态（加速的时候免抓），过程中接触僵尸会将自身范围内所有僵尸抓起并砸向地面，秒杀小僵尸和僵尸皮肤（ZM神器）送回出生点。（成功后手臂毁损-一次性神器）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "同时投技的5s加速，也可以用于提前触发人类难守的点。"
@@ -147,57 +143,45 @@
               {
                 "type": "text",
                 "text": "2.洛克炮"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "正面E：向准心发射小光球，命中僵尸增加能量。能量满后，再次按E三连发减速的大光球。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "可以击落蛾子"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "能量每秒自然回复"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "3机械臂-旋钻（风神器类似后室水枪，使用成功后就会毁损）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "正面E：朝准心方向6s后发射，会朝着发射方向释放跟随的正面推力和高伤害区域。同时附带推力伤害。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "可以用来阻拦僵尸"
@@ -222,30 +206,24 @@
               {
                 "type": "text",
                 "text": "1.时停（类冰，定住所有僵尸，能重置人类地速）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "正面E：小停（小范围冰） 30sCD"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "头顶E：大范围停，全局都能冰到。能打断黑洞僵尸神器的黑洞且能重置人类地速。70sCD"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "例如：维吉尔裸完人类定身（维吉尔的裸只对人类有定身），僵尸依旧可以动，然后大停开了人类可以直接走出去，离开终极区域。如果没有离开在终极范围里的人类依然会吃维吉尔裸的伤害。"
@@ -258,21 +236,17 @@
               {
                 "type": "text",
                 "text": "2.链剑（锁链 类风 推力）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "正面E： 小范围风 30sCD"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "头顶E： 大范围风 70sCD"
@@ -285,21 +259,17 @@
               {
                 "type": "text",
                 "text": "3.爱抚（奶）抬头E可免疫所有攻击"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "正面E: 范围奶持续6s。   60sCD"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "头顶E：免抓奶，免疫任何僵尸伤害神器效果和免疫BOSS技能，持续4s。90sCD"
@@ -312,48 +282,38 @@
               {
                 "type": "text",
                 "text": "4.磁暴（如果你玩过后室，可以理解为蓝色闪电）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "正面E：释放扇形电击击退范围内的僵尸   20sCD。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "头顶E：1秒后向准星方向发射定时炸弹，吸附到僵尸身上5秒后引爆，"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "眩晕范围内僵尸一秒后留下6秒的减速电场。也可在发射出去后正面E秒爆头顶E的技能效果。70sCD"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "磁暴的头顶E射出击中黑洞僵尸本身（必须是击中，一般不建议用神器打断，因为磁暴射出后会自动吸附到别僵尸。）可以打断黑洞（可以隔墙击中黑洞僵尸神器）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "（可用正面E或尼禄的左轮直接引爆）"
@@ -366,21 +326,17 @@
               {
                 "type": "text",
                 "text": "5.冲击（激光）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "正面E：向准星方向向后弹射自身（人话讲：后撤步，可以跳起来后撤步飞的更高。），两格充能，随时回复。10sCD"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "头顶E：以你为发射起点（注意开始使用后，你自身无法移动只可转动视角），向准心持续发射激光（6s），被激光射中的任何僵尸强制减速。              70sCD"
@@ -393,30 +349,24 @@
               {
                 "type": "text",
                 "text": "6.爆裂（如果你玩过后室，可以理解为火盐包。）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "正面E：向准心方向发射一个机械臂，向僵尸方向射出会自动锁敌僵尸并点燃，再按E回收手臂。没回收的话进入冷却，没回收成功则进入CD。（可击落飞行僵尸神器）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "头顶E：引爆机械手臂造成减速和减速火场。如没有发射，以自身为中心引爆。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "正面E射出后击中黑洞僵尸神器本身（必须是击中，一般不建议用神器打断，因为爆裂射出后会自动吸附到别的僵尸。）可以打断僵尸黑洞（可以隔墙击中黑洞僵尸神器）"
@@ -439,12 +389,10 @@
               {
                 "type": "text",
                 "text": "写在僵尸神器前的话"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "注意"
@@ -505,12 +453,10 @@
               {
                 "type": "text",
                 "text": "第四关准备打维吉尔恶魔形态（尤里曾）一阶段开始的时候，就没有维吉尔了。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "第五关在进入boss房开始boss战后，就没有维吉尔了。"
@@ -541,21 +487,17 @@
               {
                 "type": "text",
                 "text": "按空格键飞翔，按任意方向控制飞行方向。（可被尼禄和但丁击落，击落后数秒才能恢复飞行技能。）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "按右键能喷毒，对人类造成伤害。（可以隔薄墙毒人，在下水道楼梯场景里隔薄墙毒人和图书馆的时候会操作人类）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "也可以被人类击落"
@@ -586,12 +528,10 @@
               {
                 "type": "text",
                 "text": "左键挥砍"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "右键：进入免疫子弹的霸体状态6秒"
@@ -622,21 +562,17 @@
               {
                 "type": "text",
                 "text": "左键向前砍"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "右键2s后会根据僵尸数量生成跟随的护盾，僵尸越多盾越厚。（皮肤的枪械也能造成伤害）护盾期间里的小僵尸有加速。僵尸只有加速不免疫击退。可以让皮肤去前面砍拖延。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "人类枪械可以打爆（人类枪械是攻击盾的血量，造成一定量的伤害致使盾爆炸）。"
@@ -667,39 +603,31 @@
               {
                 "type": "text",
                 "text": "按空格键飞翔，按任意方向控制飞行方向。（可被尼禄和但丁击落，击落后数秒才能恢复飞行技能。）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "左键：向准星方向发射火球，接触地面或墙体生成减速火场"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "右键：在3秒后引爆自身，对周围人类造成高额伤害自身送回上个传送点"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "可以在旋转楼梯炸人类的脚底，在游戏场景里一定要小心Z轴的隔薄墙的自爆（下水道的楼梯板和图书馆）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "也可以被人类击落"
@@ -730,39 +658,31 @@
               {
                 "type": "text",
                 "text": "前三关不会出现"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "a.左键普攻"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "右键:进入前行状态15s，期间按左键显性并攻击，进入隐身后有加速。后手开可以解任何一次性控制和减速神器，冲击无法解。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "（如果你后手开隐身是可以解控控制类人类神器的)，隐身开启时会有个音效，指挥一定要注意。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "隐身时候人类可以丢雷攻击和枪械攻击"
@@ -793,39 +713,31 @@
               {
                 "type": "text",
                 "text": "只会在二四五关出现"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "左键：向前斩击"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "右键：以你中心向前方生成一道引力裂隙（直线黑洞），在这个直线的周围都会向你自身吸。受到尼禄右键枪械和但丁右键可以被打断（可以隔墙打断），投技可以打断黑洞僵尸神器并把他送回上个出生点、时停的大停可以打断，磁暴头顶E、爆裂正面E射出手臂击中黑洞僵尸后能打断黑洞（有点难隔墙打断，因为磁暴或爆裂会自动吸附准心射出后附近的僵尸）。释放后，你自身无法移动。强控"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "会玩的黑洞一般会隔墙吸，尤其是在下水道楼梯场景中，黑洞会隔墙吸住人类，这时候需要尼禄或但丁用技能枪械隔墙打断。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "皮肤的右键枪械能打断（如果两个皮肤战死，虽然磁暴、爆裂和时停也可以打断但需要熟练度且很难隔墙打断，可能要出现大部分掉人的混乱情况）。"
@@ -856,12 +768,10 @@
               {
                 "type": "text",
                 "text": "a.左键：向前斩击（前摇有点长）（砍完第一刀后的后摇也很长）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "b.右键：爆发性移速，数秒后自动斩击。也可在加速期间你也可以自己按左键提前斩击。"
@@ -926,12 +836,10 @@
               {
                 "type": "text",
                 "text": "1.皮肤教学视频"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "https://www.bilibili.com/video/BV1i5tU6NErs/?spm_id_from=333.337.search-card.all.click"
@@ -944,30 +852,24 @@
               {
                 "type": "text",
                 "text": "2.皮肤选取机制"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "第一二三关里，尼禄和但丁是在皮肤高亮框里的人随机一个选中皮肤。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "第一二关只有尼禄，第三关只有但丁。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "在第四五关里但丁和尼禄会同时出现，但丁和尼禄是谁抢到是谁的。"
@@ -989,39 +891,31 @@
               {
                 "type": "text",
                 "text": "3.人类与皮肤之间的合作"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "皮肤不是万能的，皮肤也很脆。被僵尸神器砍二三刀就死了。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "身为指挥你要在第四五关分配好两位皮肤的职责。比如：尼禄和人类负责盯蛾子，但丁盯维吉尔、尼禄打断黑洞，这种职责划分。如果实在来不及哪个方便就喊哪个皮肤去打断黑洞或是其余僵尸神器。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "但丁交裸的时候，指挥需要叫人类或是神器保护好但丁。因为但丁的裸是有前摇的，在终极没放出来之前，僵尸可以走动是可以伤害到但丁的。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "但丁交裸开始后在天空，也不要忘记保护空中的但丁，火蛾子和毒蛾子可以在空中进攻但丁。（虽然空中但丁交裸有僵尸强定身，但还是要防止这种剧本。）"
@@ -1046,48 +940,38 @@
               {
                 "type": "text",
                 "text": "左键普攻。在每次普攻快结束的时候按E，就是火刀。可以增加尼禄自身保活率。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "右键3发左轮，3发打完后一定要再次按右键换左轮子弹。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "一定要记得右键打蛾子，打蛾子的僵尸本体不是蛾子的模型。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "火刀尼禄的断后能力比但丁强很多，而且断后自保能力也比但丁强很多。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "尼禄的右键左轮可以隔墙打断僵尸黑洞神器"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "尼禄在第一关：序章和第二关的职责主要盯一下蛾子和打断僵尸神器，如果你不会玩尼禄，那你就右键开枪打蛾子，能砍就砍一下。"
@@ -1127,12 +1011,10 @@
               {
                 "type": "text",
                 "text": "但丁所有风格武器的右键共享30s CD"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "建议指挥记得叫但丁用白象牙和黑檀木双枪打断隔墙吸的黑洞僵尸神器，不限风格形态。"
@@ -1145,21 +1027,17 @@
               {
                 "type": "text",
                 "text": "剑圣形态"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "魔剑：右键会形成一个直线风（小推力）把僵尸击退。刀旋转完后会砍出3道剑气，造成减速。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "拳套：右键会形成一个环形风把僵尸推开。"
@@ -1172,21 +1050,17 @@
               {
                 "type": "text",
                 "text": "枪神形态"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "霰弹枪：可以减速僵尸，原地制造范围减速区域"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "双枪：跃至高空向下圆柱范围造成跟随定身（建议指挥叫但丁用双枪打断隔墙吸的黑洞僵尸神器）"
@@ -1199,66 +1073,52 @@
               {
                 "type": "text",
                 "text": "皇家守卫形态"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "按任意武器右键进行皇家格挡，格挡的0.3秒守到僵尸皮肤攻击会无敌并且无效化次攻击的伤害。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "在维吉尔准备开始收刀前几帧使用皇家守卫可弹掉维吉尔的大招（适合高手），能隔墙打断。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "真魔人形态（终极）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "可斩断维吉尔的终极，斩杀范围内所有僵尸。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "在维吉尔收刀之前变身真魔人可以抵消维吉尔次元斩绝（维吉尔终极）。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "变身真魔人裸的最后一段可以抵消次元斩绝（维吉尔终极）。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "真魔人形态下攻击僵尸或僵尸神器可以让僵尸神器进入短暂死亡的“休息室”，3s后回到最近出生点。"
@@ -1316,39 +1176,31 @@
               {
                 "type": "text",
                 "text": "身为指挥要注意维吉尔的次元斩范围减速和终极"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "目前的维吉尔裸更多是为了僵尸争取操作窗口。在第四五关中，密集的地形里吃到维吉尔的裸人类会有强制定身，会为别的僵尸神器争取操作窗口。皮肤和神器反应一定要迅速。（可以呼叫皮肤打断或是利用免疫免除神器伤害、或是利用时停恢复人类地速跑出终极区域）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "维吉尔的终极是一个大范围的球体，即使你和他上下楼也会被裸到，隔墙跨地形也会被裸到。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "在维吉尔裸的范围内，会对人类强制定身，可以用时停头顶E来重置人类地速。离开终极范围。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "如果没有及时叫但丁皇家守卫打断、但丁裸终极或是叫爱抚交免疫，在终极范围内群体人类大量伤害甚至死亡。"
@@ -1398,12 +1250,10 @@
               {
                 "type": "text",
                 "text": "Boss 一阶段： 打boss中间脚底那个水晶，远离脚底下的特效，躲开上下的激光刀（伤害刀）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "Boss 二阶段： boss无敌，不用打，人类只用躲脚底特效和上下激光刀（伤害刀）"
@@ -1428,30 +1278,24 @@
               {
                 "type": "text",
                 "text": "Boss一阶段"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "人类需要在boss的另一端打boss"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "有4个技能"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "拍地震撼：地面特效显示是全地板波纹状，离得越远伤害越低。在boss准备拍向地面的时候卡好时间跳起来可以躲避这段拍击的伤害，拍完后（人保持移动）远离中间，boss会喷一簇火球会伤害玩家。"
@@ -1491,21 +1335,17 @@
               {
                 "type": "text",
                 "text": "Boss二阶段"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "人类全程远离boss正面，指挥需要叫奶找个位置正面E接人回血。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "正面普攻"
@@ -1527,12 +1367,10 @@
               {
                 "type": "text",
                 "text": "翻滚龙车"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "招式和2阶段差不多，注意远离boss脚底特效、直线或翻滚龙车。如果有V能提前处决更好。"
@@ -1545,30 +1383,24 @@
               {
                 "type": "text",
                 "text": "Boss三阶段普攻与二阶段一致。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "二转三阶阶段玩家会固定会掉一百血。一定打血针！"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "在boss打完后，立刻去僵尸传送点塔楼前端，用控制类神器拖住僵尸进攻节奏。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "如果你有冲击的话，也可以在喷泉传送点附近用冲击远端击退僵尸进攻节奏。"
@@ -1641,21 +1473,17 @@
               {
                 "type": "text",
                 "text": "在开始打BOSS前，要在boss房门口守到门关。但不能贴boss房门口守，可以在boss房门口交个控制类技能。打boss的时候刚好把神器CD转回来。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "Boss战一旦开始，boss房周围会有灵魂火，伤害有点高。一定要安排好进场顺序。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "灵魂火范围"
@@ -1668,12 +1496,10 @@
               {
                 "type": "text",
                 "text": "Boss 一阶段"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "全程远离boss，躲脚底特效和圆型爆炸范围和紫色直线龙车地面特效（紫色的直线特效是有残留的，一定要提醒。这招在后面两个阶段也会出现，一定要反复提醒这招有残留。）"
@@ -1686,21 +1512,17 @@
               {
                 "type": "text",
                 "text": "注意boss一阶段会有单独的单手剑蓝色和紫色的内外场爆炸，不一定会连招，伤害较小。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "但是二阶段和三阶段伤害会很高，且转完阶段后第一招会出现。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "抬手剑特效蓝色外场爆炸"
@@ -1722,39 +1544,31 @@
               {
                 "type": "text",
                 "text": "Boss 二阶段"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "开始"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "指挥需要立刻指挥奶神器（爱抚），所有人在内场远离中间boss别去外场。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "在boss快要出第一招攻击前先爱抚正面E效果结束后，然后头顶E免疫boss技能。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "两段奶不一定能完全覆盖二阶段转阶段开始的攻击，人还是要保持一定的机动性。"
@@ -1767,12 +1581,10 @@
               {
                 "type": "text",
                 "text": "Boss在转完阶段后会有一个抬手攻击内外场爆炸"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "指挥需要引导人类站在地图红色圆环上方便人类随时反应"
@@ -1785,21 +1597,17 @@
               {
                 "type": "text",
                 "text": "抬手剑的颜色是紫色，先内场爆炸，后外场爆炸（人类躲避顺序，先外后内）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "抬手剑的颜色是蓝色，先外场爆炸，后内场爆炸（人类躲避顺序，先内后外）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "在转完阶段后boss依然会有抬手剑紫色和蓝色的招式。"
@@ -1830,21 +1638,17 @@
               {
                 "type": "text",
                 "text": "Boss三阶段"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "人类会获得一个加速，不要去外场，外场有巨量伤害。（在该阶段指挥可以分配奶开正面E回血或是头顶E免疫部分boss攻击，来保活萌新。）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "Boss会有X型的龙车，地面上有X型紫色直线攻击特效，站两条交叉线的外面。"
@@ -1866,30 +1670,24 @@
               {
                 "type": "text",
                 "text": "boss会持续好几波龙车接紫色原地内爆攻击招式。然后才会转阶段完毕。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "在躲完后，指挥仍需要提醒人类，boss还会有抬手紫色剑和蓝色剑的攻击招式"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "Boss在转完阶段后会有一个抬手攻击内外场爆炸"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "指挥需要引到人类站在地图红色圆环上方便人类随时反应"
@@ -1902,21 +1700,17 @@
               {
                 "type": "text",
                 "text": "抬手剑的颜色是紫色，先内场爆炸，后外场爆炸（人类躲避顺序，先外后内）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "抬手剑的颜色是蓝色，先外场爆炸，后内场爆炸（人类躲避顺序，先内后外）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "抬手剑特效蓝色外场爆炸"
@@ -1995,12 +1789,10 @@
               {
                 "type": "text",
                 "text": "Boss一阶段"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "传送后，人类原地回头就是boss房，在boss房门外打boss前的水晶即可，只有水晶血量被打完后，才能攻击boss本体。屏幕中红色为水晶血量、蓝色为boss本体血量。一阶段全程不需要进入boss房。"
@@ -2013,12 +1805,10 @@
               {
                 "type": "text",
                 "text": "指挥则需要带着神器和皮肤去另一个方向断后。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "图的左边方向为boss，图的右侧红色符咒门则是僵尸传送。"
@@ -2031,21 +1821,17 @@
               {
                 "type": "text",
                 "text": "Boss二阶段"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "指挥需要提醒人类远离boss正面和脚底特效"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "Boss出招"
@@ -2085,12 +1871,10 @@
               {
                 "type": "text",
                 "text": "内场爆炸和外场爆炸，指挥需要提醒。（注意在爆炸后boss有可能会出脚底爆裂攻击，会出现4道高伤害直线脚底特效，躲开特效后，一定要等到特效消失，有残留）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "内场爆炸"
@@ -2130,30 +1914,24 @@
               {
                 "type": "text",
                 "text": "Boss 三阶段"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "Boss二段转三阶段的时候会打开尸笼，指挥需要指挥皮肤和控制类神器去守尸笼。同时注意隐身Furry后手开技能解控（僵尸隐身神器，主动开启后会免疫人类控制类神器技能）。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "守一会儿后僵尸会集体传送回尸笼，并继续boss战。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "Boss其余技能与二阶段一致。"
@@ -2211,21 +1989,17 @@
               {
                 "type": "text",
                 "text": "指挥和大部分人类需要去跳刀房外一直断后拖延时间。（实在断不住可能就要全员跳刀了）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "让少部分人去跳刀打boss就行。（刀为ff神都第四关的刀，高、低、斜刀。）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "图中为标点为boss的刀峰范围。"
@@ -2238,12 +2012,10 @@
               {
                 "type": "text",
                 "text": "打完boss跳完刀后，最后的撤离点时间20s。神器该交就交了，防止隐身（Furry）突脸就行。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "最后人类撤离的地点在图中面包车后的彩色标点，时间结束会有一道符咒门立刻出现。外面核爆，然后该局结束。假如最后撤离点进入僵尸那僵尸胜利。"
@@ -2268,30 +2040,24 @@
               {
                 "type": "text",
                 "text": "人类远程远离boss，boss会有远程锁定技能，锁定你后，保持单方向移动，会有锁定你的弹幕攻击（按A或按D即可）保持移动绕着boss打。在快打完boss第二阶段的时候，指挥一定要提醒人类提前来跳刀房这侧贴门。打完boss后5-10s在场地中间有僵尸传送点，如果人类不提前贴跳刀房那侧的门，部分人会来不及撤退的。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "BOSS一阶段（二阶段出招与一阶段一样）"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "远离boss，一直绕着boss打"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "Boss攻击方式"
@@ -2313,12 +2079,10 @@
               {
                 "type": "text",
                 "text": "2.扇形次元斩，以boss自身为中心180°射出左、斜左、中、斜右、右分批次砍出2批次元斩（每批3道次元斩）。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "一定要站在斩击夹缝里躲避，保持机动。这个技能结束后会在boss砍出的刀气经过的路径释放次元斩。"
@@ -2349,12 +2113,10 @@
               {
                 "type": "text",
                 "text": "boss锁定加速普攻并进行二段挑飞攻击。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "boss会突然加速锁定某一位玩家，并上挑至空中进行次元斩，然后玩家会落地。被锁定的玩家自备一根血针。或是AD躲开boss第一个攻击，这样boss就无法对你进行上挑挑飞的二段攻击（本人实际操作中很难躲掉第一段锁定，因为boss机动性巨高）。"
@@ -2367,12 +2129,10 @@
               {
                 "type": "text",
                 "text": "6.虚无刀界，一阶段伤害很高。二阶段会砍出剑气后向boss攻击方向蔓延，吃多了伤害会死亡。吃到虚无刀界的玩家会被定身。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "一阶段的虚无刀界。砍完就会逐渐消失没有蔓延。"
@@ -2394,48 +2154,38 @@
               {
                 "type": "text",
                 "text": "BOSS二阶段"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "Boss转魔人化就会进入二阶段。二阶段普通攻击与一阶段一样，会强化该攻击的伤害。并且boss移速会更快且瞬移到玩家身边。同时boss会有更多脚底特效的技能。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "会有三个终极，在第一个开始前，指挥一定要标个点，所有人吃到奶。最大可能避免boss终极导致的人员死亡。或是头顶E免疫一些技能来保活人类。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "以下四个终极随机出，随机顺序，但出过一个后就会在剩下三个里面出，排除法。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "终极一："
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "地面全屏特效，一直要找刀缝隙里站，如果站在刀的特效上会秒杀。"
@@ -2448,12 +2198,10 @@
               {
                 "type": "text",
                 "text": "终极二：龙车"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "Boss会起飞（建议玩家一直锁定boss飞行方向），然后boss落地在场地里横穿一道次元斩。玩家一定要A或D躲开boss直面冲击次元斩"
@@ -2466,12 +2214,10 @@
               {
                 "type": "text",
                 "text": "终极三：全场核爆。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "（如果出招第一个终极是核爆，建议在这个终极前开口奶保活或是准备开启的时候开免疫保活）离中间越远伤害越小，所有人去地图边缘贴死空气墙，备好一根血针。"
@@ -2484,21 +2230,17 @@
               {
                 "type": "text",
                 "text": "终极四：V的世界"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "分为三段攻击（连招-会按下面1-3编号顺序出招)"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "锁定天坠，天上会掉密集且迅速的天坠。人类保持移动看脚底特效迅速躲。"
@@ -2529,21 +2271,17 @@
               {
                 "type": "text",
                 "text": "建议打boss打快点减少人员伤亡。打完boss后撤退路在板凳维吉尔身后的地方，打完后全神器封锁（所有神器无法使）。只能靠枪守，然后到最后的地点守到桥断准备跳刀（屏幕上5句歌词后桥断）。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "分为尼禄刀、维吉尔刀和但丁刀。"
-              }
-            ]
-          },
-          {
-            "type": "paragraph",
-            "content": [
+              },
+              {
+                "type": "hardBreak"
+              },
               {
                 "type": "text",
                 "text": "（传送刀，只有剩余人类跳完后才算通关。目前作者说法是-假如没有任何人跳刀成功会进入假结局播放不一样的终场CG。）"
