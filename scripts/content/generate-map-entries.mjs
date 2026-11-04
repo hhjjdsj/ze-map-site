@@ -657,6 +657,8 @@ function renderEntry(rec, research, wsRec, gfl) {
     noEntity ? null : `entityCount: ${rec.n}`,
     released ? `releaseDate: ${JSON.stringify(released)}` : null,
     updated ? `lastUpdated: ${JSON.stringify(updated)}` : null,
+    research?.manualPage ? `manualPage: ${JSON.stringify(research.manualPage)}` : null,
+    research?.manual ? `manual: ${JSON.stringify(research.manual)}` : null,
     research?.manualPdf ? `manualPdf: ${JSON.stringify(research.manualPdf)}` : null,
     research?.videoUrls?.length ? `videoUrls: [${research.videoUrls.map((x) => JSON.stringify(x)).join(', ')}]` : null,
     /*

@@ -39,6 +39,10 @@ const maps = defineCollection({
     videoKinds: z.record(z.string(), z.string()).optional(),
   /* 攻略区直接嵌入的原版文档（PDF 路径，可选） */
   manualPdf: z.string().optional(),
+  /* 攻略区原生 HTML（data/manual/<key>.json 的 key，可选） */
+  manual: z.string().optional(),
+  /* 攻略区内嵌的原生 HTML 页面（/manual/... 路径，可选） */
+  manualPage: z.string().optional(),
     /* 其他社区叫法（可选）：["X 社区：爬雪山【娱】", "UB 难度表：雪山逃亡v6"]
        —— 页面显示在地图名下方的小字里，帮「对不上名字」的人找到图。
        原稿（data/research）或社区投稿都能写；社区那份按追加 + 去重合并。 */
