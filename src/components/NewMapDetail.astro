@@ -230,6 +230,7 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
 <dialog class="img-lightbox" id="img-lightbox" aria-label="查看大图">
   <button type="button" class="img-lightbox-close" aria-label="关闭">×</button>
   <img alt="" />
+  <p class="img-lightbox-hint">滚轮缩放 · 拖动平移 · 双击还原</p>
 </dialog>
 
 <style>
@@ -351,10 +352,13 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
   .new-prose-doc .doc-figure img { display:block; margin:0 auto; width:auto; max-width:100%; max-height:540px; height:auto; border-radius:8px; }
   .new-prose-doc p { max-width:100%; }
 
-  .img-lightbox { position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; }
+  .img-lightbox { position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; overflow: hidden; }
   .img-lightbox[open] { display: flex; align-items: center; justify-content: center; }
   .img-lightbox::backdrop { background: rgba(4, 6, 10, .93); }
-  .img-lightbox img { display: block; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }
+  .img-lightbox img { display: block; width: auto; height: auto; max-width: 94vw; max-height: 90vh; object-fit: contain; transform-origin: center center; cursor: zoom-in; touch-action: none; user-select: none; }
+  .img-lightbox img.is-zoomed { cursor: grab; }
+  .img-lightbox img.is-dragging { cursor: grabbing; }
+  .img-lightbox-hint { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); margin: 0; padding: 5px 12px; border-radius: 999px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.16); color: rgba(255,255,255,.72); font-size: 11.5px; white-space: nowrap; }
   .img-lightbox-close { position: fixed; top: 18px; right: 22px; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.55); color: #fff; font-size: 22px; line-height: 1; cursor: pointer; z-index: 2; }
   .img-lightbox-close:hover { background: rgba(255,255,255,.16); }
 </style>
@@ -417,16 +421,71 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
     const dialog = document.getElementById('img-lightbox');
     if (!dialog) return;
     const img = dialog.querySelector('img');
+    let scale = 1;
+    let x = 0;
+    let y = 0;
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    const apply = () => {
+      img.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+      img.classList.toggle('is-zoomed', scale > 1.01);
+    };
+    const reset = () => {
+      scale = 1;
+      x = 0;
+      y = 0;
+      apply();
+    };
+
     document.addEventListener('click', (event) => {
       const target = event.target.closest('.new-gallery img, .new-prose-doc .doc-figure img');
       if (!target) return;
       event.preventDefault();
+      reset();
       img.src = target.currentSrc || target.src;
       img.alt = target.alt || '';
       if (typeof dialog.showModal === 'function') dialog.showModal();
     });
+
     dialog.addEventListener('click', (event) => {
       if (event.target === dialog || event.target.closest('.img-lightbox-close')) dialog.close();
+    });
+
+    dialog.addEventListener('wheel', (event) => {
+      if (!dialog.open) return;
+      event.preventDefault();
+      const next = Math.min(8, Math.max(1, scale * (event.deltaY < 0 ? 1.18 : 1 / 1.18)));
+      scale = next;
+      if (scale === 1) { x = 0; y = 0; }
+      apply();
+    }, { passive: false });
+
+    img.addEventListener('pointerdown', (event) => {
+      if (scale <= 1) return;
+      dragging = true;
+      startX = event.clientX - x;
+      startY = event.clientY - y;
+      img.classList.add('is-dragging');
+      img.setPointerCapture(event.pointerId);
+    });
+    img.addEventListener('pointermove', (event) => {
+      if (!dragging) return;
+      x = event.clientX - startX;
+      y = event.clientY - startY;
+      apply();
+    });
+    const endDrag = () => {
+      dragging = false;
+      img.classList.remove('is-dragging');
+    };
+    img.addEventListener('pointerup', endDrag);
+    img.addEventListener('pointercancel', endDrag);
+
+    img.addEventListener('dblclick', () => {
+      if (scale > 1.01) reset();
+      else { scale = 2.2; x = 0; y = 0; apply(); }
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initImageLightbox);
