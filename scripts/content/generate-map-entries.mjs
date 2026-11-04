@@ -644,6 +644,7 @@ function renderEntry(rec, research, wsRec, gfl) {
     typeof sizeMb === 'number' && sizeMb > 0 ? `size: ${sizeMb}` : null,
     /* featured：首页「精选」那一排卡片就是按这个字段筛的（见 pages/index.astro） */
     research?.featured ? `featured: true` : null,
+    research?.spotlight ? `spotlight: true` : null,
     `tags: [${tags.map((x) => JSON.stringify(x)).join(', ')}]`,
     hasCover ? `cover: ${JSON.stringify(coverRel)}` : null,
     `workshopUrl: ${wsUrl}`,

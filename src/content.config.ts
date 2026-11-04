@@ -50,6 +50,8 @@ const maps = defineCollection({
     releaseDate: z.coerce.string().optional(),
     lastUpdated: z.coerce.string().optional(),
     featured: z.boolean().default(false),
+  /* 首页牌面（大卡片），同时出现在精选区之外 */
+  spotlight: z.boolean().default(false),
 
     /* ===== 实体预览（工坊地图包烘焙数据及已入库的历史快照） ===== */
     /** 实体数据分片 slug，对应 /entity/data/<entitySlug>.bin */

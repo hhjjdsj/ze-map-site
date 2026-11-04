@@ -12,7 +12,8 @@ const maps = await getMaps();
 /* 最近改动：全量拿回来，组件只渲染前 8 条，剩下的靠「加载更多」按需拉 */
 const feed = await getUpdateFeed();
 
-const featured = maps.filter((m) => m.data.featured);
+const featured = maps.filter((m) => m.data.featured && !m.data.spotlight);
+const spotlight = maps.find((m) => m.data.spotlight) ?? null;
 
 const totalEntities = maps.reduce((a, m) => a + (m.data.entityCount ?? 0), 0);
 const previewable = maps.filter((m) => m.data.entitySlug).length;
@@ -88,6 +89,32 @@ const hotTags = Object.entries(tagCount)
         <span class="ec-go">进入实体预览 ↗</span>
       </a>
     </section>
+
+
+    {spotlight && (
+      <section class="spotlight" id="spotlight">
+        <div class="section-head">
+          <h2>优秀地图</h2>
+          <a href={`/maps/${spotlight.id}/`}>查看地图 →</a>
+        </div>
+        <div class="spotlight-card">
+          {spotlight.data.cover && <img class="spotlight-cover" src={spotlight.data.cover} alt="" loading="eager" />}
+          <div class="spotlight-shade"></div>
+          <div class="spotlight-body">
+            <span class="spotlight-badge">推荐 · 新图</span>
+            <h3>{spotlight.data.title}</h3>
+            <p class="spotlight-sub">{spotlight.data.titleEn}</p>
+            <div class="spotlight-tags">
+              {(spotlight.data.tags ?? []).slice(0, 5).map((tag) => <span>{tag}</span>)}
+            </div>
+            <div class="spotlight-actions">
+              <a class="spotlight-cta" href={`/maps/${spotlight.id}/`}>查看地图 →</a>
+              <a class="spotlight-guide" href={`/maps/${spotlight.id}/#guide`}>直接看攻略</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    )}
 
     {featured.length > 0 && (
       <section id="featured">
@@ -217,4 +244,24 @@ const hotTags = Object.entries(tagCount)
   {/* 主页也要按访问者本机时间再筛一次：否则站点两个月没重新部署的话，
       主页还挂着已经过期的条目，而 /new/ 页早已空了。 */}
   <ListExpiry />
+
+<style>
+  .spotlight { margin: 8px 0 34px; }
+  .spotlight-card { position: relative; display: block; border-radius: 18px; overflow: hidden; border: 1px solid #232c38; min-height: 320px; text-decoration: none; color: #fff; }
+  .spotlight-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .spotlight-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(4,6,10,.94) 0%, rgba(4,6,10,.62) 46%, rgba(4,6,10,.18) 100%), linear-gradient(0deg, rgba(4,6,10,.9), transparent 62%); }
+  .spotlight-body { position: relative; z-index: 2; padding: clamp(20px, 3vw, 36px); max-width: 620px; }
+  .spotlight-badge { display: inline-block; font-size: 11px; letter-spacing: .1em; padding: 3px 10px; border-radius: 999px; background: linear-gradient(135deg,#e5484d,#ff7a59); color: #fff; }
+  .spotlight-body h3 { margin: 12px 0 2px; font-size: clamp(24px, 3.4vw, 40px); line-height: 1.15; color: #fff; }
+  .spotlight-sub { margin: 0 0 12px; color: rgba(255,255,255,.62); font-family: ui-monospace, monospace; font-size: 12px; }
+  .spotlight-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+  .spotlight-tags span { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); color: rgba(255,255,255,.8); }
+  .spotlight-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .spotlight-cta { font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 9px; background: #fff; color: #14161a; }
+  .spotlight-guide { font-size: 12.5px; color: rgba(255,255,255,.78); border-bottom: 1px solid rgba(255,255,255,.32); }
+  @media (max-width: 640px) {
+    .spotlight-card { min-height: 240px; }
+    .spotlight-shade { background: linear-gradient(0deg, rgba(4,6,10,.96) 8%, rgba(4,6,10,.4) 72%); }
+  }
+</style>
 </BaseLayout>
