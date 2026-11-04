@@ -21,8 +21,12 @@ const inline = (node, images) => {
   }
   if (node.type === 'hardBreak') return '<br />';
   if (node.type === 'figure') {
+    const direct = node.attrs?.src ? String(node.attrs.src) : '';
     const image = images[(Number(node.attrs?.n) || 0) - 1];
-    return image ? `<figure class="doc-figure doc-figure-${node.attrs?.side === 'right' ? 'right' : 'left'}"><img src="${escape(image.localSrc ?? image.src)}" alt="${escape(image.caption ?? '')}" /></figure>` : '';
+    const src = direct || (image ? image.localSrc ?? image.src : '');
+    if (!src) return '';
+    const alt = direct ? '' : escape(image.caption ?? '');
+    return `<figure class="doc-figure doc-figure-${node.attrs?.side === 'right' ? 'right' : 'left'}"><img src="${escape(src)}" alt="${alt}" loading="lazy" /></figure>`;
   }
   return children(node, images);
 };

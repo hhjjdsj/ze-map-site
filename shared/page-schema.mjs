@@ -142,7 +142,10 @@ function validateDocNode(node, path, errors) {
     if (align !== undefined && align !== null && !DOC_ALIGNMENTS.has(align)) errors.push(error(`${path}.attrs.textAlign`, '对齐方式不合法'));
   }
   if (node.type === 'figure') {
-    if (!isInteger(node.attrs?.n) || node.attrs.n < 1 || node.attrs.n > 36) {
+    const src = node.attrs?.src;
+    if (src !== undefined) {
+      if (typeof src !== 'string' || !/^\/(?!\/)/.test(src)) errors.push(error(`${path}.attrs.src`, '图片地址必须是站内路径'));
+    } else if (!isInteger(node.attrs?.n) || node.attrs.n < 1 || node.attrs.n > 36) {
       errors.push(error(`${path}.attrs.n`, '图片序号必须在 1 到 36 之间'));
     }
     if (node.attrs?.side !== undefined && !['left', 'right'].includes(node.attrs.side)) {
