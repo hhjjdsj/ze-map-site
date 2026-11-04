@@ -63,3 +63,35 @@ export function textToDoc(text) {
     }),
   };
 }
+
+/**
+ * 攻略正文（纯文本 + 简单 markdown）→ HTML。
+ * 支持：空行分段、**粗体**、![alt](src) 图片、行内换行。
+ * 只允许站内路径与 https 图片，其余按文本转义。
+ */
+export function markdownToHtml(text) {
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const imgOk = (src) => /^\/(?!\/)/.test(src) || /^https:\/\//.test(src);
+  const inlineMd = (line) => {
+    let html = esc(line);
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, src) => {
+      const cleanAlt = String(alt ?? '').trim();
+      const cleanSrc = String(src ?? '').trim();
+      if (!imgOk(cleanSrc)) return '';
+      return '<figure class="doc-figure"><img src="' + cleanSrc + '" alt="' + cleanAlt + '" loading="lazy" /><figcaption>' + cleanAlt + '</figcaption></figure>';
+    });
+    return html;
+  };
+  return String(text ?? '')
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+      const hasFigure = lines.some((l) => /^!\[[^\]]*\]\([^)]+\)$/.test(l));
+      if (hasFigure) return lines.map((l) => inlineMd(l)).join('\n');
+      return '<p>' + lines.map(inlineMd).join('<br />') + '</p>';
+    })
+    .join('\n');
+}

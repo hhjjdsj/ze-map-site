@@ -1,6 +1,6 @@
 {
   "slug": "ze_devil_may_cry",
-  "count": 6,
+  "count": 24,
   "images": [
     {
       "src": "/images/gallery/devil-may-cry/01-workshop.webp",
@@ -31,6 +31,96 @@
       "src": "/images/gallery/devil-may-cry/06-boss-vergil.webp",
       "kind": "workshop",
       "caption": "BOSS 战 · 维吉尔（闪电阶段）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/zombie-01-green-empusa.webp",
+      "kind": "guide",
+      "caption": "僵尸神器 · 毒蛾子（Green Empusa）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/zombie-02-antenora.webp",
+      "kind": "guide",
+      "caption": "僵尸神器 · 双刀哥（Antenora）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/zombie-03-empusa-queen.webp",
+      "kind": "guide",
+      "caption": "僵尸神器 · 护盾（Empusa Queen）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/zombie-04-fire-empusa.webp",
+      "kind": "guide",
+      "caption": "僵尸神器 · 火蛾子"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/zombie-05-furry.webp",
+      "kind": "guide",
+      "caption": "僵尸神器 · 隐身（Furry）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/zombie-06-hell-juddeca.webp",
+      "kind": "guide",
+      "caption": "僵尸神器 · 黑洞（Hell Juddeca）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/zombie-07-hell-caina.webp",
+      "kind": "guide",
+      "caption": "僵尸神器 · 镰刀哥（Hell Caina）"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/zombie-08-npc.webp",
+      "kind": "guide",
+      "caption": "僵尸神器 · NPC"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/skin-nero.webp",
+      "kind": "guide",
+      "caption": "人类皮肤 · 尼禄"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/skin-dante.webp",
+      "kind": "guide",
+      "caption": "人类皮肤 · 但丁"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/skin-v.webp",
+      "kind": "guide",
+      "caption": "赞助皮肤 · V"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/skin-vergil.webp",
+      "kind": "guide",
+      "caption": "僵尸皮肤 · 维吉尔"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/boss-moth.webp",
+      "kind": "guide",
+      "caption": "第三关 BOSS · 大蛾子"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/boss-knight.webp",
+      "kind": "guide",
+      "caption": "第三关 BOSS · 骑士"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/boss-arena.webp",
+      "kind": "guide",
+      "caption": "第四关 · BOSS 场地机制"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/boss-vergil.webp",
+      "kind": "guide",
+      "caption": "维吉尔 · 恶魔形态"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/boss-vergil-5.webp",
+      "kind": "guide",
+      "caption": "第五关 · 维吉尔本体"
+    },
+    {
+      "src": "/images/gallery/devil-may-cry/guide/boss-burst.webp",
+      "kind": "guide",
+      "caption": "BOSS 爆发阶段"
     }
   ]
 }

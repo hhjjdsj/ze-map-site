@@ -3,7 +3,7 @@ import { galleryFor } from '../lib/gallery';
 import VideoEmbed from './VideoEmbed.astro';
 import StageAccordion from './StageAccordion.astro';
 import { getMaps } from '../lib/maps';
-import { docToHtml, textToDoc } from '../../shared/doc-render.mjs';
+import { docToHtml, textToDoc, markdownToHtml } from '../../shared/doc-render.mjs';
 import { parseResearchBody } from '../../shared/research-body.mjs';
 import { VIDEO_CATEGORIES, videoKindOf, videoCategoryLabel } from '../../shared/videos.mjs';
 
@@ -113,7 +113,7 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
 
       <section class="new-section" id="items"><div class="new-section-title"><span>05</span><h2>神器 / 道具</h2><small>{itemRows.length ? `${itemRows.length} 行` : '结构化字段'}</small></div>{itemRows.length ? (<><div class="new-table-wrap"><table class="new-table"><thead><tr><th>道具</th><th>冷却</th><th>使用次数</th><th>说明</th><th>备注</th></tr></thead><tbody>{itemRows.map((item: any) => <tr><td>{item.name}</td><td>{item.cd > 0 ? `${item.cd} 秒` : '—'}</td><td>{item.uses > 0 ? `${item.uses} 次` : '不限'}</td><td>{item.intro || '待补充'}</td><td>{item.note}</td></tr>)}</tbody></table></div>{removedItems.length > 0 && <p class="new-item-note">社区反馈本图没有 {removedItems.length} 件道具。</p>}</>) : <div class="new-empty">暂无神器表数据。</div>}</section>
 
-      <section class="new-section" id="guide"><div class="new-section-title"><span>06</span><h2>攻略技巧</h2><a href={`/edit/${entry.id}/`}>编辑本页</a></div>{guideCleared ? <div class="new-empty">暂无攻略内容。</div> : playerBlocks.some((block: any) => block.type === 'guideItem') ? playerBlocks.filter((block: any) => block.type === 'guideItem').map((block: any, index: number) => <div class="new-prose"><h3 id={`guide-${index}`}>{block.title}</h3><div set:html={docToHtml(block.doc, gallery)}></div></div>) : guideSections.length ? guideSections.map((section, index) => <div class="new-prose"><h3 id={`guide-${index}`}>{section.title}</h3><div set:html={docToHtml(textToDoc(section.text), gallery)}></div></div>) : <div class="new-empty">暂无攻略内容。</div>}</section>
+      <section class="new-section" id="guide"><div class="new-section-title"><span>06</span><h2>攻略技巧</h2><a href={`/edit/${entry.id}/`}>编辑本页</a></div>{guideCleared ? <div class="new-empty">暂无攻略内容。</div> : playerBlocks.some((block: any) => block.type === 'guideItem') ? playerBlocks.filter((block: any) => block.type === 'guideItem').map((block: any, index: number) => <div class="new-prose"><h3 id={`guide-${index}`}>{block.title}</h3><div set:html={docToHtml(block.doc, gallery)}></div></div>) : guideSections.length ? guideSections.map((section, index) => <div class="new-prose"><h3 id={`guide-${index}`}>{section.title}</h3><div set:html={markdownToHtml(section.text)}></div></div>) : <div class="new-empty">暂无攻略内容。</div>}</section>
 
       {displayVideoGroups.length > 0 && <section class="new-section" id="videos"><div class="new-section-title"><span>07</span><h2>视频</h2><small>{displayVideos.length} 个</small></div>{displayVideoGroups.map((group) => <div class="new-video-group"><h3>{group.label}</h3><div class="new-videos">{group.items.slice(0, 6).map((item: any) => <VideoEmbed url={item.url} />)}</div></div>)}</section>}
       {related.length > 0 && <section class="new-section" id="related"><div class="new-section-title"><span>08</span><h2>同类地图</h2><small>按共同标签</small></div><div class="new-related">{related.map((map) => (
