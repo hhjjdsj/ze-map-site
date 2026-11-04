@@ -22,6 +22,7 @@ const research = parseResearchBody(entry.body);
 const story = research.story;
 const intro = research.intro || research.summary || String(d.research?.summary ?? '').trim();
 const guideSections = research.guides;
+const manualPdf = d.manualPdf || (d.research && d.research.manualPdf) || null;
 const stageRows = research.stageRows;
 
 const allMaps = await getMaps();
@@ -113,7 +114,7 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
 
       <section class="new-section" id="items"><div class="new-section-title"><span>05</span><h2>神器 / 道具</h2><small>{itemRows.length ? `${itemRows.length} 行` : '结构化字段'}</small></div>{itemRows.length ? (<><div class="new-table-wrap"><table class="new-table"><thead><tr><th>道具</th><th>冷却</th><th>使用次数</th><th>说明</th><th>备注</th></tr></thead><tbody>{itemRows.map((item: any) => <tr><td>{item.name}</td><td>{item.cd > 0 ? `${item.cd} 秒` : '—'}</td><td>{item.uses > 0 ? `${item.uses} 次` : '不限'}</td><td>{item.intro || '待补充'}</td><td>{item.note}</td></tr>)}</tbody></table></div>{removedItems.length > 0 && <p class="new-item-note">社区反馈本图没有 {removedItems.length} 件道具。</p>}</>) : <div class="new-empty">暂无神器表数据。</div>}</section>
 
-      <section class="new-section" id="guide"><div class="new-section-title"><span>06</span><h2>攻略技巧</h2><a href={`/edit/${entry.id}/`}>编辑本页</a></div>{guideCleared ? <div class="new-empty">暂无攻略内容。</div> : playerBlocks.some((block: any) => block.type === 'guideItem') ? playerBlocks.filter((block: any) => block.type === 'guideItem').map((block: any, index: number) => <div class="new-prose"><h3 id={`guide-${index}`}>{block.title}</h3><div set:html={docToHtml(block.doc, gallery)}></div></div>) : guideSections.length ? guideSections.map((section, index) => <div class="new-prose"><h3 id={`guide-${index}`}>{section.title}</h3><div set:html={markdownToHtml(section.text)}></div></div>) : <div class="new-empty">暂无攻略内容。</div>}</section>
+      <section class="new-section" id="guide"><div class="new-section-title"><span>06</span><h2>攻略技巧</h2><a href={`/edit/${entry.id}/`}>编辑本页</a></div>{manualPdf ? (<div class="new-manual"><iframe src={manualPdf} title="原版文档" loading="lazy"></iframe><div class="new-manual-bar"><span>原版文档（作者授权转载）</span><a href={manualPdf} download>下载 PDF</a></div></div>) : guideCleared ? <div class="new-empty">暂无攻略内容。</div> : playerBlocks.some((block: any) => block.type === 'guideItem') ? playerBlocks.filter((block: any) => block.type === 'guideItem').map((block: any, index: number) => <div class="new-prose"><h3 id={`guide-${index}`}>{block.title}</h3><div set:html={docToHtml(block.doc, gallery)}></div></div>) : guideSections.length ? guideSections.map((section, index) => <div class="new-prose"><h3 id={`guide-${index}`}>{section.title}</h3><div set:html={markdownToHtml(section.text)}></div></div>) : <div class="new-empty">暂无攻略内容。</div>}</section>
 
       {displayVideoGroups.length > 0 && <section class="new-section" id="videos"><div class="new-section-title"><span>07</span><h2>视频</h2><small>{displayVideos.length} 个</small></div>{displayVideoGroups.map((group) => <div class="new-video-group"><h3>{group.label}</h3><div class="new-videos">{group.items.slice(0, 6).map((item: any) => <VideoEmbed url={item.url} />)}</div></div>)}</section>}
       {related.length > 0 && <section class="new-section" id="related"><div class="new-section-title"><span>08</span><h2>同类地图</h2><small>按共同标签</small></div><div class="new-related">{related.map((map) => (
@@ -249,7 +250,11 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
   .new-section-title small,.new-section-title a { margin-left:auto; color:var(--new-muted); font-size:12px; }
   .new-section-title a { color:var(--new-link); }
   .new-prose { max-width:78ch; white-space:pre-wrap; line-height:1.9; color:var(--new-text); }
-  .new-stage-placeholder,.new-empty { margin-top:16px; padding:16px; border:1px dashed var(--new-border-2); border-radius:9px; color:var(--new-muted); background:var(--new-panel-2); }
+  .new-stage-placeholder,.new-manual { border: 1px solid var(--new-border); border-radius: 10px; overflow: hidden; background: #0b0e13; }
+.new-manual iframe { width: 100%; height: 78vh; min-height: 560px; border: 0; display: block; }
+.new-manual-bar { display: flex; justify-content: space-between; gap: 10px; padding: 8px 12px; font-size: 12px; color: var(--new-muted); border-top: 1px solid var(--new-border); }
+.new-manual-bar a { color: var(--new-accent, #e5484d); text-decoration: none; }
+.new-empty { margin-top:16px; padding:16px; border:1px dashed var(--new-border-2); border-radius:9px; color:var(--new-muted); background:var(--new-panel-2); }
   #stages { --panel: var(--new-panel-2); --border: var(--new-border); --accent: var(--new-accent); --accent-2: var(--new-link); }
   .stage-text { white-space: pre-wrap; overflow-wrap: anywhere; }
   .stage-rich p { margin: 0 0 10px; line-height: 1.8; }

@@ -657,6 +657,7 @@ function renderEntry(rec, research, wsRec, gfl) {
     noEntity ? null : `entityCount: ${rec.n}`,
     released ? `releaseDate: ${JSON.stringify(released)}` : null,
     updated ? `lastUpdated: ${JSON.stringify(updated)}` : null,
+    research?.manualPdf ? `manualPdf: ${JSON.stringify(research.manualPdf)}` : null,
     research?.videoUrls?.length ? `videoUrls: [${research.videoUrls.map((x) => JSON.stringify(x)).join(', ')}]` : null,
     /*
      * 视频类型标注（可选）：{ "BVxxxx": "地图档案" } —— 页面据此在对应视频上挂个小标签。
