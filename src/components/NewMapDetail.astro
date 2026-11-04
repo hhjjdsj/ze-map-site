@@ -342,6 +342,9 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
   @media (min-width:1600px) { .new-sidebar .new-toc { position:fixed; top:96px; right:12px; width:min(280px, calc((100vw - 1240px) / 2 - 24px)); max-height:calc(100vh - 120px); overflow-y:auto; z-index:60; } }
   @media (max-width:850px) { .new-layout { grid-template-columns:1fr; }.new-sidebar { position:static; order:0; }.new-toc { max-height:none; overflow:visible; }.new-gallery,.new-related { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   @media (max-width:520px) { .new-container { padding-left:16px; padding-right:16px; }.new-title-inner { padding-top:30px; }.new-gallery { grid-template-columns:1fr; }.new-cover img { aspect-ratio:2/1; } }
+  .new-prose-doc .doc-figure, .new-prose-doc .doc-figure-left, .new-prose-doc .doc-figure-right { float:none !important; max-width:100% !important; width:auto; margin:18px 0; text-align:center; }
+  .new-prose-doc .doc-figure img { display:block; margin:0 auto; width:auto; max-width:100%; max-height:540px; height:auto; border-radius:8px; }
+  .new-prose-doc p { max-width:100%; }
 </style>
 
 {/* set:html 生成的节点没有 Astro 作用域属性，正文样式必须全局写，否则颜色 / 字号 / 对齐全部失效。 */}
@@ -353,7 +356,18 @@ if (related.length > 0) tocItems.push({ id: 'related', label: '同类地图', co
   .new-map-detail .doc-color-red{color:var(--doc-red)}.new-map-detail .doc-color-orange{color:var(--doc-orange)}.new-map-detail .doc-color-amber{color:var(--doc-amber)}.new-map-detail .doc-color-green{color:var(--doc-green)}.new-map-detail .doc-color-teal{color:var(--doc-teal)}.new-map-detail .doc-color-cyan{color:var(--doc-cyan)}.new-map-detail .doc-color-blue{color:var(--doc-blue)}.new-map-detail .doc-color-indigo{color:var(--doc-indigo)}.new-map-detail .doc-color-purple{color:var(--doc-purple)}.new-map-detail .doc-color-pink{color:var(--doc-pink)}.new-map-detail .doc-color-gray{color:var(--doc-gray)}.new-map-detail .doc-color-brown{color:var(--doc-brown)}
   .new-map-detail .doc-size-12{font-size:12px}.new-map-detail .doc-size-13{font-size:13px}.new-map-detail .doc-size-14{font-size:14px}.new-map-detail .doc-size-15{font-size:15px}.new-map-detail .doc-size-16{font-size:16px}.new-map-detail .doc-size-17{font-size:17px}.new-map-detail .doc-size-18{font-size:18px}.new-map-detail .doc-size-19{font-size:19px}.new-map-detail .doc-size-20{font-size:20px}.new-map-detail .doc-size-21{font-size:21px}.new-map-detail .doc-size-22{font-size:22px}.new-map-detail .doc-size-23{font-size:23px}.new-map-detail .doc-size-24{font-size:24px}.new-map-detail .doc-size-25{font-size:25px}.new-map-detail .doc-size-26{font-size:26px}.new-map-detail .doc-size-27{font-size:27px}.new-map-detail .doc-size-28{font-size:28px}.new-map-detail .doc-size-29{font-size:29px}.new-map-detail .doc-size-30{font-size:30px}.new-map-detail .doc-size-31{font-size:31px}.new-map-detail .doc-size-32{font-size:32px}
   .new-map-detail .doc-align-left{text-align:left}.new-map-detail .doc-align-center{text-align:center}.new-map-detail .doc-align-right{text-align:right}
-  .new-map-detail .doc-figure { margin:14px 0; }.new-map-detail .doc-figure img { max-width:100%; border-radius:10px; }.new-map-detail .doc-figure-left { float:left; margin-right:16px; max-width:46%; }.new-map-detail .doc-figure-right { float:right; margin-left:16px; max-width:46%; }
+  .new-map-detail .doc-figure { margin:14px 0; }
+
+  .new-prose-doc .doc-figure,
+  .new-prose-doc .doc-figure-left,
+  .new-prose-doc .doc-figure-right { float:none !important; display:block !important; max-width:100% !important; width:auto !important; margin:20px 0 !important; text-align:center; }
+  .new-prose-doc .doc-figure img,
+  .new-prose-doc .doc-figure-left img,
+  .new-prose-doc .doc-figure-right img { display:block; margin:0 auto; width:auto; max-width:100%; max-height:540px; height:auto; border-radius:8px; }
+  .new-prose-doc h4 { font-size:clamp(16px,1.8vw,19px); margin:26px 0 8px; color:var(--new-text); }
+  .new-prose-doc p { margin:10px 0; line-height:1.85; }
+  .new-prose-doc ul, .new-prose-doc ol { padding-left:22px; margin:10px 0; }
+.new-map-detail .doc-figure img { max-width:100%; border-radius:10px; }.new-map-detail .doc-figure-left { float:left; margin-right:16px; max-width:46%; }.new-map-detail .doc-figure-right { float:right; margin-left:16px; max-width:46%; }
 </style>
 
 <script>
