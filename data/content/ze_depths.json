@@ -1,10 +1,11 @@
 {
   "v": 1,
   "slug": "ze_depths",
-  "baseRev": null,
-  "researchRev": null,
+  "baseRev": "fnv1a:36040019",
+  "researchRev": "fnv1a:cf303442",
   "heroImage": "/images/covers/custom/ze_depths.jpg",
   "tags": null,
+  "difficulty": "火星",
   "blocks": [
     {
       "id": "story",
@@ -36,7 +37,9 @@
   ],
   "guideCleared": false,
   "infobox": {
-    "aliases": "冥城：深入地下城"
+    "aliases": "冥城：深入地下城",
+    "players": "64",
+    "duration": "45min"
   },
   "stageRows": null,
   "itemEdits": [
@@ -333,7 +336,12 @@
       "by": "时轩",
       "at": "2026-10-18T17:31:04.681Z",
       "submission": 515
+    },
+    {
+      "revision": 541,
+      "submitter": "时轩",
+      "reviewer": "白叶",
+      "appliedAt": 1794056261030
     }
-  ],
-  "difficulty": "火星"
+  ]
 }

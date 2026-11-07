@@ -1,7 +1,7 @@
 {
   "v": 1,
   "slug": "ze_obf_filth_v1",
-  "baseRev": null,
+  "baseRev": "fnv1a:4b5756ed",
   "researchRev": null,
   "heroImage": "/images/covers/custom/ze_obf_filth_v1.webp",
   "tags": null,
@@ -33,7 +33,12 @@
   "stageRows": null,
   "itemEdits": [],
   "itemOrder": [],
-  "videos": null,
+  "videos": [
+    {
+      "url": "https://www.bilibili.com/video/BV1dqnS6XEL2/?spm_id_from=333.1387.homepage.video_card.click",
+      "kind": "run"
+    }
+  ],
   "history": [
     {
       "source": "data/community",
@@ -98,6 +103,12 @@
       "at": "2026-10-21T07:07:00.952Z",
       "submission": 524,
       "reviseOf": "127"
+    },
+    {
+      "revision": 538,
+      "submitter": "匿名",
+      "reviewer": "白叶",
+      "appliedAt": 1794056261030
     }
   ]
 }

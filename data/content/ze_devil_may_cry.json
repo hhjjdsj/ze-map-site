@@ -1,5 +1,11 @@
 {
+  "v": 1,
   "slug": "ze_devil_may_cry",
+  "baseRev": "fnv1a:9553f04a",
+  "researchRev": "fnv1a:77074ba4",
+  "heroImage": null,
+  "tags": null,
+  "difficulty": null,
   "blocks": [
     {
       "id": "story-0",
@@ -9,10 +15,744 @@
         "content": [
           {
             "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            },
             "content": [
               {
                 "type": "text",
                 "text": "《鬼泣 5》主题的 CS2 僵尸逃跑移植图，作者 @Seth.。地图按原作章节分成五关：第一关序章，第二关城市街道，第三关（大蛾子、骑士两个 BOSS），第四关维吉尔（尤里曾恶魔形态），第五关维吉尔本体。人类方有面包车随机神器与常规刷新神器，僵尸方有 8 种僵尸神器，双方还各有皮肤技能；具体机制与 BOSS 打法见下方攻略。"
+              },
+              {
+                "type": "hardBreak"
+              },
+              {
+                "type": "text",
+                "text": "《鬼泣5》故事剧情："
+              },
+              {
+                "type": "hardBreak"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "《鬼泣4》事件后，"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E5%B0%BC%E7%A6%84/13010611?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "尼禄"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "与好友"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E5%A6%AE%E5%8F%AF/22945461?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "妮可"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "加入了"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E4%BD%86%E4%B8%81/7933040?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "但丁"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "的“恶魔猎人事务所”。一天下午，尼禄正在事务所工作，一个披着斗篷的神秘之客到来，扯下了他那只带有恶魔之力的右臂。手臂在神秘之客的手中化作"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E9%98%8E%E9%AD%94%E5%88%80/6112089?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "阎魔刀"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "。神秘人随即用刀打开一道传送门离去。"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "数日后，一个名叫"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/V/22905664?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "V"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "的年轻人雇佣了但丁团队，希望他们消灭强大的恶魔"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E5%B0%A4%E9%87%8C%E6%9B%BE/23197264?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "尤里曾"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "。众人前往红墓市（Red Grave City），发现城中出现一棵名为"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/Qliphoth/53450773?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "Qliphoth"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "的巨大恶魔之树。这颗树依靠人类的血液成长，被它吸光血液的人会变成无生命的空壳。此后，但丁一行人遭遇尤里曾，在强大的恶魔之王攻击下节节败退。尼禄在V的指引下赶到现场试图干预，同样被恶魔之王击败。但丁阻止尤里曾抓捕尼禄的行动，却导致佩剑"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E5%8F%9B%E9%80%86%E4%B9%8B%E5%88%83/4991260?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "叛逆之刃"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "被击碎，他本人亦被击飞；但丁的伙伴"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E8%95%BE%E8%92%82/1530524?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "蕾蒂"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "和"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E7%BF%A0%E8%A5%BF/6428404?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "翠西"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "则被尤里曾俘虏。最终，V说服尼禄先行逃离。"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "一个月后，尼禄带着妮可打造的义手型兵装回到红墓市。与V会合后，尼禄得知V正在寻找魔界之树所结的果实——传闻中，吃下果实的恶魔能够获得巨大力量，成为魔界之王。两人一边摧毁魔界之树的根部，一边寻找但丁的下落。期间，尼禄救下了蕾蒂，而V则独自行动，找到了"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E6%96%AF%E5%B7%B4%E8%BE%BE%E4%B9%8B%E5%89%91/818509?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "斯巴达之剑"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "以及陷入昏迷的但丁。"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "从昏迷中醒来的但丁救出崔西，继续前往挑战尤里曾。崔西则从V口中得知了真相：尤里曾是但丁的哥哥"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E7%BB%B4%E5%90%89%E5%B0%94/1561721?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "维吉尔"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "的恶魔形态，维吉尔利用阎魔刀的力量分离了自身的魔性与人性，而人类形态便是V，而V身体正随时间逐渐衰败。"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "但丁抵达幼时故居后，意识到阎魔刀拥有分离人性与魔性的能力，进而猜想叛逆之刃也拥有着同样潜能。他将断裂的叛逆之刃刺入自身，通过吸收叛逆之刃与斯巴达之剑的力量，觉醒了完整的恶魔之力，并获得了新武器"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E9%AD%94%E5%89%91%E4%BD%86%E4%B8%81/23353458?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "魔剑但丁"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "。"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "尼禄再次尝试与尤里曾战斗，仍旧不敌尤里曾，但丁及时现身救下了他。凭借新获得的力量，但丁逐渐占据上风。此时，因魔树的果实成熟，尤里曾趁机脱身，在地底深处吞下果实，力量再度增强。但丁率先抵达与尤里曾对峙，尼禄则在赶来途中从恶魔玛尔法斯手中救出V，并从V口中得知但丁与维吉尔的过往纠葛。当尼禄与V赶到时，但丁刚好击败尤里曾，濒死的V阻止了但丁的最后一击，他通过击杀尤里曾与他融合，重新变回了维吉尔。"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "维吉尔使用阎魔刀开启传送门回到魔界之树顶端，告知但丁等他恢复全力后再一决胜负。尼禄为报断臂之仇，坚持要追上去与维吉尔有个了断，然而但丁却告诉他真相：维吉尔就是尼禄的父亲。他不希望尼禄背上弑亲之名，便孤身前往魔界之树顶端。随后，但丁面对V曾经的使魔——实际为维吉尔化身"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/Nelo%20Angelo/4388090?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "Nelo Angelo"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "时期的具象化记忆。使魔们选择死在但丁手中，以削减维吉尔的昔日创伤。"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "但丁与维吉尔展开决战，维吉尔由此得知尼禄是自己的儿子。另一边，尼禄在前往魔界之树的路上拨通与"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://baike.baidu.com/item/%E5%A7%AC%E8%8E%89%E5%8F%B6/4902149?fromModule=lemma_inlink",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": "innerLink_eFDl8",
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "姬莉叶"
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "的电话，倾诉内心的挣扎与苦恼，最终平复了心绪。决心阻止血亲自残的他，觉醒了恶魔之力，断掉的手臂也由此恢复。赶到现场后，他制止了两人的战斗，誓言终结这场多年的兄弟纷争，并最终击败了维吉尔。为了斩断魔界之树并封印连接魔界和人间的传送门，但丁和维吉尔决心前往魔界。临走前，维吉尔将V的笔记本留给了尼禄。"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "fontSize": null,
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "后来，见证魔界之树崩塌的尼禄与妮可离去，继续踏上狩猎恶魔的旅途。而在魔界，但丁与维吉尔仍持续着切磋，同时联手对抗来袭的恶魔，昔日的兄弟阋墙，在多年后终于迎来了如真正兄弟般相处的友好时光。而另一边，始终没有收到但丁任何消息的翠西与蕾蒂，在但丁的代理人莫里森的安排下，接到了新的工作。"
               }
             ]
           }
@@ -3583,8 +4323,55 @@
           }
         ]
       }
+    },
+    {
+      "id": "intro",
+      "type": "intro",
+      "doc": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "鬼泣（Devil May Cry） CS2 移植图，作者 @Seth.。攻略区为站内可编辑内容，整理自 Liyuu～ 的《鬼泣神器介绍与 boss 战详解》（已获作者同意转载，鸣谢：冬初淡夏、無玖9）。"
+              },
+              {
+                "type": "hardBreak"
+              },
+              {
+                "type": "text",
+                "text": "原版 PDF ："
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://docs.qq.com/doc/DYmxZSE5jTU1wV1JB",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "https://docs.qq.com/doc/DYmxZSE5jTU1wV1JB"
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
+  "guideCleared": false,
+  "infobox": {},
+  "stageRows": null,
   "itemEdits": [
     {
       "action": "add",
@@ -3753,6 +4540,16 @@
       "uses": 0,
       "intro": "只在第四、五关出现；右键「裸」生成大范围球体，强制定身范围内人类，隔墙、隔层也能生效；人类可用时停等神器重置地速逃出。",
       "note": "僵尸皮肤"
+    }
+  ],
+  "itemOrder": [],
+  "videos": null,
+  "history": [
+    {
+      "revision": 540,
+      "submitter": "Liyuu~",
+      "reviewer": "白叶",
+      "appliedAt": 1794056261030
     }
   ]
 }

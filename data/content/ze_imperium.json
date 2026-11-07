@@ -1,0 +1,33 @@
+{
+  "v": 1,
+  "slug": "ze_imperium",
+  "baseRev": "fnv1a:6ac4aeb7",
+  "researchRev": null,
+  "heroImage": null,
+  "tags": null,
+  "difficulty": null,
+  "blocks": [],
+  "guideCleared": false,
+  "infobox": {},
+  "stageRows": null,
+  "itemEdits": [
+    {
+      "action": "add",
+      "name": "高斯",
+      "cd": 4.5,
+      "uses": 10,
+      "intro": "彩蛋神器，需要触发四个彩蛋按钮才能拾取，效果为直线小范围超强减速",
+      "note": "该神器拾取后会卡投掷物模型，并且有实体，在移动电梯平台可以误伤队友，谨慎拾取"
+    }
+  ],
+  "itemOrder": [],
+  "videos": null,
+  "history": [
+    {
+      "revision": 539,
+      "submitter": "匿名",
+      "reviewer": "白叶",
+      "appliedAt": 1794056261030
+    }
+  ]
+}

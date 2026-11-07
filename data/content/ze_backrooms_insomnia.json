@@ -1,7 +1,7 @@
 {
   "v": 1,
   "slug": "ze_backrooms_insomnia",
-  "baseRev": "fnv1a:89582596",
+  "baseRev": "fnv1a:563b776f",
   "researchRev": "fnv1a:1b75b002",
   "heroImage": null,
   "tags": null,
@@ -58,6 +58,94 @@
               {
                 "type": "text",
                 "text": "工坊订阅 10911、浏览 11632。"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "story",
+      "type": "story",
+      "doc": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "《后室2：失眠症》延续作者前作《ze_Backrooms:Deathbed》的后室设定。装备储藏室里保存着一件从后室带回的特殊装置；探索队借助它主动切入不同层级。出发前，监控会显示下一层的样貌，队伍用层级中收集的后室材料准备补给，确认无误后按下广播，十秒后开始探索。"
+              },
+              {
+                "type": "text",
+                "text": "Level 0",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": " 的黄色大厅、"
+              },
+              {
+                "type": "text",
+                "text": "Level 1「Habitable Zone」",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": " 与 "
+              },
+              {
+                "type": "text",
+                "text": "Level 37「Sublimity」",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": " 的泳池层，都是这支队伍可能落入的区域。"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "层级并不空。每个层级都有自己的容器、实体和危险；其他探索者留下的容器散布在主关卡里，打开后可能得到有用物资，也可能一无所获。随着队伍通过的层级增多，被称为「幻影」的实体也会越来越多。它们像是被人为制造、又能被某种力量操控的猎手，和原本就盘踞在层级里的笑魇、窃皮者、细菌、派对客一起，把探索变成一场持续的追猎。"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "队伍还要维持"
+              },
+              {
+                "type": "text",
+                "text": "理智",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": "：同伴被实体杀死、长时间待在黑暗里、幻影使用能力，都会让理智下降；理智见底会带来更糟的后果。层级里的声音并不友善——“HELP ME”“THEY ARE EVERYWHERE”“IT MAKES ME FEEL ALIVE”“don't resist it”“bring us to otherworldly”——它们像是在引诱人类继续深入。对探索队来说，唯一能做的只有继续找路、找电梯、在幻影追上之前离开；而「失眠症」这个名字，也像在暗示这场探索从一开始就不是能轻易醒来的梦。"
               }
             ]
           }
@@ -528,6 +616,12 @@
       "submitter": "宇宙机器人",
       "reviewer": "123",
       "appliedAt": 1793095116660
+    },
+    {
+      "revision": 535,
+      "submitter": "SolsticeStarry",
+      "reviewer": "霓光",
+      "appliedAt": 1794056261030
     }
   ]
 }
