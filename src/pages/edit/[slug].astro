@@ -168,9 +168,10 @@ const tocItems = [
 
 <script type="application/json" id="initial-blocks" set:html={JSON.stringify(initialBlocks)}></script>
 <script type="application/json" id="initial-structured" set:html={JSON.stringify({ stageRows: initialStageRows, stageDocs: initialStageDocs, items: initialItems, videos: initialVideos, baseRev: data.contentRev ?? null, researchRev: data.researchRev ?? null, baselineEmpty })}></script>
+<script type="application/json" id="initial-gallery" set:html={JSON.stringify(galleryImages.map((image: any) => ({ src: image.localSrc ?? image.src, caption: image.caption ?? "" })))}></script>
 <script type="application/json" id="initial-tags" set:html={JSON.stringify(initialTags)}></script>
 <script>
-  import { Editor, Extension } from '@tiptap/core';
+  import { Editor, Extension, Node } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
   import { TextStyle } from '@tiptap/extension-text-style';
   import TextAlign from '@tiptap/extension-text-align';
@@ -277,9 +278,38 @@ const tocItems = [
   let initialGuideSignature = '';
   let stagesDirty = false;
   let videosDirty = false;
+  /* 正文图片节点：和 shared/page-schema.mjs 的 figure 对齐（attrs.src / attrs.side）。 */
+  const Figure = Node.create({
+    name: 'figure',
+    group: 'block',
+    atom: true,
+    draggable: true,
+    selectable: true,
+    addAttributes() {
+      return {
+        src: { default: null },
+        side: { default: 'left' },
+        n: { default: null },
+      };
+    },
+    parseHTML() {
+      return [{
+        tag: 'figure.doc-figure',
+        getAttrs: (element: HTMLElement) => ({
+          src: element.querySelector('img')?.getAttribute('src') ?? null,
+          side: element.classList.contains('doc-figure-right') ? 'right' : 'left',
+        }),
+      }];
+    },
+    renderHTML({ HTMLAttributes }: any) {
+      const side = HTMLAttributes.side === 'right' ? 'right' : 'left';
+      return ['figure', { class: `doc-figure doc-figure-${side}` }, ['img', { src: HTMLAttributes.src ?? '', alt: '' }]];
+    },
+  });
   const extensions = [
     /* StarterKit 自带 link / underline；再单独引入会重复注册扩展。 */
     StarterKit.configure({ heading: { levels: [3, 4] }, link: { protocols: ['https'], openOnClick: false, autolink: true } }),
+    Figure,
     TokenTextStyle,
     FontSize,
     TokenColor,
@@ -372,6 +402,7 @@ const tocItems = [
     size.onchange = () => { const value = Number(size.value); if (value) (editor.chain().focus() as any).setFontSize(value).run(); else (editor.chain().focus() as any).unsetFontSize().run(); size.value = ''; }; bar.append(size);
     const align = document.createElement('select'); align.title = '对齐'; [['left', '左对齐'], ['center', '居中'], ['right', '右对齐']].forEach(([value, label]) => align.append(new Option(label, value)));
     align.onchange = () => { editor.chain().focus().setTextAlign(align.value).run(); }; bar.append(align);
+    command('🖼', '插入图片', () => openFigurePicker(editor));
     command('⌫', '清除格式', () => editor.chain().focus().unsetAllMarks().clearNodes().run());
     /* 默认色 = 页面正文色（暗色主题下就是详情页的亮白色），移除颜色覆盖。 */
     const defaultColor = document.createElement('button');
@@ -394,6 +425,79 @@ const tocItems = [
     });
     return bar;
   };
+
+  /* 插入图片：可以从图片集挑、粘贴站内地址，或直接上传一张（走 /api/content-gallery）。 */
+  let figurePicker: HTMLElement | null = null;
+  let figureEditor: Editor | null = null;
+  const insertFigure = (src: string) => {
+    if (!figureEditor || !src) return;
+    figureEditor.chain().focus().insertContent({ type: 'figure', attrs: { src, side: 'left' } }).run();
+    closeFigurePicker();
+  };
+  const closeFigurePicker = () => {
+    if (figurePicker) figurePicker.hidden = true;
+    figureEditor = null;
+  };
+  const openFigurePicker = (editor: Editor) => {
+    figureEditor = editor;
+    if (!figurePicker) {
+      const overlay = document.createElement('div');
+      overlay.className = 'edit-figure-picker';
+      overlay.hidden = true;
+      overlay.innerHTML = [
+        '<div class="edit-figure-dialog" role="dialog" aria-label="插入图片">',
+        '  <div class="edit-figure-head"><strong>插入图片</strong><button type="button" data-close>×</button></div>',
+        '  <div class="edit-figure-row"><input type="text" data-url placeholder="粘贴站内图片地址，例如 /images/... " /><button type="button" data-insert>插入</button></div>',
+        '  <div class="edit-figure-row"><label class="edit-figure-upload">上传图片<input type="file" accept="image/*" data-file hidden /></label><span data-status class="edit-figure-status"></span></div>',
+        '  <div class="edit-figure-grid" data-grid></div>',
+        '</div>',
+      ].join('');
+      document.body.append(overlay);
+      const gallery = JSON.parse(document.getElementById('initial-gallery')?.textContent ?? '[]') as Array<{ src: string; caption?: string }>;
+      const grid = overlay.querySelector('[data-grid]')!;
+      for (const image of gallery) {
+        if (!image?.src) continue;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.title = image.caption || image.src;
+        button.innerHTML = '<img alt="" src="' + image.src.replace(/"/g, '&quot;') + '" />';
+        button.onclick = () => insertFigure(image.src);
+        grid.append(button);
+      }
+      overlay.addEventListener('click', (event) => {
+        if (event.target === overlay || (event.target as HTMLElement).closest('[data-close]')) closeFigurePicker();
+      });
+      overlay.querySelector('[data-insert]')?.addEventListener('click', () => {
+        const input = overlay.querySelector('[data-url]') as HTMLInputElement;
+        insertFigure(input.value.trim());
+      });
+      overlay.querySelector('[data-file]')?.addEventListener('change', async (event) => {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+        const status = overlay.querySelector('[data-status]')!;
+        status.textContent = '上传中…';
+        const fd = new FormData();
+        fd.append('map', location.pathname.split('/').filter(Boolean).pop() ?? '');
+        fd.append('image', file);
+        fd.append('caption', file.name.replace(/\.[^.]+$/, ''));
+        try {
+          const res = await fetch('/api/content-gallery', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (!res.ok || !data.ok) throw new Error(data.error || 'HTTP ' + res.status);
+          const media = data.media ?? {};
+          const src = media.localSrc || media.src;
+          if (!src) throw new Error('没有拿到图片地址');
+          insertFigure(src);
+        } catch (error) {
+          status.textContent = '上传失败：' + (error instanceof Error ? error.message : String(error));
+        }
+      });
+      figurePicker = overlay;
+    }
+    figurePicker.hidden = false;
+    (figurePicker.querySelector('[data-url]') as HTMLInputElement)?.focus();
+  };
+
   const render = () => {
      for (const editor of editors.values()) editor.destroy();
      editors.clear(); blocksEl.replaceChildren(); flowBlocksEl.replaceChildren(); guideBlocksEl.replaceChildren();
@@ -538,6 +642,22 @@ const tocItems = [
   .structured-row { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)) auto; gap:7px; margin:8px 0; }.structured-row input,.structured-row textarea,.structured-row select { width:100%; min-width:0; box-sizing:border-box; border:1px solid var(--edit-border-2); border-radius:5px; padding:7px; background:var(--edit-panel-2); color:var(--edit-text); font:12px inherit; }.structured-row textarea { min-height:40px; resize:none; overflow:hidden; line-height:1.5; }.structured-row button { white-space:nowrap; border:1px solid var(--edit-border-2); border-radius:5px; background:var(--edit-panel); color:var(--edit-muted); }.item-row { grid-template-columns:1.2fr .6fr .6fr 1.6fr 1.6fr auto; }.video-row { grid-template-columns:1fr 120px auto; }.structured-row.is-removed { opacity:.45; text-decoration:line-through; }
    @media (min-width:1600px) { .edit-sidebar .edit-toc { position:fixed; top:96px; right:12px; width:min(280px, calc((100vw - 1240px) / 2 - 24px)); max-height:calc(100vh - 120px); overflow-y:auto; z-index:60; } } @media (max-width:850px) { .edit-layout { grid-template-columns:1fr; }.edit-sidebar { position:static; order:0; }.edit-toc { max-height:none; overflow:visible; }.edit-gallery-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
    @media (max-width:720px) { .edit-page { padding:24px 0 60px; }.edit-header { align-items:flex-start; flex-direction:column; }.edit-layout { padding:22px 16px 0; }.edit-fields { grid-template-columns:1fr; }.edit-actions { align-items:stretch; flex-direction:column; }.structured-row,.item-row { grid-template-columns:1fr; }.stage-card-head { grid-template-columns:1fr; }.edit-mode-bar,.edit-auth-banner { flex-direction:column; align-items:flex-start; } }
+
+  .edit-figure-picker { position: fixed; inset: 0; z-index: 200; background: rgba(6, 9, 14, .66); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .edit-figure-picker[hidden] { display: none; }
+  .edit-figure-dialog { width: min(94vw, 760px); max-height: 84vh; overflow: auto; background: var(--edit-panel, #141a23); border: 1px solid var(--edit-border, #26303d); border-radius: 14px; padding: 16px; color: var(--edit-text, #e8eef7); }
+  .edit-figure-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .edit-figure-head button { border: 0; background: transparent; color: inherit; font-size: 20px; cursor: pointer; }
+  .edit-figure-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+  .edit-figure-row input[type="text"] { flex: 1 1 260px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--edit-border, #26303d); background: var(--edit-bg, #0d1219); color: inherit; }
+  .edit-figure-row button, .edit-figure-upload { padding: 7px 12px; border-radius: 8px; border: 1px solid var(--edit-border, #26303d); background: var(--edit-bg, #0d1219); color: inherit; cursor: pointer; font-size: 13px; }
+  .edit-figure-status { font-size: 12px; opacity: .75; }
+  .edit-figure-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+  .edit-figure-grid button { padding: 0; border: 1px solid var(--edit-border, #26303d); border-radius: 8px; overflow: hidden; background: #000; cursor: pointer; aspect-ratio: 16 / 10; }
+  .edit-figure-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .block-rich-editor figure.doc-figure { margin: 14px 0; }
+  .block-rich-editor figure.doc-figure img { display: block; max-width: 100%; height: auto; border-radius: 8px; }
+  .block-rich-editor figure.doc-figure.ProseMirror-selectednode { outline: 2px solid var(--edit-accent, #e5484d); }
 </style>
 
 <script>
