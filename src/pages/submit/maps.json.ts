@@ -85,6 +85,20 @@ export const GET: APIRoute = async () => {
     if (galleryUser) row.galleryUser = galleryUser;
     if (d.contentRev) row.contentRev = d.contentRev;
 
+    /* 攻略条目：单项编辑要能选条目、改富文本，所以把当前 doc 一起带出来。
+       只有已经写了攻略条目（guideItem）的图才带，避免 989 张图全塞一遍。 */
+    const contentForRow = contentBySlug.has(m.id) ? contentBySlug.get(m.id) : null;
+    const contentBlocks = Array.isArray(contentForRow?.blocks) ? contentForRow.blocks : [];
+    const guideBlocks = contentBlocks.filter((block: any) => block?.type === 'guideItem');
+    if (guideBlocks.length) {
+      row.guides = guideBlocks.map((block: any) => ({
+        id: String(block.id ?? ''),
+        title: String(block.title ?? ''),
+        doc: block.doc ?? null,
+      }));
+      row.gallery = galleryImages.map((image) => ({ src: image.localSrc ?? image.src, caption: image.caption ?? '' }));
+    }
+
     /* 神器 / 道具现状：手写表 + 服务器配置打底 + 社区已通过的更正。
        字段用短键 —— 1700 多行，键名能省下十几 KB。
        k: doc=手写正文里的表 / server=服务器配置 / updated,added,removed=社区改过。

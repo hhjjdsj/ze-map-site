@@ -84,6 +84,24 @@ const fields = Object.entries(rules)
         <div id="se-single-editor"></div>
       </section>
 
+      <section class="se-card" id="se-guides" hidden>
+        <div class="se-card-head">
+          <h2 class="se-h2">攻略条目</h2>
+          <span class="se-note">和整页编辑共用同一份内容；这里新增的条目两边都会出现</span>
+          <button class="se-btn se-btn-sm" type="button" id="se-guide-add">＋ 新增一条</button>
+        </div>
+        <div class="se-fieldchips" id="se-guide-chips"></div>
+        <div id="se-guide-panel">
+          <input id="se-guide-title" class="se-guide-title" placeholder="条目名称，例如：二.僵尸神器" />
+          <div class="se-guide-bar" id="se-guide-toolbar"></div>
+          <div class="se-guide-body" id="se-guide-body"></div>
+          <div class="se-guide-foot">
+            <button class="se-btn se-btn-sm" type="button" id="se-guide-delete">删除当前条目</button>
+            <span class="se-note" id="se-guide-status"></span>
+          </div>
+        </div>
+      </section>
+
       <section class="se-card" id="se-full" hidden>
         <p class="se-note">所有字段已按现状填好；改过的字段会高亮，提交时只带上改过的项。</p>
         <div id="se-full-fields" class="se-fields"></div>
@@ -154,6 +172,9 @@ const fields = Object.entries(rules)
   <script type="application/json" id="se-field-defs" set:html={JSON.stringify(fields)} />
 
   <script>
+    import { Editor, Node } from '@tiptap/core';
+    import StarterKit from '@tiptap/starter-kit';
+
     type FieldDef = { key: string; label: string; kind: string; hint: string; requireLogin: boolean; values: string[] | null };
     type MapRow = Record<string, any>;
     const defs: FieldDef[] = JSON.parse(document.getElementById('se-field-defs')?.textContent ?? '[]');
@@ -404,9 +425,197 @@ const fields = Object.entries(rules)
     /* 特殊项：没有普通编辑器，各自落在下面的卡片里 */
     const SPECIAL_FIELDS = [
       { key: 'items', label: '神器 / 道具' },
+      { key: 'guides', label: '攻略条目' },
       { key: 'cover', label: '地图封面' },
       { key: 'gallery', label: '图片集图片' },
     ];
+
+    /* 攻略条目：和整页编辑同一份 blocks；提交时整组攻略条目一起进 patch.blocks。 */
+    const GuideFigure = Node.create({
+      name: 'figure',
+      group: 'block',
+      atom: true,
+      draggable: true,
+      addAttributes() {
+        return { src: { default: null }, side: { default: 'left' }, n: { default: null } };
+      },
+      parseHTML() {
+        return [{
+          tag: 'figure.doc-figure',
+          getAttrs: (element: HTMLElement) => ({
+            src: element.querySelector('img')?.getAttribute('src') ?? null,
+            side: element.classList.contains('doc-figure-right') ? 'right' : 'left',
+          }),
+        }];
+      },
+      renderHTML({ HTMLAttributes }: any) {
+        const side = HTMLAttributes.side === 'right' ? 'right' : 'left';
+        return ['figure', { class: 'doc-figure doc-figure-' + side }, ['img', { src: HTMLAttributes.src ?? '', alt: '' }]];
+      },
+    });
+    const emptyDoc = () => ({ type: 'doc', content: [] });
+    let guideItems: Array<{ id: string; title: string; doc: any }> = [];
+    let guideActive = 0;
+    let guideDirty = false;
+    let guideEditor: Editor | null = null;
+    let guidePicker: HTMLElement | null = null;
+    const guideStatus = (text: string) => { const el = document.getElementById('se-guide-status'); if (el) el.textContent = text; };
+    const insertGuideFigure = (src: string) => {
+      if (!guideEditor || !src) return;
+      guideEditor.chain().focus().insertContent({ type: 'figure', attrs: { src, side: 'left' } }).run();
+      guideDirty = true;
+      closeGuidePicker();
+      guideStatus('图片已插入；提交后进入审核。');
+    };
+    function closeGuidePicker() { if (guidePicker) guidePicker.hidden = true; }
+    function openGuidePicker() {
+      if (!guidePicker) {
+        const overlay = document.createElement('div');
+        overlay.className = 'se-guide-picker';
+        overlay.hidden = true;
+        overlay.innerHTML = '<div class="se-guide-picker-dialog"><div class="se-guide-picker-head"><strong>插入图片</strong><button type="button" data-close>×</button></div><div class="se-guide-picker-row"><input type="text" data-url placeholder="粘贴站内图片地址，例如 /images/..." /><button type="button" data-insert>插入</button></div><div class="se-guide-picker-row"><label class="se-btn se-btn-sm">上传图片<input type="file" accept="image/*" data-file hidden /></label><span class="se-note" data-status></span></div><div class="se-guide-picker-grid" data-grid></div></div>';
+        document.body.append(overlay);
+        const grid = overlay.querySelector('[data-grid]')!;
+        const gallery = Array.isArray((current as any)?.gallery) ? (current as any).gallery : [];
+        for (const image of gallery) {
+          if (!image?.src) continue;
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.title = image.caption || image.src;
+          button.innerHTML = '<img alt="" src="' + String(image.src).replace(/"/g, '&quot;') + '" />';
+          button.addEventListener('click', () => insertGuideFigure(image.src));
+          grid.append(button);
+        }
+        overlay.addEventListener('click', (event) => {
+          const target = event.target as HTMLElement;
+          if (target === overlay || target.closest('[data-close]')) closeGuidePicker();
+        });
+        overlay.querySelector('[data-insert]')?.addEventListener('click', () => {
+          const input = overlay.querySelector('[data-url]') as HTMLInputElement;
+          insertGuideFigure(input.value.trim());
+        });
+        overlay.querySelector('[data-file]')?.addEventListener('change', async (event) => {
+          const file = (event.target as HTMLInputElement).files?.[0];
+          if (!file || !current) return;
+          const status = overlay.querySelector('[data-status]')!;
+          status.textContent = '上传中…';
+          const fd = new FormData();
+          fd.append('map', current.slug);
+          fd.append('image', file);
+          fd.append('caption', file.name.replace(/\.[^.]+$/, ''));
+          try {
+            const res = await fetch('/api/content-gallery', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.error || 'HTTP ' + res.status);
+            const src = data.media?.localSrc || data.media?.src;
+            if (!src) throw new Error('没有拿到图片地址');
+            insertGuideFigure(src);
+          } catch (error) {
+            status.textContent = '上传失败：' + (error instanceof Error ? error.message : String(error));
+          }
+        });
+        guidePicker = overlay;
+      }
+      guidePicker.hidden = false;
+      (guidePicker.querySelector('[data-url]') as HTMLInputElement)?.focus();
+    }
+    function ensureGuideEditor() {
+      if (guideEditor) return guideEditor;
+      const host = document.getElementById('se-guide-body');
+      if (!host) return null;
+      guideEditor = new Editor({
+        element: host,
+        extensions: [StarterKit.configure({ heading: { levels: [3, 4] } }), GuideFigure],
+        content: guideItems[guideActive]?.doc ?? emptyDoc(),
+        onUpdate: ({ editor }) => {
+          const item = guideItems[guideActive];
+          if (item) item.doc = editor.getJSON();
+          guideDirty = true;
+          guideStatus('已修改；提交后进入审核队列。');
+        },
+      });
+      return guideEditor;
+    }
+    function renderGuideToolbar() {
+      const bar = document.getElementById('se-guide-toolbar');
+      if (!bar || bar.dataset.ready) return;
+      bar.dataset.ready = '1';
+      const command = (label: string, title: string, run: () => void) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'se-btn se-btn-sm';
+        button.textContent = label;
+        button.title = title;
+        button.addEventListener('click', run);
+        bar.append(button);
+      };
+      const chain = () => guideEditor?.chain().focus();
+      command('B', '粗体', () => chain()?.toggleBold().run());
+      command('I', '斜体', () => chain()?.toggleItalic().run());
+      command('U', '下划线', () => chain()?.toggleUnderline().run());
+      command('H3', '三级标题', () => chain()?.toggleHeading({ level: 3 }).run());
+      command('H4', '四级标题', () => chain()?.toggleHeading({ level: 4 }).run());
+      command('•', '无序列表', () => chain()?.toggleBulletList().run());
+      command('1.', '有序列表', () => chain()?.toggleOrderedList().run());
+      command('🖼', '插入图片', () => openGuidePicker());
+    }
+    function renderGuides() {
+      const card = document.getElementById('se-guides');
+      if (!card) return;
+      const visible = mode === 'single' && currentField === 'guides' && !!current;
+      card.hidden = !visible;
+      if (!visible) return;
+      const chips = document.getElementById('se-guide-chips');
+      const panel = document.getElementById('se-guide-panel');
+      if (!chips || !panel) return;
+      chips.replaceChildren();
+      panel.hidden = guideItems.length === 0;
+      guideItems.forEach((item, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'se-fchip' + (index === guideActive ? ' is-on' : '');
+        button.textContent = item.title || '未命名条目';
+        button.addEventListener('click', () => {
+          guideActive = index;
+          renderGuides();
+        });
+        chips.append(button);
+      });
+      if (!guideItems.length) {
+        guideStatus('这张图还没有攻略条目，点右上角「新增一条」开始写。');
+        return;
+      }
+      const title = document.getElementById('se-guide-title') as HTMLInputElement | null;
+      if (title && document.activeElement !== title) title.value = guideItems[guideActive]?.title ?? '';
+      renderGuideToolbar();
+      const editor = ensureGuideEditor();
+      editor?.commands.setContent(guideItems[guideActive]?.doc ?? emptyDoc(), false);
+      guideStatus(guideDirty ? '有未提交的修改。' : '');
+    }
+    document.getElementById('se-guide-title')?.addEventListener('input', (event) => {
+      const item = guideItems[guideActive];
+      if (!item) return;
+      item.title = (event.target as HTMLInputElement).value;
+      guideDirty = true;
+      guideStatus('已修改；提交后进入审核队列。');
+      const chip = document.querySelectorAll('#se-guide-chips .se-fchip')[guideActive] as HTMLElement | undefined;
+      if (chip) chip.textContent = item.title || '未命名条目';
+    });
+    document.getElementById('se-guide-add')?.addEventListener('click', () => {
+      guideItems.push({ id: 'guide-' + Date.now(), title: '新的攻略技巧', doc: emptyDoc() });
+      guideActive = guideItems.length - 1;
+      guideDirty = true;
+      renderGuides();
+    });
+    document.getElementById('se-guide-delete')?.addEventListener('click', () => {
+      if (!guideItems.length) return;
+      if (!confirm('删除当前攻略条目？提交后需要审核通过才会生效。')) return;
+      guideItems.splice(guideActive, 1);
+      guideActive = Math.max(0, Math.min(guideActive, guideItems.length - 1));
+      guideDirty = true;
+      renderGuides();
+    });
+
 
     function renderSingle() {
       els.field.textContent = '';
@@ -453,6 +662,9 @@ const fields = Object.entries(rules)
       if (editorCard) editorCard.hidden = mode !== 'single' || isSpecial;
       els.items.hidden = !(isSpecial && currentField === 'items') || mode === 'full';
       els.media.hidden = !(isSpecial && (currentField === 'cover' || currentField === 'gallery'));
+      const guidesCard = document.getElementById('se-guides');
+      if (guidesCard) guidesCard.hidden = !(isSpecial && currentField === 'guides') || mode !== 'single';
+      if (isSpecial && currentField === 'guides') renderGuides();
       const coverBox = document.getElementById('se-cover-box');
       const galleryBox = document.getElementById('se-gallery-box');
       if (coverBox) coverBox.hidden = currentField !== 'cover';
@@ -608,6 +820,14 @@ const fields = Object.entries(rules)
         removed: String(r.action ?? '') === 'remove',
       }));
       itemBase = itemRows.map((r) => ({ ...r }));
+      if (guideEditor) { guideEditor.destroy(); guideEditor = null; }
+      guideItems = (Array.isArray((row as any).guides) ? (row as any).guides : []).map((guide: any) => ({
+        id: String(guide?.id ?? ''),
+        title: String(guide?.title ?? ''),
+        doc: guide?.doc ?? emptyDoc(),
+      }));
+      guideActive = 0;
+      guideDirty = false;
       renderSide(row);
       renderSingle();
       renderFull();
@@ -801,7 +1021,7 @@ const fields = Object.entries(rules)
     async function sendText() {
       if (!current) return;
       const items = payload();
-      if (!items.length) {
+      if (!items.length && !guideDirty) {
         els.result.hidden = false;
         els.result.textContent = '还没有改动 —— 改一项再提交。';
         return;
@@ -810,6 +1030,16 @@ const fields = Object.entries(rules)
       els.result.textContent = '提交中…';
       try {
         const patch = contentPatch(items);
+        if (guideDirty) {
+          const activeDoc = guideEditor?.getJSON();
+          patch.blocks = guideItems.map((item, index) => ({
+            id: item.id,
+            type: 'guideItem',
+            title: item.title,
+            doc: index === guideActive && activeDoc ? activeDoc : (item.doc ?? emptyDoc()),
+          }));
+          patch.guideCleared = patch.blocks.length === 0;
+        }
         const changed = Object.keys(patch).filter((key) => !['slug', 'mode', 'baseRev'].includes(key));
         if (!changed.length) {
           els.result.textContent = '没有可提交到内容层的字段。';
@@ -1352,5 +1582,22 @@ const fields = Object.entries(rules)
       .se-tabs { display: flex; width: 100%; }
       .se-tab { flex: 1; }
     }
-  </style>
+    .se-guide-title { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--se-line, #2b3543); background: var(--se-bg, #0e141c); color: inherit; font-weight: 600; }
+  .se-guide-bar { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .se-guide-bar .se-btn { min-width: 34px; }
+  .se-guide-body { min-height: 220px; border: 1px solid var(--se-line, #2b3543); border-radius: 10px; padding: 12px; background: var(--se-panel, #101720); }
+  .se-guide-body .ProseMirror { min-height: 196px; outline: none; }
+  .se-guide-body figure.doc-figure img { display: block; max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; }
+  .se-guide-foot { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .se-guide-picker { position: fixed; inset: 0; z-index: 300; background: rgba(5, 8, 12, .7); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .se-guide-picker[hidden] { display: none; }
+  .se-guide-picker-dialog { width: min(94vw, 720px); max-height: 84vh; overflow: auto; padding: 16px; border-radius: 14px; border: 1px solid var(--se-line, #2b3543); background: var(--se-panel, #101720); color: inherit; }
+  .se-guide-picker-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .se-guide-picker-head button { border: 0; background: transparent; color: inherit; font-size: 20px; cursor: pointer; }
+  .se-guide-picker-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .se-guide-picker-row input[type="text"] { flex: 1 1 240px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--se-line, #2b3543); background: var(--se-bg, #0e141c); color: inherit; }
+  .se-guide-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+  .se-guide-picker-grid button { padding: 0; border: 1px solid var(--se-line, #2b3543); border-radius: 8px; overflow: hidden; background: #000; aspect-ratio: 16 / 10; cursor: pointer; }
+  .se-guide-picker-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+</style>
 </BaseLayout>
