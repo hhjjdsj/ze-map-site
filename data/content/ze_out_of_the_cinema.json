@@ -1,0 +1,87 @@
+{
+  "v": 1,
+  "slug": "ze_out_of_the_cinema",
+  "baseRev": "fnv1a:315a6a7b",
+  "researchRev": null,
+  "heroImage": null,
+  "tags": [
+    "单关",
+    "BOSS战",
+    "迷宫",
+    "电子音乐"
+  ],
+  "difficulty": "困难",
+  "blocks": [],
+  "guideCleared": false,
+  "infobox": {
+    "author": "闪电",
+    "duration": "约25分钟",
+    "stages": ""
+  },
+  "stageRows": null,
+  "itemEdits": [
+    {
+      "action": "add",
+      "name": "奶",
+      "cd": 0,
+      "uses": 1,
+      "intro": "加血",
+      "note": "一次性"
+    },
+    {
+      "action": "add",
+      "name": "锤",
+      "cd": 0,
+      "uses": 1,
+      "intro": "向前方发送一道雷电",
+      "note": "一次性"
+    }
+  ],
+  "itemOrder": [],
+  "videos": null,
+  "history": [
+    {
+      "revision": 542,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1794450933463
+    },
+    {
+      "revision": 543,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1794450933463
+    },
+    {
+      "revision": 544,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1794450933463
+    },
+    {
+      "revision": 545,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1794450933463
+    },
+    {
+      "revision": 546,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1794450933463
+    },
+    {
+      "revision": 547,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1794450933463
+    },
+    {
+      "revision": 548,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1794450933463
+    }
+  ],
+  "title": "飞常电影院"
+}
