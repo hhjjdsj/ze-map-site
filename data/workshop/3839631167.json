@@ -1,0 +1,18 @@
+{
+  "id": "3839631167",
+  "result": 1,
+  "title": "ze_Pirates_Port_Royal_Xmas",
+  "description": "To Server Administrators This map will be removed from the Workshop at 12:00 a.m. JST on December 27. 서버 관리자님께 이 맵은 일본 시간 12월 27일 0:00에 워크숍에서 비공개로 전환됩니다. 致服务器管理员 该地图将于日本时间12月27日0:00从“工作坊”中移除 ✼••┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈••✼ ze_Pirates_Port_Royal XMAS A Christmas edition of Puklica CS2 ze_Pirates_Port_Royal , built from DarkerZ 's XMAS stripper (v1.5) for the CS:GO version (ze_pirates_port_royal_v5_6), ported to the CS2 map and recompiled with baked lighting. 7 levels Black Pearl Cannon SnowMaiden Bad Santa True Santa Christmas Day Christmas Night Features Bosses and items in Christmas style: Santa, SnowMaiden, True Santa, candy swords, bottles, fireworks, ice wall, gift bombs, Christmas trees, gifts and snowfall. Level 6 \"Christmas Day\" : the XMAS stripper's own marathon through the whole map, as in the CS:GO XMAS version: the first gate under gift bombs, the village, the cannon at the fort, the residence, the bridge and the ship to the Snow Maiden's island, back over the bridge and through the village to the cellar, Bad Santa's house and True Santa - with a 24-song Christmas music manager and a blue winter grade. All five human items wait in a row at the start. Level 7 \"Christmas Night\" : the same route at night with ice-slash lasers, falling crystals, the bosses' XMAS attacks (cannon, Snow Maiden, Bad Santa) and the XMAS stripper's final \"Christmas Night\" event on the kraken deck. At the start, two arched passages through the wall (from the north bank and from the middle walkway) let you get past the first lasers, like the openings in the CS:GO XMAS version. Ice-crystal particle effects, a frost overlay and the level titles on the HUD. Admin room: a new Level 7 button; the Level 6 and 7 buttons stand on the room's south wall. Server notes Like the original CS2 map it needs a CS2Fixes-style ZE plugin: the KeyValues input (item owners, health, speed, teleport targets), the game_ui emulation (zombie Bad Santa), AddScore / IgniteLifetime and zr_toggle_respawn. EntWatch: the ",
+  "creator": "76561198817685699",
+  "timeCreated": "2026-11-14",
+  "timeUpdated": "2026-11-17",
+  "subscriptions": 36,
+  "views": 182,
+  "fileSize": "525245920",
+  "tags": [
+    "Cs2",
+    "Map",
+    "Custom"
+  ],
+  "filename": ""
+}
