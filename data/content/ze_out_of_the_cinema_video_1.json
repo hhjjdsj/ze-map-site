@@ -1,0 +1,166 @@
+{
+  "v": 1,
+  "slug": "ze_out_of_the_cinema_video_1",
+  "baseRev": "fnv1a:c830fd50",
+  "researchRev": "fnv1a:77074ba4",
+  "heroImage": null,
+  "tags": [
+    "BOSS战",
+    "神器",
+    "彩蛋",
+    "音乐",
+    "滑翔",
+    "风景"
+  ],
+  "difficulty": "普通",
+  "blocks": [
+    {
+      "id": "guide-1795144264313",
+      "type": "guideItem",
+      "title": "彩蛋触发",
+      "doc": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "需要找到大圣遗留的5根毫毛变化而成的人物。"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "每次触发需要靠近按E，触发后会有10秒的无限子弹。"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "story",
+      "type": "story",
+      "doc": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gameplay",
+      "type": "gameplay",
+      "doc": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "guideCleared": false,
+  "infobox": {
+    "author": "闪电",
+    "duration": "约23分钟",
+    "stages": "1"
+  },
+  "stageRows": null,
+  "itemEdits": [
+    {
+      "action": "add",
+      "name": "胜利海帕枪",
+      "cd": 60,
+      "uses": null,
+      "intro": "带伤害和推力攻击",
+      "note": ""
+    },
+    {
+      "action": "add",
+      "name": "神光棒",
+      "cd": 90,
+      "uses": null,
+      "intro": "恢复血量到225",
+      "note": ""
+    }
+  ],
+  "itemOrder": [],
+  "videos": null,
+  "history": [
+    {
+      "revision": 549,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1795759553735
+    },
+    {
+      "revision": 550,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1795759553735
+    },
+    {
+      "revision": 551,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1795759553735
+    },
+    {
+      "revision": 552,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1795759553735
+    },
+    {
+      "revision": 553,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1795759553735
+    },
+    {
+      "revision": 554,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1795759553735
+    },
+    {
+      "revision": 555,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1795759553735
+    },
+    {
+      "revision": 556,
+      "submitter": "匿名",
+      "reviewer": "123",
+      "appliedAt": 1795759553735
+    },
+    {
+      "revision": 557,
+      "submitter": "闪电",
+      "reviewer": "123",
+      "appliedAt": 1795759553735
+    },
+    {
+      "revision": 558,
+      "submitter": "闪电",
+      "reviewer": "123",
+      "appliedAt": 1795759553735
+    }
+  ],
+  "title": "飞常电影院第一部:光"
+}
